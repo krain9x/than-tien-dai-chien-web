@@ -49,7 +49,7 @@ let S = loadSave();
 // ------------------------------------------------------------------ RESIZE
 let scale = 1, dpr = 1;
 function resize() {
-  const vw = window.innerWidth, vh = window.innerHeight;
+  const vv = window.visualViewport, vw = Math.round(vv ? vv.width : window.innerWidth), vh = Math.round(vv ? vv.height : window.innerHeight);
   scale = Math.min(vw / W, vh / H);
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   const app = $('#app');
@@ -58,8 +58,14 @@ function resize() {
   cv.style.width = W * scale + 'px'; cv.style.height = H * scale + 'px';
   ui.style.transform = 'scale(' + scale + ')';
 }
-window.addEventListener('resize', resize);
+window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 250));
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 resize();
+// Mở trong trình duyệt (chưa phải app): trang chủ gợi ý thêm vào màn hình chính để chơi full màn hình
+const IS_APP = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches);
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+// Chạm 1 lần để thử vào toàn màn hình (Android/máy tính; iPhone không hỗ trợ)
+document.addEventListener('pointerup', () => { if (!IS_APP && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); }, { once: true });
 
 // ------------------------------------------------------------------ IMAGES
 // Ảnh vẽ tay (Codex) ở art/sprites + art/portraits; thiếu ảnh thì dùng hình vẽ bằng code.
@@ -2082,7 +2088,9 @@ function showHome() {
       <button id="hBt"><img src="art/ui/ic_book.webp"><span>Tàng Kinh</span></button>
     </nav>
     <button class="link hm-reset" id="hReset">Xoá dữ liệu chơi thử</button>
+    ${(!IS_APP && IS_IOS && !S.a2hs) ? '<div class="a2hs" id="a2hs">Để chơi full màn hình: bấm <b>Chia sẻ</b> ⬆ rồi <b>Thêm vào MH chính</b>. <u>Đóng</u></div>' : ''}
   </div>`;
+  const ah = $('#a2hs'); if (ah) ah.onclick = () => { S.a2hs = 1; save(); ah.remove(); };
   $('#hFight').onclick = showStages;
   $('#hLineup').onclick = showLineup;
   $('#hGacha').onclick = showGacha;

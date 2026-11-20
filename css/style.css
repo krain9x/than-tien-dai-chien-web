@@ -417,3 +417,7 @@ h2, h3, h4 { margin: 0; }
   background: linear-gradient(rgba(53,32,15,0), #35200fee 40%); border-top: 3px solid #e0b040; background-color: #35200fcc; }
 .hm-nav button img { width: 50px; height: 50px; filter: drop-shadow(0 3px 2px rgba(0,0,0,.5)); transition: transform .1s; } .hm-nav button:active img { transform: scale(.92); }
 .hm-reset { position: absolute; right: 8px; top: 62px; font-size: 11px; margin: 0; opacity: .6; }
+
+html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
+.a2hs { position: absolute; left: 50%; transform: translateX(-50%); bottom: 82px; background: #fff6df; color: #4a2a1c; border: 3px solid #e0b040; border-radius: 12px; padding: 6px 12px; font-size: 13px; font-weight: 700; max-width: 520px; text-align: center; z-index: 9; }
+.a2hs u { color: #c0392b; margin-left: 6px; }
