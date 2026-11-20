@@ -24,9 +24,9 @@ const SAVE_KEY = 'ttdc_save_v1';
 const newRec = () => ({ lv: 1, star: 1, shard: 0 });
 function defaultSave() {
   const owned = {};
-  ['ngokhong', 'batgioi', 'quanam', 'duongtang', 'honghainhi'].forEach(id => { owned[id] = newRec(); });
+  ['batgioi', 'duongtang', 'honghainhi'].forEach(id => { owned[id] = newRec(); });   // tân thủ: 3 tướng SR, SSR đến dần qua chiêu mộ
   return { ngoc: 1500, vang: 3000, univ: 0, owned,
-           lineup: ['ngokhong', 'batgioi', 'quanam', 'duongtang', 'honghainhi'],
+           lineup: ['batgioi', 'duongtang', 'honghainhi'],
            cleared: {}, pity: 0, pity10: 0, pulls: 0 };
 }
 function loadSave() {
@@ -39,12 +39,7 @@ function loadSave() {
 function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } }
 let S = loadSave();
 // Tặng 10 tướng mới vào kho hiện có (một lần cho mỗi bản save) để thử ngay, không cần quay gacha
-(function grantNewHeroes() {
-  const NEW = ['duongtien', 'khuongtanha', 'vantieu', 'trieucongminh', 'thailaoquan', 'satang', 'thietphien', 'litinh', 'hangnga', 'bachcot'];
-  if (S.grantNew1) return;
-  for (const id of NEW) if (HEROES[id] && !S.owned[id]) S.owned[id] = newRec();
-  S.grantNew1 = 1; save();
-})();
+// (đã bỏ) tặng sẵn 10 tướng mới — tân thủ đi từ thấp lên cao
 
 // ------------------------------------------------------------------ RESIZE
 let scale = 1, dpr = 1;
@@ -232,12 +227,12 @@ const LUNGE = { boomerang: 14, pierce: 18, bounce: 8, split: 8, spin: 6, lob: 10
 const MELEE_PROJ = { ngokhong: 'staffwave', ngumavuong: 'boulder', batgioi: 'rakewave' };
 const PIERCE_PROJ = { staffwave: 1, rakewave: 1 };
 function makeEnemy(type, lvl, x, y) {
-  const d = ENEMIES[type], m = 1 + 0.32 * (lvl - 1);
+  const d = ENEMIES[type], m = 1 + 0.32 * (lvl - 1), spd = B && B.mech === 'speed' ? 1.35 : 1;   // chương Đại náo Thiên Cung: quái nhanh hơn
   const e = {
     side: 'e', id: type, d, look: d.look, name: d.name, el: d.el, level: lvl,
     base: { hp: d.hp * m, atk: d.atk * m, def: d.def * (1 + 0.1 * (lvl - 1)) },
     bonus: { hpPct: 0, atkPct: 0, crit: 0, dmgTaken: 0 },
-    aspd: d.aspd, range: d.range, move: d.move, ranged: !!d.ranged, proj: d.proj,
+    aspd: d.aspd, range: d.range, move: d.move * spd, ranged: !!d.ranged, proj: d.proj,
     x, y, hp: d.hp * m, cdA: rand(0.3, 1.2), buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0,
     shield: 0, shieldT: 0, inv: 0,
     dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
@@ -303,7 +298,7 @@ function startBattleNow(si) {
     st, si, time: 0, wave: -1, waveStart: 0, nextT: null, spawnQ: [], waveDef: null, waveDropped: false,
     heroes: [], enemies: [], projs: [], fx: [], parts: [], floaters: [], drops: [], zones: [], warns: [],
     mods: {}, cp: {}, gate: { hp: st.gate, max: st.gate }, gateHurt: 0,
-    fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
+    mech: (CHAPTERS[st.chap] || {}).mk || null, mechT: 4, fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
     cutin: null, rerolls: 2, soul: 0, amMode: 'duong', amT: 5, gateT: 10, field: {}, slots: [], kcT: 12, lv: 1, xp: 0, pickQ: [], dodgeCd: 0, deaths: 0, kills: 0, banner: null, endT: null, win: false, joy: null,
     bg: (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
   };
@@ -541,6 +536,7 @@ function deployNext() {
   placeHero(B.deploy.shift());
 }
 function openDeployPick() {
+  tutor('phu', 'Nhặt <b>Linh Phù</b> → chọn 1 tướng xuất trận. Đội tối đa 5 tướng.');
   B.paused = true;
   const opts = B.deploy.slice(0, 4);
   const wrap = document.createElement('div');
@@ -651,6 +647,7 @@ function openBachGiam() {
   box.querySelector('#bgClose').onclick = () => box.remove();
 }
 function openCongPhap() {
+  tutor('cp', 'Lên cấp hoặc nhặt Thiên Thư → <b>chọn 1 công pháp</b>. Chọn cơ bản trước, sau đó tiến bậc thành cao cấp. Tối đa 6 ô.');
   B.paused = true;
   let opts = rollCongPhap();
   const wrap = document.createElement('div');
@@ -1268,6 +1265,8 @@ function bossSpecial(e, dt) {
     if (nx && e.hp < maxHp(e) * nx.at) {
       e.phase++;
       if (nx.enrage) e.buffs.push({ k: 'aspd', v: nx.enrage, t: 9999 });
+      if (nx.heal) e.hp = Math.min(maxHp(e), e.hp + maxHp(e) * nx.heal);
+      if (nx.shield) { e.shield = Math.max(e.shield || 0, maxHp(e) * nx.shield); e.shieldT = 30; }
       B.banner = { text: nx.text, sub: nx.sub, t: 0, boss: true }; B.shake = 0.5;
       if (nx.summon) for (let i = 0; i < nx.summon[1]; i++) B.enemies.push(makeEnemy(nx.summon[0], B.st.lvl, clamp(e.x + rand(-120, 120), 30, W - 30), e.y + rand(-40, 40)));
       if (typeof fxBurst === 'function') { fxBurst(e.x, e.y - 60, 'burst_gold', 300); fxBurst(e.x, e.y - 40, 'petal', 260); }
@@ -1339,7 +1338,28 @@ function updateFx(dt) {
   if (B.tgtMark > 0) B.tgtMark -= dt;
 }
 
+function tutor(key, text) {
+  if (!S.tut) S.tut = {}; if (S.tut[key]) return; S.tut[key] = 1; save();
+  const t = document.createElement('div'); t.className = 'tutor'; t.innerHTML = '<b>Hướng dẫn</b>' + text + '<small>Chạm để đóng</small>';
+  t.onclick = () => t.remove(); ui.appendChild(t); setTimeout(() => t.remove(), 7000);
+}
+function updateMech(dt) {   // cơ chế riêng chương (GDD §2): bẫy (Thập Tuyệt Trận), lửa (Hoả Diệm Sơn)
+  if (!B.mech || B.over) return;
+  if (B.mech === 'traps' || B.mech === 'fire') {
+    B.mechT -= dt; if (B.mechT > 0) return;
+    const src = B.enemies.find(e => !e.dead); const live = B.heroes.filter(h => !h.dead && !h.clone);
+    if (!src || !live.length) { B.mechT = 1; return; }
+    B.mechT = B.mech === 'traps' ? 5 : 4;
+    const h = pick(live), r = B.mech === 'fire' ? 80 : 60;
+    B.warns.push({ x: h.x + rand(-20, 20), y: h.y + rand(-10, 10), r, t: 1.4, dur: 1.4, src, mult: B.mech === 'fire' ? 1.0 : 1.3 });
+    if (B.mech === 'fire') B.decals.push({ x: h.x, y: h.y + 4, r: 70, t: 0, dur: 3 });
+  }
+}
 function update(dt) {
+  if (B && !B.over) updateMech(dt);
+  if (B && !B.over && B.time > 1.5 && B.time < 1.6) tutor('tap', 'Tướng tự đánh. <b>Chạm vào quái</b> để đội trưởng (vòng vàng) nhắm đánh con đó.');
+  if (B && !B.over && B.heroes.some(h => !h.dead && h.mp >= 60)) tutor('ult', 'Thẻ tướng phát sáng <b>TUYỆT KỸ</b> → chạm thẻ để tung tuyệt kỹ.');
+  if (B && !B.over && B.mech) tutor('mech_' + B.mech, { traps: 'Thập Tuyệt Trận: <b>vòng đỏ</b> là bẫy sắp nổ — chạm quái khác để đội trưởng tránh dồn chỗ.', speed: 'Thiên Cung: quái chạy <b>nhanh hơn</b>, dùng tuyệt kỹ sớm.', fire: 'Hoả Diệm Sơn: <b>lửa</b> rơi xuống chỗ tướng đứng định kỳ.', fog: 'Thuỷ tộc: nước đục che <b>nửa phải</b> màn hình.' }[B.mech] || '');
   if (B.over) { updateFx(dt); if (B.endT != null && (B.endT -= dt) <= 0) { B.endT = null; showResult(); } return; }
   B.time += dt;
   while (B.spawnQ.length && B.spawnQ[0].at <= B.time) spawnEnemy(B.spawnQ.shift());
@@ -2050,6 +2070,10 @@ function render() {
   for (const d of B.drops) drawDrop(d);
   drawGhosts();
   for (const u of all) drawUnit(u);
+  if (B.mech === 'fog') {   // Thuỷ tộc: nước đục giảm tầm nhìn (GDD chương 11)
+    const g = ctx.createLinearGradient(W * 0.42, 0, W, 0); g.addColorStop(0, 'rgba(20,60,90,0)'); g.addColorStop(0.35, 'rgba(20,60,90,0.55)'); g.addColorStop(1, 'rgba(10,40,70,0.85)');
+    ctx.save(); ctx.fillStyle = g; ctx.fillRect(W * 0.42, 0, W * 0.58, H); ctx.restore();
+  }
   if (cap && !cap.dead) {
     const y = cap.y - 82 * sizeOf(cap) + Math.sin(B.time * 6) * 3;
     ctx.save(); ctx.beginPath(); ctx.moveTo(cap.x - 7, y - 9); ctx.lineTo(cap.x + 7, y - 9); ctx.lineTo(cap.x, y);
@@ -2232,7 +2256,8 @@ function showHome() {
     <div class="hm-logo"><span class="l1">THẦN TIÊN</span><span class="l2">ĐẠI CHIẾN</span></div>
     <div class="hm-left">
       <button class="hm-ic" id="hQuest"><img src="art/ui/ic_quest.webp">${qDot ? '<i class="dot"></i>' : ''}<span>Nhiệm Vụ</span></button>
-      <button class="hm-ic" id="hGift"><img src="art/ui/ic_gift.webp"><span>Tân Thủ</span></button>
+      <button class="hm-ic" id="hGift"><img src="art/ui/ic_gift.webp">${(() => { const L = loginState(); return LOGIN7.some((r, i) => i < L.d && !L.got.includes(i)) ? '<i class="dot"></i>' : ''; })()}<span>Tân Thủ</span></button>
+      <button class="hm-ic" id="hSave"><img src="art/ui/ic_book.webp"><span>Dữ liệu</span></button>
     </div>
     <button class="hm-idle" id="hIdle"><img src="art/ui/ic_chest.webp">${ir.m >= 1 ? '<i class="dot"></i>' : ''}<b>Treo máy</b><small>${icon('vang')}${fmt(ir.vang)}</small></button>
     <button class="hm-battle" id="hFight"><img src="art/ui/ic_battle.webp"><b>Chiến Dịch</b><small>Ải ${nx.id} · ${esc(nx.name)}</small></button>
@@ -2251,7 +2276,7 @@ function showHome() {
   $('#hGacha').onclick = showGacha;
   $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle;
-  $('#hGift').onclick = () => toast('Quà tân thủ: sắp có');
+  $('#hGift').onclick = showGift; $('#hSave').onclick = showSaveTransfer;
   $('#hReset').onclick = () => {
     if (confirm('Xoá toàn bộ tiến độ chơi thử?')) { S = defaultSave(); save(); showHome(); }
   };
@@ -2671,6 +2696,56 @@ const BANNERS = [
   { name: 'Thiên Thư Khai Quang', feat: [], desc: 'Toàn bộ tướng, SSR 2,5% · SR 15%' },
   { name: 'Tân Binh Hạ Giới', feat: ['duongtien', 'vantieu', 'thailaoquan'], desc: 'Tăng 50% tỉ lệ khi ra SSR: Dương Tiễn · Vân Tiêu · Thái Thượng Lão Quân' },
 ];
+
+
+// ---- Chuyển dữ liệu giữa các máy: mã lưu (chưa có máy chủ — chép mã rồi dán ở máy kia)
+function saveCode() { return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+function showSaveTransfer() {
+  const w = document.createElement('div'); w.className = 'modal';
+  w.innerHTML = `<div class="xfer"><h3>Chuyển dữ liệu</h3><p>Máy này: bấm <b>Sao chép mã</b>, gửi mã sang máy kia (Zalo, ghi chú…). Máy kia: dán mã rồi bấm <b>Nhập mã</b>.</p>
+    <textarea id="xCode" spellcheck="false">${saveCode()}</textarea>
+    <div class="res-btns"><button class="btn gold" id="xCopy">Sao chép mã</button><button class="btn red" id="xLoad">Nhập mã</button><button class="btn" id="xClose">Đóng</button></div>
+    <small>Lưu trực tuyến (tự đồng bộ) cần tài khoản máy chủ — sẽ bổ sung sau.</small></div>`;
+  ui.appendChild(w);
+  $('#xClose').onclick = () => w.remove();
+  $('#xCopy').onclick = () => { const t = $('#xCode'); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand('copy'); } toast('Đã sao chép mã'); };
+  $('#xLoad').onclick = () => {
+    try { const s = JSON.parse(decodeURIComponent(escape(atob($('#xCode').value.trim())))); if (!s || !s.owned) throw 0;
+      if (!confirm('Thay toàn bộ dữ liệu máy này bằng mã vừa dán?')) return; S = Object.assign(defaultSave(), s); save(); w.remove(); toast('Đã nhập dữ liệu'); showHome();
+    } catch (e) { toast('Mã không hợp lệ'); }
+  };
+}
+// ---- Quà tân thủ: đăng nhập 7 ngày
+const LOGIN7 = [{ ngoc: 300 }, { vang: 5000 }, { ngoc: 500 }, { univ: 10 }, { ngoc: 800 }, { vang: 15000 }, { ngoc: 1500, univ: 20 }];
+function loginState() {
+  const k = dayKey(); if (!S.login) S.login = { d: 0, last: null, got: [] };
+  if (S.login.last !== k) { S.login.last = k; S.login.d = Math.min(7, S.login.d + 1); save(); }
+  return S.login;
+}
+function showGift() {
+  const L = loginState(), w = document.createElement('div'); w.className = 'modal';
+  w.innerHTML = `<div class="xfer"><h3>Quà Tân Thủ · 7 ngày</h3><div class="g7">${LOGIN7.map((r, i) => {
+      const ok = i < L.d, got = L.got.includes(i);
+      return `<button class="g7d ${got ? 'got' : ok ? 'ok' : ''}" data-g="${i}" ${ok && !got ? '' : 'disabled'}><b>Ngày ${i + 1}</b><span>${rewTxt(r)}</span><i>${got ? 'Đã nhận' : ok ? 'Nhận' : 'Chưa tới'}</i></button>`; }).join('')}</div>
+    <div class="res-btns"><button class="btn" id="gClose">Đóng</button></div></div>`;
+  ui.appendChild(w); $('#gClose').onclick = () => { w.remove(); showHome(); };
+  w.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const i = +b.dataset.g; L.got.push(i); grant(LOGIN7[i]); save(); w.remove(); showGift(); });
+}
+// ---- Nhạc nền tổng hợp (ngũ cung, nhẹ, lặp) — tắt cùng nút Âm thanh
+let BGM = null;
+function bgmStart() {
+  if (!AC || BGM || (S && S.mute)) return;
+  const notes = [0, 2, 4, 7, 9, 12, 9, 7, 4, 2], base = 220, out = AC.createGain(); out.gain.value = 0.035; out.connect(AC.destination);
+  let step = 0; BGM = { out, timer: setInterval(() => {
+    if (!AC || (S && S.mute)) return;
+    const t = AC.currentTime, n = notes[step % notes.length] + (step % 20 >= 10 ? 5 : 0), f = base * Math.pow(2, n / 12);
+    const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); o.connect(g); g.connect(out); o.start(t); o.stop(t + 1);
+    if (step % 4 === 0) { const b = AC.createOscillator(), bg = AC.createGain(); b.type = 'sine'; b.frequency.value = base / 2 * Math.pow(2, (n % 12) / 12); bg.gain.setValueAtTime(0.6, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6); b.connect(bg); bg.connect(out); b.start(t); b.stop(t + 1.7); }
+    step++;
+  }, 420) };
+}
+document.addEventListener('pointerdown', () => setTimeout(bgmStart, 50));
 
 // ------------------------------------------------------------------ BOOT
 // Đường dẫn nhanh: #battle=1 (vào ải 1, bật tự động), #gacha, #heroes, #lineup, #stages, #hero=nata
