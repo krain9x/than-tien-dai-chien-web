@@ -108,7 +108,7 @@ function loadArt() {
   if (typeof Rig !== 'undefined') for (const id of Object.keys(window.RIG_DEFS || {})) jobs.push(Rig.load(id));
   if (typeof Layered !== 'undefined') for (const id of Object.keys(window.LAYER_DEFS || {})) jobs.push(Layered.load(id));
   // lưới WebGL thời gian thực: nạp file dữ liệu từng nhân vật (art/mesh/<id>.js) rồi tạo texture
-  if (typeof MeshRig !== 'undefined') for (const id of (window.MESH_IDS || [])) jobs.push(new Promise(res => {
+  if (typeof MeshRig !== 'undefined') for (const id of (window.MESH_IDS || []).filter(x => !HEROES[x.replace('_chibi', '')])) jobs.push(new Promise(res => {
     const sc = document.createElement('script');
     sc.src = 'art/mesh/' + id + '.js';
     sc.onload = () => MeshRig.load(id).then(res, res);
