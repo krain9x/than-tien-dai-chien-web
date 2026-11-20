@@ -1,0 +1,1 @@
+window.ANIM_MANIFEST = {"ngokhong": {"fw": 333, "fh": 322, "cols": 6, "ax": 158, "ay": 308, "ch": 280, "anims": {"idle": {"start": 0, "n": 12, "fps": 8, "loop": true}, "walk": {"start": 12, "n": 10, "fps": 14, "loop": true}, "attack": {"start": 22, "n": 8, "fps": 24, "loop": false}, "cast": {"start": 30, "n": 6, "fps": 12, "loop": false}}}};

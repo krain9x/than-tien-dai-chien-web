@@ -1,0 +1,1 @@
+window.MESH_IDS = ["batgioi_chibi", "cungyeu_chibi", "datky_chibi", "dauda_chibi", "duongtang_chibi", "honghainhi_chibi", "hoyeu_chibi", "nata_chibi", "ngokhong", "ngokhong_chibi", "ngumavuong_chibi", "quanam_chibi", "tieuyeu_chibi", "tinhanh_chibi"];

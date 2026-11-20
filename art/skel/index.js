@@ -1,0 +1,1 @@
+window.SKEL_IDS = ["bachcot", "batgioi", "datky", "duongtang", "duongtien", "hangnga", "honghainhi", "khuongtanha", "litinh", "nata", "ngokhong", "ngumavuong", "quanam", "satang", "thailaoquan", "thietphien", "trieucongminh", "vantieu"];
