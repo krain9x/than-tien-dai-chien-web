@@ -189,7 +189,7 @@ function rebuildTang(u) {
   for (let i = 0; i < trongOf(u) - 1 && i < list.length; i++) for (const k in list[i].m) u.tg[k] = (u.tg[k] || 0) + list[i].m[k];
 }
 function sysTang(sys) { let n = 0; if (B) for (const h of B.heroes) if (!h.dead && !h.clone && h.role === sys) n += trongOf(h) - 1; return n; }
-const coreBonus = u => RM(u, 'core') ? 0.20 * Math.min(5, sysTang(u.role)) : 0;   // Cốt Lõi: +20%/lần bồi dưỡng, tối đa 5
+const coreBonus = u => RM(u, 'core') ? 0.20 * Math.min(5, sysTang(u.role)) : 0;   // Bản Mệnh: +20%/lần bồi dưỡng, tối đa 5
 const AMMO = 8;
 const ammoMax = u => AMMO + M('ammo');
 
@@ -240,9 +240,9 @@ function getAtk(u) {
   let p = u.bonus.atkPct + buffSum(u, 'atk');
   if (u.side === 'h') {
     p += M('atkPct') + RM(u, 'atkPct') + coreBonus(u) + (u.isCap ? M('capAtk') : 0);
-    if (M('ad1') && B.amMode === 'am') p += 0.20 + M('ad1Evo');   // Âm Dương: trạng thái Âm
-    if (u.dhT > 0) p += 0.40;                                        // Điều Hòa Âm Dương
-    if (M('tuthan') && trongOf(u) >= 5) p += M('tuthan');                                     // Tu Thần
+    if (M('ad1') && B.amMode === 'am') p += 0.20 + M('ad1Evo');   // Lưỡng Nghi: trạng thái Âm
+    if (u.dhT > 0) p += 0.40;                                        // Lưỡng Nghi Giao Hoà
+    if (M('tuthan') && trongOf(u) >= 5) p += M('tuthan');                                     // Đắc Đạo
     const pa = u.d.passive;
     if (pa && pa.lowHpAtk && u.hp < maxHp(u) * 0.5) p += pa.lowHpAtk;
   }
@@ -358,21 +358,21 @@ function dealDmg(src, tgt, mult, kind) {
     if (kind === 'atk' || kind === 'ht') a *= 1 + TG(src, 'atk');
     a *= 1 + M('dmgPct') + RM(src, 'final');
     if (kind === 'atk' || kind === 'ht') {
-      if (M('tp')) a *= 1 + 0.05 * (src.tp || 0);                       // Tật Phong
-      if (M('vn')) a *= 1 + (src.vn || 0) * (M('vn') + (M('vnFinal') || 0));                     // Vô Ngã
-      if (M('vk')) a *= Math.random() < 0.5 ? 0.8 : (M('vkEvo') ? 2.2 * rand(0.8, 1.4) : 1.6);   // Viên Khuyết: Khuyết −20% / Viên +60%
-      if (M('bn')) {   // Bại Nhứ: đánh liên tục cùng mục tiêu
+      if (M('tp')) a *= 1 + 0.05 * (src.tp || 0);                       // Phong Thế
+      if (M('vn')) a *= 1 + (src.vn || 0) * (M('vn') + (M('vnFinal') || 0));                     // Kiếm Ý
+      if (M('vk')) a *= Math.random() < 0.5 ? 0.8 : (M('vkEvo') ? 2.2 * rand(0.8, 1.4) : 1.6);   // Nguyệt Tướng: Khuyết −20% / Viên +60%
+      if (M('bn')) {   // Triền Đấu: đánh liên tục cùng mục tiêu
         if (src.bnTgt === tgt) src.bn = Math.min(M('bnEvo') ? 37 : 50, (src.bn || 0) + 1); else { src.bnTgt = tgt; src.bn = 0; }
         a *= 1 + src.bn * (M('bnEvo') ? 0.02 : 0.01);
       }
     }
     if (kind === 'ht' && M('htHp')) a *= 1 + M('htHp') * (tgt.hp / maxHp(tgt));
-    if (M('tear2') && tgt.tear) a *= 1 + M('tear2') * tgt.tear;          // Xé Toạc 2
-    if (tgt.side === 'e' && M('soul')) a *= 1 + 0.01 * B.soul;          // Quy Nhất: Linh Hồn
+    if (M('tear2') && tgt.tear) a *= 1 + M('tear2') * tgt.tear;          // Phệ Huyết 2
+    if (tgt.side === 'e' && M('soul')) a *= 1 + 0.01 * B.soul;          // Thu Hồn: Hồn Phách
     if (src.isCap && (kind === 'skill' || kind === 'ult')) a *= 1.10;
   }
   const K = 500 + 50 * (tgt.level || 1);
-  a *= K / (K + getDef(tgt) * (src.side === 'h' && M('vnSee') ? 1 - Math.min(5, src.vn || 0) * M('vnSee') : 1));   // Lạc Anh: Nhìn Thấu bỏ qua phòng thủ
+  a *= K / (K + getDef(tgt) * (src.side === 'h' && M('vnSee') ? 1 - Math.min(5, src.vn || 0) * M('vnSee') : 1));   // Lạc Anh: Thấu Thị bỏ qua phòng thủ
   if (BEATS[src.el] === tgt.el) a *= 1.15; else if (BEATS[tgt.el] === src.el) a *= 0.85;
   let crit = false;
   if (kind !== 'dot' && Math.random() < getCrit(src)) { a *= 1 + getCritDmg(src); crit = true; }
@@ -400,8 +400,8 @@ function dealDmg(src, tgt, mult, kind) {
     if (M('lifesteal') && !src.dead) healU(src, a * M('lifesteal'), true);
     if (kind === 'atk') {
       const htc = M('htChance') + RM(src, 'htChance');
-      if (htc && !tgt.dead && Math.random() < htc) {   // Một Đòn Hội Tâm
-        dealDmg(src, tgt, 1.5 * (1 + M('htDmg')), 'ht'); floater(tgt.x, tgt.y - 78 * sizeOf(tgt), 'Hội Tâm!', '#ffb347', 15);
+      if (htc && !tgt.dead && Math.random() < htc) {   // Một Đòn Thần Kích
+        dealDmg(src, tgt, 1.5 * (1 + M('htDmg')), 'ht'); floater(tgt.x, tgt.y - 78 * sizeOf(tgt), 'Thần Kích!', '#ffb347', 15);
       }
       const tr = M('tear') + RM(src, 'tear');
       if (tr && !tgt.dead && Math.random() < tr) { tgt.tear = Math.min(5, (tgt.tear || 0) + 1); tgt.tearT = 3; tgt.tearDps = Math.max(tgt.tearDps || 0, getAtk(src) * 0.6 * (1 + M('tearDmg'))); }
@@ -441,9 +441,9 @@ function chainLightning(src, from) {
 }
 function adLose(u, amt) {
   u.adLost = (u.adLost || 0) + amt;
-  while (u.adLost >= maxHp(u) * 0.08) { u.adLost -= maxHp(u) * 0.08; if (!(u.dhT > 0)) floater(u.x, u.y - 80, 'Điều Hòa Âm Dương', '#7dffb0', 13); u.dhT = M('ad2Evo') ? 5 : 3; }
+  while (u.adLost >= maxHp(u) * 0.08) { u.adLost -= maxHp(u) * 0.08; if (!(u.dhT > 0)) floater(u.x, u.y - 80, 'Lưỡng Nghi Giao Hoà', '#7dffb0', 13); u.dhT = M('ad2Evo') ? 5 : 3; }
 }
-function healAmD(src, u, amt) {   // hồi máu của tướng; Âm Dương: gây sát thương quái gần; hồi thừa → khiên
+function healAmD(src, u, amt) {   // hồi máu của tướng; Lưỡng Nghi: gây sát thương quái gần; hồi thừa → khiên
   if (!u || u.dead) return;
   const room = maxHp(u) - u.hp;
   healU(u, amt, true);
@@ -461,7 +461,7 @@ function kill(t, src) {
   t.dead = true; t.hp = 0; t.deathT = 0;
   if (t.side === 'e') {
     B.kills++;
-    if (M('soul') && Math.random() < 0.10 && B.soul < 40 + M('soulMax')) { B.soul++; floater(t.x, t.y - 60, 'Linh Hồn ' + B.soul, '#9ad0ff', 12); }
+    if (M('soul') && Math.random() < 0.10 && B.soul < 40 + M('soulMax')) { B.soul++; floater(t.x, t.y - 60, 'Hồn Phách ' + B.soul, '#9ad0ff', 12); }
     B.xp += t.boss ? 30 : t.elite ? 5 : 1;
     while (B.xp >= xpNeed()) { B.xp -= xpNeed(); B.lv++; floater(W / 2, 120, 'Lên cấp ' + B.lv + '!', '#ffe14d', 24); queuePick(openCongPhap); }
     particles(t.x, t.y - 20, t.look.skin, t.boss ? 40 : 12, t.boss ? 300 : 170);
@@ -1076,7 +1076,7 @@ function tryAttack(u, tgt) {
     if (M('tp') && Math.random() < 0.5) u.tp = Math.min(10 + M('tpMax'), (u.tp || 0) + 1);
     if (M('vn')) u.vn = (u.vn || 0) >= 5 + M('vnMax') ? 1 : (u.vn || 0) + 1;
     u.qnHit = 1;
-    if (u.ammo <= 0) {   // hết chưởng → điều khí; Tật Phong / Vô Ngã mất hết
+    if (u.ammo <= 0) {   // hết chưởng → điều khí; Phong Thế / Kiếm Ý mất hết
       let t = 2.0 / (u.isCap ? 1.2 : 1);
       if (RM(u, 'coreEvo')) t *= 1 - Math.min(0.175, 0.035 * sysTang(u.role));   // [VLĐMT] −3,5%/cấp, tối đa −17,5%
       if (M('tuthanEvo') && trongOf(u) >= 5) t *= 0.95;   // [VLĐMT] −5%
@@ -2082,7 +2082,7 @@ function showHome() {
     <button class="hm-idle" id="hIdle"><img src="art/ui/ic_chest.webp">${ir.m >= 1 ? '<i class="dot"></i>' : ''}<b>Treo máy</b><small>${icon('vang')}${fmt(ir.vang)}</small></button>
     <button class="hm-battle" id="hFight"><img src="art/ui/ic_battle.webp"><b>Chiến Dịch</b><small>Ải ${nx.id} · ${esc(nx.name)}</small></button>
     <nav class="hm-nav">
-      <button id="hHeroes"><img src="art/ui/ic_hero.webp"><span>Hiệp Khách</span></button>
+      <button id="hHeroes"><img src="art/ui/ic_hero.webp"><span>tướng</span></button>
       <button id="hLineup"><img src="art/ui/ic_team.webp"><span>Đội Hình</span></button>
       <button id="hGacha"><img src="art/ui/ic_summon.webp"><span>Chiêu Mộ</span></button>
       <button id="hBt"><img src="art/ui/ic_book.webp"><span>Tàng Kinh</span></button>
@@ -2186,7 +2186,7 @@ function showLineup() {
 // ---------------- Heroes
 function showHeroes() {
   const ids = Object.keys(HEROES).sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || (HEROES[a].rar < HEROES[b].rar ? 1 : -1));
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('Hiệp Khách')}
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('tướng')}
     <div class="hero-grid">${ids.map(id => {
       const h = HEROES[id], o = S.owned[id];
       return `<button class="hcard ${o ? '' : 'locked'} r-${h.rar}" data-h="${id}">
@@ -2203,7 +2203,7 @@ function showHeroDetail(id) {
   const lvCost = o ? 150 * o.lv : 0;
   const starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
   const bonds = BONDS.filter(b => b.members.includes(id));
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('Hiệp Khách')}
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('tướng')}
     <div class="detail r-${h.rar}">
       <div class="det-art"><img src="${fullImg(id, 220)}"></div>
       <div class="det-head">${rarTag(h.rar)}<h3>${esc(h.name)}</h3><small>${esc(h.title)} · ${esc(h.src)}</small>
@@ -2261,7 +2261,7 @@ function pullOne() {
   return { rar, id, isNew: true };
 }
 function showGacha() {
-  ui.innerHTML = `<div class="screen panel-screen gacha">${topBar('Chiêu Mộ Hiệp Khách')}
+  ui.innerHTML = `<div class="screen panel-screen gacha">${topBar('Chiêu Mộ tướng')}
     <div class="chap-tabs">${BANNERS.map((b, i) => `<button class="btn small ${i === (S.gb || 0) ? 'gold' : ''}" data-gb="${i}">${b.name}</button>`).join('')}</div>
     <div class="banner-art">
       ${(() => { const bn = BANNERS[S.gb || 0], f = bn.feat.length ? bn.feat : ['nata', 'datky', 'ngumavuong']; return `<img class="ba-main" src="${fullImg(f[0], 220)}"><img class="ba-l" src="${fullImg(f[1], 150)}"><img class="ba-r" src="${fullImg(f[2], 150)}"><div class="ba-text"><span>${bn.name}</span><small>${bn.desc} · bảo hiểm 80 lượt</small></div>`; })()}
