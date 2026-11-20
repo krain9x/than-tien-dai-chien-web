@@ -2082,7 +2082,7 @@ function showHome() {
     <button class="hm-idle" id="hIdle"><img src="art/ui/ic_chest.webp">${ir.m >= 1 ? '<i class="dot"></i>' : ''}<b>Treo máy</b><small>${icon('vang')}${fmt(ir.vang)}</small></button>
     <button class="hm-battle" id="hFight"><img src="art/ui/ic_battle.webp"><b>Chiến Dịch</b><small>Ải ${nx.id} · ${esc(nx.name)}</small></button>
     <nav class="hm-nav">
-      <button id="hHeroes"><img src="art/ui/ic_hero.webp"><span>tướng</span></button>
+      <button id="hHeroes"><img src="art/ui/ic_hero.webp"><span>Thần Tướng</span></button>
       <button id="hLineup"><img src="art/ui/ic_team.webp"><span>Đội Hình</span></button>
       <button id="hGacha"><img src="art/ui/ic_summon.webp"><span>Chiêu Mộ</span></button>
       <button id="hBt"><img src="art/ui/ic_book.webp"><span>Tàng Kinh</span></button>
@@ -2186,7 +2186,7 @@ function showLineup() {
 // ---------------- Heroes
 function showHeroes() {
   const ids = Object.keys(HEROES).sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || (HEROES[a].rar < HEROES[b].rar ? 1 : -1));
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('tướng')}
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
     <div class="hero-grid">${ids.map(id => {
       const h = HEROES[id], o = S.owned[id];
       return `<button class="hcard ${o ? '' : 'locked'} r-${h.rar}" data-h="${id}">
@@ -2203,7 +2203,7 @@ function showHeroDetail(id) {
   const lvCost = o ? 150 * o.lv : 0;
   const starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
   const bonds = BONDS.filter(b => b.members.includes(id));
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('tướng')}
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
     <div class="detail r-${h.rar}">
       <div class="det-art"><img src="${fullImg(id, 220)}"></div>
       <div class="det-head">${rarTag(h.rar)}<h3>${esc(h.name)}</h3><small>${esc(h.title)} · ${esc(h.src)}</small>
@@ -2261,7 +2261,7 @@ function pullOne() {
   return { rar, id, isNew: true };
 }
 function showGacha() {
-  ui.innerHTML = `<div class="screen panel-screen gacha">${topBar('Chiêu Mộ tướng')}
+  ui.innerHTML = `<div class="screen panel-screen gacha">${topBar('Chiêu Mộ Thần Tướng')}
     <div class="chap-tabs">${BANNERS.map((b, i) => `<button class="btn small ${i === (S.gb || 0) ? 'gold' : ''}" data-gb="${i}">${b.name}</button>`).join('')}</div>
     <div class="banner-art">
       ${(() => { const bn = BANNERS[S.gb || 0], f = bn.feat.length ? bn.feat : ['nata', 'datky', 'ngumavuong']; return `<img class="ba-main" src="${fullImg(f[0], 220)}"><img class="ba-l" src="${fullImg(f[1], 150)}"><img class="ba-r" src="${fullImg(f[2], 150)}"><div class="ba-text"><span>${bn.name}</span><small>${bn.desc} · bảo hiểm 80 lượt</small></div>`; })()}
