@@ -289,7 +289,7 @@ function startBattleNow(si) {
     st, si, time: 0, wave: -1, waveStart: 0, nextT: null, spawnQ: [], waveDef: null, waveDropped: false,
     heroes: [], enemies: [], projs: [], fx: [], parts: [], floaters: [], drops: [], zones: [], warns: [],
     mods: {}, cp: {}, gate: { hp: st.gate, max: st.gate }, gateHurt: 0,
-    ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
+    fxb: [], ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
     cutin: null, rerolls: 2, soul: 0, amMode: 'duong', amT: 5, gateT: 10, field: {}, slots: [], kcT: 12, lv: 1, xp: 0, pickQ: [], dodgeCd: 0, deaths: 0, kills: 0, banner: null, endT: null, win: false, joy: null,
     bg: (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
   };
@@ -460,7 +460,7 @@ function kill(t, src) {
   if (t.dead) return;
   t.dead = true; t.hp = 0; t.deathT = 0;
   if (t.side === 'e') {
-    B.kills++;
+    B.kills++; if (B.fxb.length < 40) fxBurst(t.x, t.y - 22, 'smoke', 120);
     if (M('soul') && Math.random() < 0.10 && B.soul < 40 + M('soulMax')) { B.soul++; floater(t.x, t.y - 60, 'Hồn Phách ' + B.soul, '#9ad0ff', 12); }
     B.xp += t.boss ? 30 : t.elite ? 5 : 1;
     while (B.xp >= xpNeed()) { B.xp -= xpNeed(); B.lv++; floater(W / 2, 120, 'Lên cấp ' + B.lv + '!', '#ffe14d', 24); queuePick(openCongPhap); }
@@ -898,6 +898,7 @@ function fireProj(u, tgt, o) {
     pat: o.pat || '', pl: o.pl == null ? null : o.pl, bounces: o.bounces || 0, dmax: o.dmax || 0, trav: 0, ret: false, age: 0,
     splitN: o.splitN || 0, spin: !!o.spin, boom: o.boom || 0, stun: o.stun || 0, child: !!o.child, spinT: 0, tickT: 0,
   });
+  if (u.side === 'h' && B.fxb.length < 40) fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70);   // chớp nòng
   return B.projs[B.projs.length - 1];
 }
 // đòn đánh thường theo kiểu riêng của tướng (ATK_STYLE trong data.js)
@@ -966,6 +967,7 @@ function updateProjs(dt) {
       if (nx) p.homing = nx; else { p.done = true; continue; }
     }
     p.x += p.vx * dt; p.y += p.vy * dt;
+    if (p.side === 'h') { (p.hist = p.hist || []).push([p.x, p.y]); if (p.hist.length > 9) p.hist.shift(); }
     const edge = p.pat === 'boomerang' ? (p.x < -80 || p.x > W + 120) && p.ret : (p.x < -60 || p.x > W + 60);
     if (p.life <= 0 || edge || p.y < -80 || p.y > H) { p.done = true; continue; }
     const targets = p.side === 'h' ? B.enemies : B.heroes;
@@ -1012,6 +1014,7 @@ function updateProjs(dt) {
 function hitFeel(p, t) {
   const col = projColor(p.type), a = Math.atan2(p.vy, p.vx);
   B.sparks.push({ x: t.x, y: t.y - 24 * sizeOf(t), a, col, t: 0, dur: 0.22, big: p.kind !== 'atk' });
+  if (B.fxb.length < 40) fxBurst(t.x, t.y - 24 * sizeOf(t), (PFX[p.type] || {}).burst || 'burst_gold', p.kind !== 'atk' ? 150 : 95, Math.random() * 6);
   if (p.src && p.src.side === 'h') {
     const h = B.hits; if (h.id !== p.src.id || h.t <= 0) h.n = 0;
     h.id = p.src.id; h.n++; h.t = 1.4;
@@ -1282,6 +1285,7 @@ function updateFx(dt) {
   for (const l of B.later) { l.t -= dt; if (l.t <= 0 && !l.done) { l.done = true; l.fn(); } }
   B.later = B.later.filter(l => !l.done);
   if (B.flash > 0) B.flash -= dt;
+  for (const b of B.fxb) b.t += dt; B.fxb = B.fxb.filter(b => b.t < b.dur);
   for (const g of B.ghosts) g.t += dt; B.ghosts = B.ghosts.filter(g => g.t < 0.22);
   for (const s of B.sparks) s.t += dt; B.sparks = B.sparks.filter(s => s.t < s.dur);
   if (B.hits.t > 0) B.hits.t -= dt;
@@ -1595,6 +1599,61 @@ function drawGhosts() {
   }
 }
 // tia sáng điểm trúng (xoè nan) + đồng hồ số đòn
+// ------------------------------------------------------------------ CHẤT LIỆU HIỆU ỨNG (art/fx, nền đen, vẽ bằng hoà sáng 'lighter')
+const FXT = {};
+for (const n of ['burst_gold', 'burst_blue', 'slash', 'orb', 'lightning', 'smoke', 'ring', 'flare', 'fire', 'petal']) { const i = new Image(); i.src = 'art/fx/' + n + '.webp'; FXT[n] = i; }
+function fxGlow(name, x, y, size, rot, alpha, sx, sy) {
+  const im = FXT[name]; if (!im || !im.complete || !im.naturalWidth || alpha <= 0) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, alpha);
+  ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.scale(sx || 1, sy || 1);
+  ctx.drawImage(im, -size / 2, -size / 2, size, size); ctx.restore();
+}
+// kiểu đạn → bộ chất liệu: lõi, quầng, nổ khi trúng
+const PFX = {
+  staff: { core: 'orb', glow: 'ring', burst: 'burst_gold', trail: '#ffd34d', spin: 1 },
+  crescent: { core: 'slash', glow: 'flare', burst: 'burst_blue', trail: '#bfe0ff', spin: 1 },
+  spear: { core: 'flare', glow: 'lightning', burst: 'burst_blue', trail: '#9fd0ff', line: 1 },
+  light: { core: 'orb', glow: 'flare', burst: 'burst_gold', trail: '#fff3a0' },
+  ring: { core: 'ring', glow: 'fire', burst: 'burst_gold', trail: '#ffb02e', spin: 1 },
+  fan: { core: 'petal', glow: 'flare', burst: 'burst_gold', trail: '#7fe8a0', spin: 1 },
+  pearl: { core: 'orb', glow: 'flare', burst: 'burst_gold', trail: '#ffe58a' },
+  bolt: { core: 'lightning', glow: 'flare', burst: 'burst_blue', trail: '#bfe0ff', line: 1 },
+  bead: { core: 'orb', glow: 'ring', burst: 'burst_gold', trail: '#ffcf4a', spin: 1 },
+  moon: { core: 'orb', glow: 'ring', burst: 'burst_blue', trail: '#dfe8ff', spin: 1 },
+  drop: { core: 'orb', glow: 'petal', burst: 'burst_blue', trail: '#9fe8ff' },
+  foxfire: { core: 'petal', glow: 'smoke', burst: 'burst_gold', trail: '#ff7ad9' },
+  bone: { core: 'flare', glow: 'smoke', burst: 'burst_blue', trail: '#c8a0ff', line: 1 },
+  fire: { core: 'fire', glow: 'orb', burst: 'burst_gold', trail: '#ff7a2e' },
+  pill: { core: 'orb', glow: 'smoke', burst: 'burst_gold', trail: '#ffb347' },
+  pagoda: { core: 'flare', glow: 'ring', burst: 'burst_gold', trail: '#ffd34d' },
+  rake: { core: 'orb', glow: 'ring', burst: 'burst_gold', trail: '#e0e8f0', spin: 1 },
+  boulder: { core: 'smoke', glow: 'orb', burst: 'burst_gold', trail: '#c8a070' },
+  staffwave: { core: 'slash', glow: 'flare', burst: 'burst_gold', trail: '#ffd34d' },
+  rakewave: { core: 'slash', glow: 'flare', burst: 'burst_blue', trail: '#bfe0ff' },
+  palm: { core: 'orb', glow: 'flare', burst: 'burst_gold', trail: '#ffe58a' },
+};
+// vẽ lớp sáng của đạn: dải đuôi uốn theo đường bay + quầng + lõi
+function drawProjFX(p) {
+  const S = PFX[p.type]; if (!S || p.side !== 'h') return;
+  const h = p.hist || [];
+  if (h.length > 1) {   // dải đuôi: nhiều đoạn thon dần, hoà sáng
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+    for (let i = 1; i < h.length; i++) {
+      const q = i / h.length; ctx.globalAlpha = q * 0.55; ctx.strokeStyle = S.trail; ctx.lineWidth = (p.r || 8) * 1.6 * q;
+      ctx.beginPath(); ctx.moveTo(h[i - 1][0], h[i - 1][1]); ctx.lineTo(h[i][0], h[i][1]); ctx.stroke();
+      ctx.globalAlpha = q * 0.7; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = (p.r || 8) * 0.5 * q; ctx.stroke();
+    }
+    ctx.restore();
+  }
+  const a = Math.atan2(p.vy, p.vx), R = Math.min(52, (p.r || 8) * (p.child ? 3 : 4));
+  const pulse = 1 + 0.12 * Math.sin(p.age * 30);
+  fxGlow(S.glow, p.x, p.y, R * 1.5 * pulse, S.line ? a : p.age * 4, 0.55, S.line ? 1.6 : 1, S.line ? 0.6 : 1);
+  fxGlow(S.core, p.x, p.y, R * pulse, S.spin ? p.rot * 0.8 : a, 0.95);
+}
+function fxBurst(x, y, name, size, a) { B.fxb.push({ x, y, name, size, a: a || 0, t: 0, dur: 0.32 }); }
+function drawFxBursts() {
+  for (const b of B.fxb) { const k = b.t / b.dur; fxGlow(b.name, b.x, b.y, b.size * (0.55 + 0.75 * Math.sqrt(k)), b.a + k * 0.6, (1 - k) * 1.1); }
+}
 function drawSparks() {
   for (const s of B.sparks) {
     const k = s.t / s.dur, R = (s.big ? 46 : 26) * (0.5 + k);
@@ -1613,7 +1672,8 @@ function drawSparks() {
   }
 }
 function drawProj(p) {
-  if (p.side === 'h' && !p.child && p.kind !== 'sword') {   // vệt đuôi sáng sau đạn (theo vận tốc), màu theo loại đạn
+  if (p.side === 'h' && PFX[p.type]) drawProjFX(p);
+  else if (p.side === 'h' && !p.child && p.kind !== 'sword') {   // vệt đuôi sáng sau đạn (theo vận tốc), màu theo loại đạn
     const sp = Math.hypot(p.vx, p.vy) || 1, L = Math.min(70, sp * 0.1), ux = p.vx / sp, uy = p.vy / sp, col = projColor(p.type);
     const g = ctx.createLinearGradient(p.x, p.y, p.x - ux * L, p.y - uy * L); g.addColorStop(0, col); g.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.save(); ctx.globalAlpha = 0.55; ctx.strokeStyle = g; ctx.lineWidth = (p.r || 8) * 0.9; ctx.lineCap = 'round';
@@ -1916,6 +1976,7 @@ function render() {
   }
   for (const p of B.projs) drawProj(p);
   for (const f of B.fx) drawFx(f);
+  drawFxBursts();
   drawSparks();
   for (const p of B.parts) {
     ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color;
@@ -1944,7 +2005,15 @@ function render() {
   }
   if (B.flash > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, B.flash / 0.22) * 0.38; ctx.fillStyle = '#fff8e0'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
   drawTargetMark();
-  if (B.cutin) drawCutin();
+  if (B.cutin) {   // tuyệt kỹ: tối màn + vệt tốc độ hoà sáng
+    const k = Math.min(1, B.cutin.t * 4) * Math.max(0, 1 - Math.max(0, B.cutin.t - 0.6) / 0.2);
+    ctx.save(); ctx.globalAlpha = 0.45 * k; ctx.fillStyle = '#0a0410'; ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * k;
+    for (let i = 0; i < 26; i++) { const y = (i * 53 + B.cutin.t * 900 * (i % 3 + 1)) % H, x = ((i * 137) % W + B.cutin.t * 2600) % (W + 400) - 200;
+      ctx.strokeStyle = i % 4 ? '#fff3c0' : '#ffb02e'; ctx.lineWidth = 1 + (i % 3); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 140 - (i % 5) * 30, y); ctx.stroke(); }
+    ctx.restore();
+    drawCutin();
+  }
   if (B.banner) drawBanner();
 }
 
