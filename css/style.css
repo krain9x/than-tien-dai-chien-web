@@ -421,3 +421,44 @@ h2, h3, h4 { margin: 0; }
 html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .a2hs { position: absolute; left: 50%; transform: translateX(-50%); bottom: 82px; background: #fff6df; color: #4a2a1c; border: 3px solid #e0b040; border-radius: 12px; padding: 6px 12px; font-size: 13px; font-weight: 700; max-width: 520px; text-align: center; z-index: 9; }
 .a2hs u { color: #c0392b; margin-left: 6px; }
+
+/* ===================== HUD TRONG TRẬN (cùng phong cách art/ui) ===================== */
+.hud-top { top: 0; left: 0; right: 0; height: 46px; padding: 0 10px; gap: 7px; background: linear-gradient(#6a3a22ee, #3f2214dd); border-bottom: 3px solid #e0b040; box-shadow: 0 3px 8px rgba(0,0,0,.35); }
+.hud-top > div { background: linear-gradient(#4a1a14, #2e0f0b); border: 2px solid #e0b040; border-radius: 14px; color: #ffe9b0; padding: 0 10px; height: 28px; display: flex; align-items: center; font-size: 14px; text-shadow: 0 1px 0 #1a0a06; box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+.hud-top .ht-stage { flex: 0 1 auto; max-width: 190px; } .hud-top .ht-stage b { color: #ffd34d; margin-right: 5px; }
+.hud-top .ht-wave { background: linear-gradient(#ffd34d, #e29a12); color: #4a2a0c; text-shadow: 0 1px 0 #fff3a0; border-color: #8a5a10; font-weight: 800; }
+.hud-top .ht-lv { gap: 6px; } .hud-top .ht-lv .bar { width: 52px; height: 8px; }
+.hud-top .gate-bar { flex: 1; height: 28px; padding: 0 10px; gap: 8px; } .hud-top .gate-bar .bar { height: 12px; background: #1a0a06; border: 1px solid #8a5a10; }
+.hud-top .gate-bar span { font-size: 12px; text-shadow: 0 1px 0 #000; }
+.hud-round { width: 34px; height: 34px; flex: none; border-radius: 50%; border: 3px solid #8a5a10; background: radial-gradient(circle at 35% 30%, #fff3a0, #ffc21a 55%, #d98a0a); color: #4a2a0c; font-weight: 800; font-size: 13px; box-shadow: 0 2px 0 #4a2a0c; padding: 0; }
+.hud-round:active { transform: translateY(2px); box-shadow: none; }
+.hud-top .tool { height: 28px; padding: 0 12px; border: 2px solid #e0b040; border-radius: 14px; background: linear-gradient(#5a3420, #35200f); color: #ffe9b0; font-size: 13px; text-shadow: 0 1px 0 #1a0a06; box-shadow: 0 2px 0 #1a0a06; }
+.hud-top .tool.on { background: linear-gradient(#ffe36a, #f2a218); color: #4a2a0c; text-shadow: none; border-color: #8a5a10; }
+.cp-owned { top: 54px; left: 10px; } .hint-tap { top: 54px; background: rgba(53,32,15,.8); border: 2px solid #e0b040; color: #ffe9b0; }
+.cpo { border-color: #35200f; box-shadow: 0 0 0 2px #e0b040; }
+
+.team { bottom: 4px; gap: 6px; padding: 5px 8px 3px; background: linear-gradient(rgba(53,32,15,0), rgba(53,32,15,.75)); border-radius: 16px 16px 0 0; }
+.tm { width: 78px; height: 88px; border: 3px solid #e0b040; border-radius: 13px; background: linear-gradient(#6a3a22, #35200f); box-shadow: 0 3px 0 #1a0a06, inset 0 1px 0 rgba(255,255,255,.18); }
+.tm img { width: 60px; height: 60px; margin-top: 3px; border-radius: 10px; background: radial-gradient(circle at 50% 30%, #ffe9b0, #c9985a); border: 2px solid #8a5a10; }
+.tm.cap { border-color: #fff3a0; box-shadow: 0 0 0 2px #b5520a, 0 0 14px #ffd34d, 0 3px 0 #1a0a06; }
+.tm-ult { background: rgba(26,10,6,.85); color: #ffe9b0; bottom: 13px; }
+.tm-hp, .tm-mp { background: #1a0a06; border: 1px solid #1a0a06; } .tm-hp { bottom: 8px; height: 6px; } .tm-mp { bottom: 2px; height: 5px; }
+.tm-key { color: #ffe9b0; } .tm-ammo { top: 32px; right: 4px; font-size: 14px; }
+.tm.ready { border-color: #fff3a0; box-shadow: 0 0 0 2px #ff7a2e, 0 0 18px #ffb02e, 0 3px 0 #1a0a06; }
+.tm.ready::after { content: 'TUYỆT KỸ'; position: absolute; left: 0; right: 0; top: -1px; font-size: 9px; font-weight: 800; text-align: center; color: #4a2a0c; background: linear-gradient(90deg, #ffd34d, #ff9a2e, #ffd34d); }
+
+/* ===== cửa sổ trong trận: cùng phong cách khung gỗ-vàng ===== */
+.modal { background: radial-gradient(circle at 50% 40%, rgba(60,32,18,.82), rgba(14,6,3,.92)); }
+.cp-card { border: 4px solid #e0b040; border-radius: 16px; box-shadow: 0 5px 0 #1a0a06, 0 0 0 2px #35200f, inset 0 0 0 3px rgba(0,0,0,.25); color: #4a2a1c; }
+.cp-card.r1 { background: linear-gradient(#fff6df, #e9cd96); } .cp-card.r2 { background: linear-gradient(#f3e6ff, #c9a8f0); border-color: #b48ae0; } .cp-card.r3 { background: linear-gradient(#fff3b8, #f5b44a); border-color: #fff3a0; box-shadow: 0 5px 0 #1a0a06, 0 0 22px #ffc21a; }
+.cp-card b { text-shadow: 0 1px 0 rgba(255,255,255,.6); color: #4a2a1c; } .cp-card small { text-shadow: none; color: #5a3a1c; }
+.cp-rar { background: linear-gradient(#5a3420, #35200f); color: #ffe9b0; border: 2px solid #e0b040; }
+.cp-icon, .cp-card .cp-por { border: 3px solid #8a5a10; background: radial-gradient(circle at 50% 30%, #fff, #f0d9a0); }
+.cp-card em { background: #35200f; color: #ffe9b0; border: 1px solid #e0b040; }
+.cp-title span { font-size: 36px; }
+.bg-modal { background: radial-gradient(circle at 50% 30%, #4a2a18, #140804); }
+.bg-it { background: #fff6df; border: 2px solid #c9985a; box-shadow: 0 2px 0 #35200f; } .bg-it.t1 { background: #f6e6c0; } .bg-it.t2 { background: #f0e0ff; border-color: #b48ae0; }
+.bg-it.own { outline: 3px solid #e0b040; } .bg-it i { color: #8a5a10; } .bg-col h4 { color: #ffd34d; text-shadow: 0 2px 0 #1a0a06; border-bottom: 2px solid #e0b040; }
+.cp-mini { background: linear-gradient(#fff6df, #e9cd96); border: 4px solid #e0b040; box-shadow: 0 4px 0 #1a0a06; }
+.res-rew span, .res-team img { background: linear-gradient(#fff6df, #e9cd96); border: 2px solid #e0b040; }
+.pause-modal h3, .res-title { filter: drop-shadow(0 4px 0 #1a0a06); }

@@ -1072,7 +1072,7 @@ function tryAttack(u, tgt) {
   if (u.cdA > 0 || !tgt || tgt.dead) return;
   if (u.side === 'h' && !u.clone) {
     if (u.dk > 0) return;                           // đang điều khí (nạp lại chưởng)
-    u.ammo = (u.ammo == null ? ammoMax(u) : u.ammo) - (M('freeShot') && Math.random() < M('freeShot') ? 0 : 1);   // Tiểu Vô Tướng Công: 15% không tốn lượt
+    u.ammo = (u.ammo == null ? ammoMax(u) : u.ammo) - (M('freeShot') && Math.random() < M('freeShot') ? 0 : 1);   // Thuấn Di Độn Pháp: 15% không tốn lượt
     if (M('tp') && Math.random() < 0.5) u.tp = Math.min(10 + M('tpMax'), (u.tp || 0) + 1);
     if (M('vn')) u.vn = (u.vn || 0) >= 5 + M('vnMax') ? 1 : (u.vn || 0) + 1;
     u.qnHit = 1;
@@ -2311,6 +2311,7 @@ function showHUD() {
   ui.innerHTML = `<div class="hud">
     <div id="pad"></div>
     <div class="hud-top">
+      <button class="hud-round" id="bPause" title="Tạm dừng (P)">❚❚</button>
       <div class="ht-stage"><b>${B.st.id}</b> ${esc(B.st.name)}</div>
       <div class="ht-wave" id="hWave"></div>
       <div class="ht-time" id="hTime">0:00</div>
@@ -2318,7 +2319,6 @@ function showHUD() {
       <div class="gate-bar"><span>Cổng Tây Kỳ</span><div class="bar"><i id="hGate"></i></div></div>
       <button class="tool" id="bAuto">Tự động</button>
       <button class="tool" id="bSpeed">x1</button>
-      <button class="btn-icon" id="bPause" title="Tạm dừng (P)">❚❚</button>
     </div>
     <div class="cp-owned" id="cpOwned"></div>
     <div class="hint-tap" id="hintTap">Chạm vào quái để đội trưởng nhắm đánh · Chạm thẻ tướng để tung tuyệt kỹ</div>
