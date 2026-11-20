@@ -289,7 +289,7 @@ function startBattleNow(si) {
     st, si, time: 0, wave: -1, waveStart: 0, nextT: null, spawnQ: [], waveDef: null, waveDropped: false,
     heroes: [], enemies: [], projs: [], fx: [], parts: [], floaters: [], drops: [], zones: [], warns: [],
     mods: {}, cp: {}, gate: { hp: st.gate, max: st.gate }, gateHurt: 0,
-    fxb: [], ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
+    fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
     cutin: null, rerolls: 2, soul: 0, amMode: 'duong', amT: 5, gateT: 10, field: {}, slots: [], kcT: 12, lv: 1, xp: 0, pickQ: [], dodgeCd: 0, deaths: 0, kills: 0, banner: null, endT: null, win: false, joy: null,
     bg: (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
   };
@@ -393,6 +393,8 @@ function dealDmg(src, tgt, mult, kind) {
   let rem = a;
   if (tgt.shield > 0) { const s = Math.min(tgt.shield, rem); tgt.shield -= s; rem -= s; }
   tgt.hp -= rem; tgt.hurt = 0.1; if (rem > maxHp(tgt) * 0.04) tgt.hitT = 0.35;
+  if (kind === 'ult' && tgt.side === 'e' && !tgt.boss && !tgt.dead) { tgt.x = Math.min(W + 30, tgt.x + 34); tgt.hitT = 0.35; }   // tuyệt kỹ hất văng
+  if (crit && src.side === 'h') sfx('crit');
   if (tgt.side === 'h' && M('ad2')) adLose(tgt, rem);
   const col = tgt.side === 'h' ? '#ff6b6b' : crit ? '#ffe14d' : kind === 'ult' ? '#ffb347' : '#ffffff';
   floater(tgt.x, tgt.y - 50 * sizeOf(tgt), crit ? a + '!' : a, col, crit ? 22 : (kind === 'ult' ? 19 : 15), crit);
@@ -460,7 +462,7 @@ function kill(t, src) {
   if (t.dead) return;
   t.dead = true; t.hp = 0; t.deathT = 0;
   if (t.side === 'e') {
-    B.kills++; if (B.fxb.length < 40) fxBurst(t.x, t.y - 22, 'smoke', 120);
+    B.kills++; sfx('pop'); if (B.fxb.length < 40) fxBurst(t.x, t.y - 22, 'smoke', 120);
     if (M('soul') && Math.random() < 0.10 && B.soul < 40 + M('soulMax')) { B.soul++; floater(t.x, t.y - 60, 'Hồn Phách ' + B.soul, '#9ad0ff', 12); }
     B.xp += t.boss ? 30 : t.elite ? 5 : 1;
     while (B.xp >= xpNeed()) { B.xp -= xpNeed(); B.lv++; floater(W / 2, 120, 'Lên cấp ' + B.lv + '!', '#ffe14d', 24); queuePick(openCongPhap); }
@@ -779,13 +781,16 @@ function cast(u, w) {
       const t2 = tgt && !tgt.dead ? tgt : findTarget(u) || nearestEnemy(u, 400);
       for (const f of sk.fx) runFx(u, (f.at === 'cluster' || f.at === 'front' || f.at === 'target') ? { ...f, P } : f, t2, 'ult');
       B.shake = Math.max(B.shake, 0.6); B.flash = 0.22;
+      B.cam = { x: P.x, y: P.y - 40, t: 0, dur: 0.7 }; sfx('boom');
+      fxBurst(P.x, P.y - 40, 'burst_gold', 340); fxBurst(P.x, P.y - 30, 'ring', 420, 0); fxBurst(P.x, P.y - 50, 'flare', 300);
+      B.decals.push({ x: P.x, y: P.y + 4, r: 120, t: 0, dur: 4.5 });
     } });
   } else for (const f of sk.fx) runFx(u, f, tgt, w === 'ult' ? 'ult' : 'skill');
   if (w === 'small' && RM(u, 'skillZone')) {
     const P = bestCluster(70) || (tgt ? { x: tgt.x, y: tgt.y } : null);
     if (P) { B.zones = B.zones.filter(z => !(z.src === u && z.tag === 'pz')); B.zones.push({ x: P.x, y: P.y, r: 70, mult: 0.4, t: 3, dur: 3, src: u, tick: 0, color: '#ff8a3a', tag: 'pz' }); }
   }
-  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; }
+  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); }
   else floater(u.x, u.y - 82, sk.name, '#fff3b0', 15);
   if (u.mp < 10) { u.dk = 2.5; floater(u.x, u.y - 64, 'Điều khí', '#7fd3ff', 14); }
   return true;
@@ -898,7 +903,7 @@ function fireProj(u, tgt, o) {
     pat: o.pat || '', pl: o.pl == null ? null : o.pl, bounces: o.bounces || 0, dmax: o.dmax || 0, trav: 0, ret: false, age: 0,
     splitN: o.splitN || 0, spin: !!o.spin, boom: o.boom || 0, stun: o.stun || 0, child: !!o.child, spinT: 0, tickT: 0,
   });
-  if (u.side === 'h' && B.fxb.length < 40) fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70);   // chớp nòng
+  if (u.side === 'h' && B.fxb.length < 40) { fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70); sfx('shoot'); }   // chớp nòng
   return B.projs[B.projs.length - 1];
 }
 // đòn đánh thường theo kiểu riêng của tướng (ATK_STYLE trong data.js)
@@ -982,6 +987,7 @@ function updateProjs(dt) {
         for (const e of enemiesIn(p, p.boom)) if (e !== t) dealDmg(p.src, e, p.mult * 0.6, p.kind);
         for (const e of enemiesIn(p, p.boom)) if (p.stun) e.stun = Math.max(e.stun || 0, p.stun);
         B.fx.push({ k: 'ring', x: p.x, y: p.y + 20, r: p.boom, color: projColor(p.type), t: 0, dur: 0.35 });
+        if (B.decals.length < 12) B.decals.push({ x: p.x, y: p.y + 20, r: p.boom * 0.6, t: 0, dur: 2.5 });
         particles(p.x, p.y, '#ffd9a0', 10, 170, 4);
         p.done = true; break;
       }
@@ -1014,6 +1020,7 @@ function updateProjs(dt) {
 function hitFeel(p, t) {
   const col = projColor(p.type), a = Math.atan2(p.vy, p.vx);
   B.sparks.push({ x: t.x, y: t.y - 24 * sizeOf(t), a, col, t: 0, dur: 0.22, big: p.kind !== 'atk' });
+  sfx(p.kind !== 'atk' ? 'hitBig' : 'hit');
   if (B.fxb.length < 40) fxBurst(t.x, t.y - 24 * sizeOf(t), (PFX[p.type] || {}).burst || 'burst_gold', p.kind !== 'atk' ? 150 : 95, Math.random() * 6);
   if (p.src && p.src.side === 'h') {
     const h = B.hits; if (h.id !== p.src.id || h.t <= 0) h.n = 0;
@@ -1286,6 +1293,8 @@ function updateFx(dt) {
   B.later = B.later.filter(l => !l.done);
   if (B.flash > 0) B.flash -= dt;
   for (const b of B.fxb) b.t += dt; B.fxb = B.fxb.filter(b => b.t < b.dur);
+  for (const d of B.decals) d.t += dt; B.decals = B.decals.filter(d => d.t < d.dur);
+  if (B.cam && (B.cam.t += dt) > B.cam.dur) B.cam = null;
   for (const g of B.ghosts) g.t += dt; B.ghosts = B.ghosts.filter(g => g.t < 0.22);
   for (const s of B.sparks) s.t += dt; B.sparks = B.sparks.filter(s => s.t < s.dur);
   if (B.hits.t > 0) B.hits.t -= dt;
@@ -1456,7 +1465,7 @@ function poseFor(u) {
   if (B && B.over) return null;   // thắng/thua: dùng rig (win/die)
   if (u.hitT > 0 && P.hit) return ['hit', 1 - u.hitT / 0.35];
   if (P.idle1 && P.idle2) {   // đứng nghỉ: hai dáng xen kẽ, chuyển mờ 0,3 giây, mỗi tướng lệch pha riêng
-    const T = 3.6, ph = ((u.t + (u.id.length * 0.37)) % T), a = ph < 1.6 ? 0 : ph < 1.9 ? (ph - 1.6) / 0.3 : ph < 3.3 ? 1 : 1 - (ph - 3.3) / 0.3;
+    const T = 3.6, ph = ((u.t + (u.id.length * 0.37)) % T), a = ph < 1.8 ? 0 : 1;   // đổi dáng dứt khoát (chuyển mờ làm 2 vũ khí chồng lên nhau trông như bị gãy/cong)
     return ['idle', ph, a];
   }
   return null;
@@ -1482,7 +1491,7 @@ function drawRigUnit(u, h, alpha) {
   if (pz) {
     ctx.save(); ctx.scale(u.f * (FACE[u.id] || 1), 1); let ok;
     if (pz[0] === 'idle') {   // xen kẽ idle1 ↔ idle2 bằng chuyển mờ
-      ok = drawPose(u, 'idle1', pz[1], h, alpha * (1 - pz[2] * 0.999)); drawPose(u, 'idle2', pz[1], h, alpha * pz[2]);
+      ok = drawPose(u, pz[2] ? 'idle2' : 'idle1', pz[1], h, alpha);
     } else ok = drawPose(u, pz[0], pz[1], h, alpha);
     ctx.restore(); if (ok) return;
   }
@@ -1599,6 +1608,29 @@ function drawGhosts() {
   }
 }
 // tia sáng điểm trúng (xoè nan) + đồng hồ số đòn
+// ------------------------------------------------------------------ ÂM THANH (tổng hợp bằng WebAudio, không dùng tệp ngoài)
+let AC = null; const _sfxT = {};
+function audioOn() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } } if (AC && AC.state === 'suspended') AC.resume(); }
+document.addEventListener('pointerdown', audioOn);
+function sfx(kind) {
+  if (!AC || (S && S.mute)) return;
+  const now = AC.currentTime, gap = { shoot: 0.06, hit: 0.05, hitBig: 0.08, pop: 0.05, crit: 0.06 }[kind] || 0;
+  if (gap && _sfxT[kind] && now - _sfxT[kind] < gap) return; _sfxT[kind] = now;
+  const out = AC.createGain(); out.connect(AC.destination);
+  const tone = (type, f0, f1, dur, vol, delay) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = type; const t = now + (delay || 0);
+    o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02); };
+  const noise = (dur, vol, hp, delay) => { const n = AC.createBufferSource(), buf = AC.createBuffer(1, Math.floor(AC.sampleRate * dur), AC.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); n.buffer = buf; const f = AC.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 800;
+    const g = AC.createGain(); g.gain.value = vol; n.connect(f); f.connect(g); g.connect(out); n.start(now + (delay || 0)); };
+  if (kind === 'shoot') { tone('triangle', 900, 380, 0.08, 0.05); noise(0.05, 0.03, 2500); }
+  else if (kind === 'hit') { noise(0.06, 0.09, 1200); tone('square', 220, 90, 0.06, 0.03); }
+  else if (kind === 'hitBig') { noise(0.14, 0.16, 500); tone('sine', 160, 50, 0.16, 0.12); }
+  else if (kind === 'crit') { tone('sawtooth', 1400, 600, 0.09, 0.05); noise(0.08, 0.1, 1800); tone('sine', 300, 80, 0.12, 0.08); }
+  else if (kind === 'pop') { tone('sine', 520, 140, 0.1, 0.06); }
+  else if (kind === 'ult') { tone('sawtooth', 200, 900, 0.35, 0.06); noise(0.4, 0.06, 3000); tone('sine', 1200, 1800, 0.3, 0.04, 0.1); }
+  else if (kind === 'boom') { noise(0.6, 0.3, 120); tone('sine', 110, 30, 0.7, 0.32); tone('triangle', 70, 25, 0.9, 0.2, 0.05); }
+}
 // ------------------------------------------------------------------ CHẤT LIỆU HIỆU ỨNG (art/fx, nền đen, vẽ bằng hoà sáng 'lighter')
 const FXT = {};
 for (const n of ['burst_gold', 'burst_blue', 'slash', 'orb', 'lightning', 'smoke', 'ring', 'flare', 'fire', 'petal']) { const i = new Image(); i.src = 'art/fx/' + n + '.webp'; FXT[n] = i; }
@@ -1941,7 +1973,16 @@ function render() {
   if (!B) { renderHome(); return; }
   ctx.save();
   if (B.shake > 0) ctx.translate(rand(-1, 1) * B.shake * 10, rand(-1, 1) * B.shake * 10);
+  if (B.cam) { const k = Math.sin(Math.PI * B.cam.t / B.cam.dur), z = 1 + 0.09 * k; ctx.translate(B.cam.x, B.cam.y); ctx.scale(z, z); ctx.translate(-B.cam.x, -B.cam.y); }   // camera dí sát điểm nổ tuyệt kỹ
   ctx.drawImage(B.bg, 0, 0, W, H);
+  for (const d of B.decals) {   // vết cháy/nứt đọng trên đất
+    const a = Math.min(1, (d.dur - d.t) / 1.2) * 0.5, g = ctx.createRadialGradient(d.x, d.y, 4, d.x, d.y, d.r);
+    g.addColorStop(0, 'rgba(40,18,6,0.9)'); g.addColorStop(0.6, 'rgba(70,32,10,0.45)'); g.addColorStop(1, 'rgba(70,32,10,0)');
+    ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * 0.42, 0, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * 0.5 * Math.max(0, 1 - d.t / 1.5); ctx.strokeStyle = '#ff9a2e'; ctx.lineWidth = 2;
+    for (let i = 0; i < 7; i++) { const an = i * 0.9 + d.x * 0.01; ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + Math.cos(an) * d.r * 0.8, d.y + Math.sin(an) * d.r * 0.33); ctx.stroke(); }
+    ctx.restore();
+  }
   drawGateDamage();
   for (const z of B.zones) {
     ctx.save(); ctx.globalAlpha = Math.min(1, z.t) * 0.45;
@@ -1990,8 +2031,13 @@ function render() {
     const sc = f.crit ? 1 + Math.max(0, 0.3 - p) * 2 : 1;
     ctx.save(); ctx.globalAlpha = p > 0.7 ? (1 - p) / 0.3 : 1; ctx.translate(f.x, y); ctx.scale(sc, sc);
     ctx.font = `800 ${f.size}px "Baloo 2",sans-serif`;
-    ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(50,20,10,0.9)'; ctx.strokeText(f.txt, 0, 0);
-    ctx.fillStyle = f.color; ctx.fillText(f.txt, 0, 0); ctx.restore();
+    if (f.crit) {   // bạo kích: chữ to, viền đỏ đậm, tô vàng chuyển cam, có loé sáng sau
+      ctx.font = `900 ${f.size + 4}px "Baloo 2",sans-serif`;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.6; ctx.fillStyle = '#ffb02e'; ctx.beginPath(); ctx.ellipse(8, -8, 34, 14, 0, 0, TAU); ctx.fill(); ctx.restore();
+      const g = ctx.createLinearGradient(0, -f.size, 0, 2); g.addColorStop(0, '#fffbe0'); g.addColorStop(0.5, '#ffd34d'); g.addColorStop(1, '#ff7a1e');
+      ctx.lineWidth = 6; ctx.strokeStyle = '#6a1206'; ctx.strokeText(f.txt, 0, 0); ctx.fillStyle = g; ctx.fillText(f.txt, 0, 0);
+    } else { ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(50,20,10,0.9)'; ctx.strokeText(f.txt, 0, 0); ctx.fillStyle = f.color; ctx.fillText(f.txt, 0, 0); }
+    ctx.restore();
   }
   ctx.restore();
   // boss bar
@@ -2070,8 +2116,8 @@ let homeBg = null, homeT = 0;
 function drawHomeHero(id, i, h, t) {
   const P = POSES[id], D = window.SKEL_DEFS && SKEL_DEFS[id], fake = { id, hurt: 0 };
   if (P && P.idle1 && P.idle2 && D) {
-    const T = 3.6, ph = (t + i * 0.83) % T, a = ph < 1.6 ? 0 : ph < 1.9 ? (ph - 1.6) / 0.3 : ph < 3.3 ? 1 : 1 - (ph - 3.3) / 0.3;
-    drawPose(fake, 'idle1', ph, h, 1 - a * 0.999); drawPose(fake, 'idle2', ph, h, a); return true;
+    const T = 3.6, ph = (t + i * 0.83) % T, a = ph < 1.8 ? 0 : 1;   // đổi dáng dứt khoát (chuyển mờ làm 2 vũ khí chồng lên nhau trông như bị gãy/cong)
+    drawPose(fake, a ? 'idle2' : 'idle1', ph, h, 1); return true;
   }
   return false;
 }
@@ -2388,6 +2434,7 @@ function showHUD() {
       <div class="gate-bar"><span>Cổng Tây Kỳ</span><div class="bar"><i id="hGate"></i></div></div>
       <button class="tool" id="bAuto">Tự động</button>
       <button class="tool" id="bSpeed">x1</button>
+      <button class="tool" id="bMute">${S.mute ? "Tắt tiếng" : "Âm thanh"}</button>
     </div>
     <div class="cp-owned" id="cpOwned"></div>
     <div class="hint-tap" id="hintTap">Chạm vào quái để đội trưởng nhắm đánh · Chạm thẻ tướng để tung tuyệt kỹ</div>
@@ -2396,6 +2443,7 @@ function showHUD() {
   const pad = $('#pad');
   pad.addEventListener('pointerdown', e => { tapTarget(logical(e)); const h = $('#hintTap'); if (h) h.remove(); });
   $('#bPause').onclick = openPause;
+  $('#bMute').onclick = () => { S.mute = !S.mute; save(); $('#bMute').textContent = S.mute ? 'Tắt tiếng' : 'Âm thanh'; audioOn(); };
   $('#bAuto').onclick = () => { B.auto = !B.auto; $('#bAuto').classList.toggle('on', B.auto); };
   $('#bSpeed').onclick = () => { B.speed = B.speed === 1 ? 2 : 1; $('#bSpeed').textContent = 'x' + B.speed; $('#bSpeed').classList.toggle('on', B.speed > 1); };
   buildTeamBar();
