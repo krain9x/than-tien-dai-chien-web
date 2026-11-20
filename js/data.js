@@ -327,6 +327,19 @@ const ENEMIES = {
     elite: true,
     look: { style: 'general', skin: '#6b6f86', hair: '#1d1d2b', outfit: '#2f3f6b', outfit2: '#c9a227',
             belt: '#c9a227', weapon: 'halberd', evil: true, size: 1.32 } },
+  // ---- Chương 1 · Thương triều suy tàn (GDD §2) — quái riêng vùng Triều Ca, boss Đát Kỷ
+  thuongbinh: { name: 'Thương Binh', hp: 240, atk: 26, def: 22, aspd: 0.9, range: 36, move: 70, el: 'kim',
+    look: { style: 'goblin', skin: '#c9a27a', hair: '#2a1a10', outfit: '#8a6a3a', outfit2: '#5a3a1a', belt: '#3a2a1a', weapon: 'halberd', evil: true, size: 0.85 } },
+  thuongcung: { name: 'Cung Thủ Thương', hp: 190, atk: 30, def: 14, aspd: 0.7, range: 230, move: 60, el: 'kim', ranged: true, proj: 'arrow',
+    look: { style: 'goblin', skin: '#c9a27a', hair: '#2a1a10', outfit: '#7a5a3a', outfit2: '#4a3a2a', belt: '#3a2a1a', weapon: 'bow', evil: true, size: 0.85 } },
+  hotinh: { name: 'Hồ Tinh', hp: 300, atk: 34, def: 16, aspd: 1.1, range: 34, move: 112, el: 'hoa',
+    look: { style: 'fox', skin: '#ffe1cf', hair: '#ff7a45', outfit: '#8a1a2a', outfit2: '#2a1a1a', belt: '#ffcc33', weapon: 'orb', evil: true, size: 0.82 } },
+  philiem: { name: 'Phi Liêm', hp: 2600, atk: 72, def: 75, aspd: 0.75, range: 52, move: 60, el: 'thuy', elite: true,
+    look: { style: 'general', skin: '#6b6f86', hair: '#1d1d2b', outfit: '#2a2a3a', outfit2: '#c9a227', belt: '#c9a227', weapon: 'halberd', evil: true, size: 1.32 } },
+  datkyboss: { name: 'Yêu Hậu Đát Kỷ', hp: 22000, atk: 110, def: 85, aspd: 0.8, range: 70, move: 48, el: 'hoa', boss: true,
+    phases: [{ at: 0.7, text: 'Hồ Tinh hộ giá!', sub: 'Đát Kỷ gọi bầy hồ tinh', summon: ['hotinh', 4] },
+             { at: 0.4, text: 'Yêu Hậu hiện nguyên hình!', sub: 'Chín đuôi bốc lửa — tốc đánh +30%, mê hoặc mạnh hơn', summon: ['hotinh', 3], enrage: 0.3 }],
+    look: { style: 'fox', skin: '#ffe1cf', hair: '#2a1020', outfit: '#8a0a2a', outfit2: '#ffcc33', belt: '#ffcc33', weapon: 'orb', wcolor: '#ff3a5a', tails: 9, crown: true, evil: true, robe: true, size: 2.0 } },
   hoyeu: { name: 'Cửu Vĩ Hồ Yêu', hp: 20000, atk: 115, def: 90, aspd: 0.75, range: 70, move: 50, el: 'hoa',
     boss: true,
     look: { style: 'fox', skin: '#ffe1cf', hair: '#ff7a45', outfit: '#c2185b', outfit2: '#ffcc33',
@@ -342,7 +355,7 @@ const ENEMIES = {
 //  Loại ải (GDD 4.6): thường 6–8 đợt (ải 1-4, 6-9), tinh anh 8–10 đợt (ải 5), boss 10–12 đợt (ải 10).
 //  'theme' = nền có sẵn gần nhất (chưa có nền riêng cho mọi chương). 'mech' = điểm cơ chế nổi bật theo GDD (chưa cài hết).
 const CHAPTERS = [
-  { id: 1, name: 'Thương triều suy tàn', region: 'Triều Ca', boss: 'Đát Kỷ', theme: 'pass', mech: 'Giới thiệu điều khiển đội trưởng và nội công', story: 'Cuối đời Thương, yêu khí tràn vào thành Triều Ca. Tiến vào hoàng cung để hạ Đát Kỷ.' },
+  { id: 1, name: 'Thương triều suy tàn', region: 'Triều Ca', boss: 'Đát Kỷ', theme: 'pass', mobs: { tieuyeu: 'thuongbinh', cungyeu: 'thuongcung', dauda: 'hotinh', tinhanh: 'philiem', hoyeu: 'datkyboss' }, mech: 'Giới thiệu điều khiển đội trưởng và nội công', story: 'Cuối đời Thương, yêu khí tràn vào thành Triều Ca. Tiến vào hoàng cung để hạ Đát Kỷ.' },
   { id: 2, name: 'Tây Kỳ khởi binh', region: 'Tây Kỳ', boss: 'Văn Trọng', theme: 'forest', mech: 'Giới thiệu Linh Phù gọi đồng đội', story: 'Chu Vũ khởi binh phạt Trụ. Giữ Tây Kỳ trước đại quân Thương của Văn Trọng.' },
   { id: 3, name: 'Thập Tuyệt Trận', region: 'Thập Tuyệt Trận', boss: 'Triệu Công Minh', theme: 'tomb', mech: 'Ải có bẫy và cơ quan', story: 'Mười trận tuyệt của Triệt giáo chặn đường. Phá trận, hạ Triệu Công Minh.' },
   { id: 4, name: 'Kim Ngâu và Tam Tiêu', region: 'Kim Ngao Đảo', boss: 'Vân Tiêu', theme: 'sea', mech: 'Boss gọi quái theo đợt', story: 'Ba chị em Tam Tiêu bày Cửu Khúc Hoàng Hà Trận trên Kim Ngao Đảo.' },
@@ -377,6 +390,7 @@ const STAGES = [];
         waves.push(o);
       }
       if (kind === 'boss') waves.push({ list: [['hoyeu', 1 + (c >= 6 ? 1 : 0)], ['tieuyeu', 4 + c]], boss: true });
+      if (ch.mobs) for (const w of waves) w.list = w.list.map(([t, n]) => [ch.mobs[t] || t, t === 'hoyeu' && ch.mobs[t] ? 1 : n]);   // quái riêng của vùng
       const par = kind === 'normal' ? 90 : kind === 'elite' ? 120 : 150 + Math.min(30, c * 3);
       STAGES.push({
         id: ch.id + '-' + k, chap: c, kind, name: ch.region + ' · ' + STAGE_PHASE[k - 1] + (k === 10 ? '' : ' ' + k), lvl, par, gate: 2500 + idx * 45, theme: ch.theme, seed: 7 + idx * 13,

@@ -1,0 +1,1 @@
+window.EPOSE = {"datkyboss": {"gx": 269, "gy": 708, "h": 702}, "hotinh": {"gx": 280, "gy": 694, "h": 675}, "philiem": {"gx": 272, "gy": 714, "h": 709}, "thuongbinh": {"gx": 242, "gy": 713, "h": 709}, "thuongcung": {"gx": 198, "gy": 710, "h": 694}};
