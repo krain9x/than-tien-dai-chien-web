@@ -1876,10 +1876,10 @@ function uxSheet(n, x, y, S, p) {   // p 0..1 → 6 khung
 // vẽ 3 nhịp của tuyệt kỹ (f = hiệu ứng 'sig' trong B.fx, p = 0..1)
 function drawUltX(f, X) {
   const p = Math.min(1, f.t / f.dur), x = clamp(f.tx, 160, W - 160), y = clamp(f.ty, 220, H - 40);
-  ctx.save(); ctx.globalAlpha = 0.4 * Math.sin(Math.PI * Math.min(1, p * 1.2)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();   // trời tối
+  ctx.save(); ctx.globalAlpha = 0.58 * Math.sin(Math.PI * Math.min(1, p * 1.2)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();   // trời tối
   const b1 = seg01(p, 0, 0.38), b2 = seg01(p, 0.3, 0.7), b3 = seg01(p, 0.6, 1);
   if (b1 > 0 && b1 < 1) uxDraw(X.beats[0], x, y - 120, 200 + 120 * b1, Math.min(1, b1 * 3) * (1 - Math.max(0, b1 - 0.8) * 5));          // nhịp 1: gồng
-  if (b2 > 0 && b2 < 1) { uxDraw(X.beats[1], x, y - 90, 300 + 80 * Math.sin(b2 * Math.PI), Math.sin(b2 * Math.PI) * 1.1); uxSheet(X.sheets[0], x, y - 60, 380, b2); }   // nhịp 2: đòn chính + nổ 6 khung
+  if (b2 > 0 && b2 < 1) { uxDraw(X.beats[1], x, y - 90, 300 + 80 * Math.sin(b2 * Math.PI), Math.sin(b2 * Math.PI) * 0.85); uxSheet(X.sheets[0], x, y - 60, 380, b2); }   // nhịp 2: đòn chính + nổ 6 khung
   if (b3 > 0 && b3 < 1) { uxDraw(X.beats[2], x, y - 20, 340 + 60 * b3, (1 - b3) * 1.1); uxSheet(X.sheets[1], x, y - 30, 420, b3); }   // nhịp 3: dư chấn
 }
 function seg01(p, a, b) { return p < a ? 0 : p > b ? 1 : (p - a) / (b - a); }
