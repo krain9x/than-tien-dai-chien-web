@@ -105,6 +105,7 @@ const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tư�
 function ensureHeroAssets(ids) {
   return Promise.all([...new Set(ids)].map(id => {
     if (_heroLoaded[id]) return _heroLoaded[id];
+    try { (ULTC[id] && ULTC[id].need || []).forEach(ucImg); } catch (e) {}
     const jobs = [];
     if (typeof Skel !== 'undefined' && (window.SKEL_IDS || []).includes(id)) jobs.push(new Promise(res => {
       const sc = document.createElement('script'); sc.src = 'art/skel/' + id + '.js';
@@ -875,8 +876,8 @@ function cast(u, w) {
     const self = sk.fx.every(f => f.at === 'self' || f.t === 'heal' || f.t === 'shield' || f.t === 'taunt' || f.t === 'buff' || f.t === 'clone');
     const f0 = sk.fx.find(f => f.at === 'cluster' || f.at === 'front' || f.at === 'target');
     const P = self || (!tgt && !f0) ? { x: u.x, y: u.y } : f0 ? skillPoint(u, f0, tgt) : { x: tgt.x, y: tgt.y };
-    const UC = ULTC[u.id], D = UC ? UC.dur : VFX.dur, lead = 0.45, hit = lead + D * (UC ? UC.hit : 0.26);
-    B.fx.push({ k: 'sig', id: u.id, x: u.x, y: u.y - 34 * sizeOf(u), tx: P.x, ty: P.y, f: u.f, t: -lead, dur: D });
+    const UC = ucReady(u.id) ? ULTC[u.id] : null, D = UC ? UC.dur : VFX.dur, lead = 0.45, hit = lead + D * (UC ? UC.hit : 0.26);
+    B.fx.push({ k: 'sig', id: u.id, x: u.x, y: u.y - 34 * sizeOf(u), tx: P.x, ty: P.y, f: u.f, t: -lead, dur: D, uc: !!UC });
     B.later.push({ t: hit, fn: () => {
       if (u.dead) return;
       const t2 = tgt && !tgt.dead ? tgt : findTarget(u) || nearestEnemy(u, 400);
@@ -891,7 +892,7 @@ function cast(u, w) {
     const P = bestCluster(70) || (tgt ? { x: tgt.x, y: tgt.y } : null);
     if (P) { B.zones = B.zones.filter(z => !(z.src === u && z.tag === 'pz')); B.zones.push({ x: P.x, y: P.y, r: 70, mult: 0.4, t: 3, dur: 3, src: u, tick: 0, color: '#ff8a3a', tag: 'pz' }); }
   }
-  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); tryCombo(u); }
+  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); }
   else floater(u.x, u.y - 82, sk.name, '#fff3b0', 15);
   if (u.mp < 10) { u.dk = 2.5; floater(u.x, u.y - 64, 'Điều khí', '#7fd3ff', 14); }
   return true;
@@ -1290,6 +1291,7 @@ function wantCast(u, w, tgt) {
   return true;
 }
 function autoSkills(u, tgt, ultOk) {
+  if (ultOk) { const cr = comboFor(u); if (cr) { if (cr.ready) { if (B.auto) { castCombo(cr.c); return; } ultOk = false; } else if (cr.near && canCast(u, 'ult')) ultOk = false; } }   // chờ đồng đội để hợp kích
   if (ultOk && canCast(u, 'ult') && wantCast(u, 'ult', tgt)) { cast(u, 'ult'); return; }
   // để dành nội công cho tuyệt kỹ khi tuyệt kỹ đã hồi
   if (ultOk && u.cdU <= 0 && u.mp < 90) return;
@@ -1897,9 +1899,10 @@ function drawComboX(c) {
 
 // ---- TUYỆT KỸ BIÊN ĐẠO: vật thể thật chuyển động (art/ultc), kèm nổ nhiều khung, rung, vết nứt
 const UCI = {}; function ucImg(n) { let i = UCI[n]; if (!i) { i = UCI[n] = new Image(); i.src = 'art/ultc/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
-['staff', 'dragon_head', 'dragon_long', 'hound_run1', 'hound_run2', 'hound_leap', 'hound_bite'].forEach(ucImg);
+['staff', 'dragon_head', 'dragon_long', 'hound_run1', 'hound_run2', 'hound_leap', 'hound_bite', 'ngk_jump', 'cloud'].forEach(ucImg);
 const ease3 = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3), easeIn = x => Math.pow(Math.max(0, Math.min(1, x)), 2.2);
-function ucDark(p, k) { ctx.save(); ctx.globalAlpha = (k || 0.5) * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+let UC_NODARK = false;
+function ucDark(p, k) { if (UC_NODARK) return; ctx.save(); ctx.globalAlpha = (k || 0.5) * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
 function ucOnce(f, key, fn) { f.done = f.done || {}; if (!f.done[key]) { f.done[key] = 1; fn(); } }
 function ucStaff(px, py, ang, L, a, glow) {   // vẽ cây gậy: gốc tại (px,py), hướng ang (0 = thẳng lên), dài L
   const im = ucImg('staff'); if (!im) return; const w = L * im.width / im.height * 1.15;
@@ -1971,6 +1974,328 @@ const ULTC = {
     ctx.drawImage(head, -HS * 0.32, -HS * head.height / head.width * 0.55, HS, HS * head.height / head.width); ctx.restore();
     if (p >= 0.5) ucOnce(f, 'hit', () => { B.shake = 0.9; B.flash = 0.22; sfx('boom'); particles(f.tx, f.ty - 40, '#9fe8ff', 46, 360, 6); });
     if (p > 0.45 && p < 0.85) uxSheet('sheet_boom_blue', f.tx, f.ty - 50, 440, (p - 0.45) / 0.4);
+  } },
+};
+
+// ===================== KHUÔN BIÊN ĐẠO TUYỆT KỸ (dùng chung, vật thể riêng từng tướng ở art/ultc) =====================
+function ucObj(n, x, y, w, rot, a, glowCol, glowK, flip) {   // vẽ vật thể tâm (x,y), rộng w
+  const im = ucImg(n); if (!im) return null; const h = w * im.height / im.width;
+  ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); if (flip) ctx.scale(-1, 1); ctx.globalAlpha = a == null ? 1 : Math.max(0, Math.min(1, a));
+  if (glowCol) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= (glowK || 0.5); ctx.filter = 'blur(12px)'; ctx.fillStyle = glowCol; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.6, h * 0.6, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+  ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); return h;
+}
+function ucHit(f, c, burst, r) { ucOnce(f, 'hit', () => { B.shake = Math.max(B.shake, 0.9); B.flash = 0.22; sfx('boom'); particles(f.tx, f.ty - 30, c || '#ffe58a', 40, 340, 5); if (r !== 0) B.decals.push({ x: f.tx, y: f.ty + 4, r: r || 160, t: 0, dur: 4 }); }); }
+const tgtXY = f => [clamp(f.tx, 140, W - 120), clamp(f.ty, 280, H - 60)];
+const UTPL = {
+  // vũ khí trong tay phóng to, dựng lên trời rồi quật xuống mục tiêu
+  smash(f, p, c) {
+    ucDark(p, 0.45); const [tx, ty] = tgtXY(f), px = f.x + 6, py = f.y, dx = tx - px, dy = (ty - 10) - py, dist = Math.hypot(dx, dy), target = Math.atan2(dx, -dy);
+    const im = ucImg(c.obj); if (!im) return; const draw = (ang, L, a, g) => { const w = L * im.width / im.height * (c.wk || 1.15); ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.globalAlpha = a;
+      if (g) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * g * 0.45; ctx.fillStyle = c.col; ctx.filter = 'blur(14px)'; ctx.fillRect(-w * 0.6, -L, w * 1.2, L); ctx.restore(); }
+      ctx.drawImage(im, -w / 2, -L, w, L); ctx.restore(); };
+    let L, ang, g = 0; const MAXL = c.len || 520;
+    if (p < 0.12) { L = 90 * ease3(p / 0.12); ang = 0.15; }
+    else if (p < 0.38) { const q = ease3((p - 0.12) / 0.26); L = 90 + q * (MAXL - 90); ang = 0.15 - 0.25 * q; g = 0.6 * q; }
+    else if (p < 0.55) { const q = easeIn((p - 0.38) / 0.17); L = MAXL + q * Math.max(0, dist + 40 - MAXL); ang = -0.1 + (target + 0.1) * q; g = 0.8;
+      for (let k = 1; k <= 4; k++) { const qq = easeIn(Math.max(0, (p - 0.38) / 0.17 - k * 0.06)); draw(-0.1 + (target + 0.1) * qq, L, 0.18, 0); } }
+    else if (p < 0.78) { L = dist + 40; ang = target; g = 0.5 * (1 - (p - 0.55) / 0.23); }
+    else { const q = ease3((p - 0.78) / 0.22); L = (dist + 40) * (1 - q) + 70 * q; ang = target * (1 - q); }
+    draw(ang, L, p > 0.95 ? (1 - p) * 20 : 1, g);
+    if (p >= 0.55) ucHit(f, c.col, 1, 190);
+    if (p > 0.53 && p < 0.9) { const q = (p - 0.53) / 0.37; uxSheet(c.sheet || 'sheet_boom_gold', tx, ty - 40, 420, q); uxSheet('sheet_crack', tx, ty, 520, q); }
+  },
+  // vật thể hiện trên trời, lớn dần, rồi giáng xuống mục tiêu
+  drop(f, p, c) {
+    ucDark(p, 0.45); const [tx, ty] = tgtXY(f), im0 = ucImg(c.obj), S = c.hgt && im0 ? c.hgt * im0.width / im0.height : (c.size || 220), hh = im0 ? S * im0.height / im0.width : S, land = ty + 12 - hh / 2, top = Math.max(60, hh / 2 - 40);
+    let y, w = S, a = 1, rot = 0;
+    if (p < 0.35) { const q = ease3(p / 0.35); y = top + 40 * Math.sin(q * 6) * (1 - q); w = S * (0.3 + 0.7 * q); a = q; rot = (1 - q) * (c.spin || 0); }
+    else if (p < 0.5) { const q = easeIn((p - 0.35) / 0.15); y = top + (land - top) * q; for (let k = 1; k <= 3; k++) ucObj(c.obj, tx, top + (land - top) * Math.max(0, q - k * 0.15), S, 0, 0.2); }
+    else { const q = (p - 0.5) / 0.5; y = land + Math.sin(q * 30) * 6 * (1 - q); a = 1 - Math.max(0, q - 0.6) / 0.4; }
+    if (p < 0.5 && c.beam) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 * Math.min(1, p * 4); ctx.filter = 'blur(18px)'; ctx.fillStyle = c.col; ctx.fillRect(tx - Math.max(S, 90) * 0.25, 0, Math.max(S, 90) * 0.5, ty); ctx.restore(); }
+    ucObj(c.obj, tx, y, w, rot, a, c.col, 0.55);
+    if (p >= 0.5) ucHit(f, c.col, 1, 170);
+    if (p > 0.48 && p < 0.88) { const q = (p - 0.48) / 0.4; uxSheet(c.sheet || 'sheet_boom_gold', tx, ty - 40, 420, q); uxSheet('sheet_crack', tx, ty, 480, q); }
+  },
+  // thú chạy (đổi chân) → phóng → vồ
+  beast(f, p, c) {
+    ucDark(p, 0.45); const R = ucImg(c.run), A = ucImg(c.atk); if (!R || !A) return;
+    const sx = f.x + 40, sy = f.y + 30, tx = Math.min(f.tx - 40, W - 140), ty = Math.max(f.ty - 10, 300), mx = sx + (tx - sx) * 0.5, my = sy + (ty - sy) * 0.5, B0 = c.size || 170;
+    const one = (im, x, y, s, rot, a, g, fl) => { const w = B0 * s, h = w * im.height / im.width; ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.globalAlpha = a == null ? 1 : a;
+      if (g) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= g; ctx.filter = 'blur(8px)'; ctx.fillStyle = c.col; ctx.beginPath(); ctx.ellipse(0, -h / 2, w * 0.55, h * 0.5, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+      ctx.drawImage(im, -w / 2, -h + 8 + (fl || 0), w, h); ctx.restore(); };
+    if (p < 0.32) { const q = p / 0.32, x = sx + (mx - sx) * ease3(q), y = sy + (my - sy) * q - Math.abs(Math.sin(q * Math.PI * 5)) * 8;
+      for (let k = 1; k <= 3; k++) one(R, x - k * 28, y, 0.9 + q * 0.4, 0, 0.14, 0.4); one(R, x, y, 0.9 + q * 0.4, Math.sin(p * 60) * 0.04, 1, 0.4); if (Math.random() < 0.6) particles(x - 30, y, '#d8c090', 2, 60, 3); }
+    else if (p < 0.6) { const q = (p - 0.32) / 0.28, x = mx + (tx - mx) * q, y = my + (ty - my) * q - Math.sin(q * Math.PI) * 110, s = 1.3 + q * 1.0, rot = -0.3 + q * 0.6;
+      for (let k = 1; k <= 4; k++) { const qq = Math.max(0, q - k * 0.07); one(A, mx + (tx - mx) * qq, my + (ty - my) * qq - Math.sin(qq * Math.PI) * 110, 1.3 + qq, -0.3 + qq * 0.6, 0.12, 0.7); }
+      one(A, x, y, s, rot, 1, 0.6); }
+    else { const q = (p - 0.6) / 0.4; if (p < 0.92) { const qq = (p - 0.58) / 0.34; uxSheet(c.sheet || 'sheet_slash', tx + 30, ty - 60, 360, qq); uxSheet('sheet_boom_gold', tx + 30, ty - 40, 280, qq); }
+      one(A, tx + Math.sin(q * 40) * 8 * (1 - q), ty - 10, 2.3 - q * 0.3, 0.3, 1 - Math.max(0, q - 0.6) / 0.4, 0.7 * (1 - q)); }
+    if (p >= 0.6) ucOnce(f, 'hit', () => { B.shake = 1.0; B.flash = 0.25; sfx('boom'); particles(f.tx, f.ty - 30, c.col, 40, 340, 5); for (const e of enemiesIn({ x: f.tx, y: f.ty }, 160)) if (!e.boss && !e.dead) { e.x = Math.min(W + 30, e.x + 60); e.hitT = 0.5; } });
+  },
+  // rồng / sinh vật dài bay uốn ngang màn hình (thân cắt lát)
+  serpent(f, p, c) {
+    ucDark(p, 0.5); const head = ucImg(c.head), body = ucImg(c.body); if (!head || !body) return;
+    const cy = clamp(f.ty, 280, H - 60) - 80, span = 0.55, path = s => [-300 + s * (W + 700), cy + Math.sin(s * 10 + p * 4) * 75 - Math.sin(s * Math.PI) * 40];
+    const hs = ease3(p) * 1.15, N = 56, BH = c.bh || 78, bw = body.width, bhI = body.height, sc = BH / bhI;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35; ctx.strokeStyle = c.col; ctx.lineWidth = BH * 1.3; ctx.lineCap = 'round'; ctx.filter = 'blur(12px)'; ctx.beginPath();
+    for (let j = 0; j <= N; j++) { const [x, y] = path(hs - j / N * span); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.restore();
+    for (let j = N - 1; j >= 0; j--) { const [x0, y0] = path(hs - j / N * span), [x1, y1] = path(hs - (j + 1) / N * span), ang = Math.atan2(y0 - y1, x0 - x1), len = Math.hypot(x0 - x1, y0 - y1) + 1.5, sw = bw / N;
+      ctx.save(); ctx.translate((x0 + x1) / 2, (y0 + y1) / 2); ctx.rotate(ang); ctx.drawImage(body, bw - (j + 1) * sw, 0, sw, bhI, -len / 2, -bhI * sc / 2, len, bhI * sc); ctx.restore();
+      if (j % 8 === 0 && Math.random() < 0.35) particles(x0, y0, c.col, 2, 90, 4); }
+    const [hx, hy] = path(hs), [hx2, hy2] = path(hs - 0.01), HS = c.hs || 170; ctx.save(); ctx.translate(hx, hy); ctx.rotate(Math.atan2(hy - hy2, hx - hx2));
+    ctx.drawImage(head, -HS * 0.32, -HS * head.height / head.width * 0.55, HS, HS * head.height / head.width); ctx.restore();
+    if (p >= 0.5) ucHit(f, c.col, 1, 0);
+    if (p > 0.45 && p < 0.85) uxSheet(c.sheet || 'sheet_boom_blue', f.tx, f.ty - 50, 440, (p - 0.45) / 0.4);
+  },
+  // ném vật thể xoay bay theo vòng cung tới mục tiêu rồi quay về (nhiều bản)
+  throw(f, p, c) {
+    ucDark(p, 0.4); const [tx, ty] = tgtXY(f), sx = f.x + 20, sy = f.y - 30, n = c.n || 1, S = c.size || 120;
+    for (let k = 0; k < n; k++) { const off = (k - (n - 1) / 2) * 0.12, q = p < 0.5 ? ease3(p / 0.5) : 1 - ease3((p - 0.5) / 0.5), arc = (k % 2 ? -1 : 1) * 90 + off * 300;
+      const x = sx + (tx - sx) * q, y = sy + (ty - 30 - sy) * q - Math.sin(q * Math.PI) * arc, rot = p * 30 * (c.spinDir || 1);
+      for (let g = 1; g <= 4; g++) { const qq = Math.max(0, q - g * 0.05 * (p < 0.5 ? 1 : -1)); ucObj(c.obj, sx + (tx - sx) * qq, sy + (ty - 30 - sy) * qq - Math.sin(qq * Math.PI) * arc, S, rot - g * 0.4, 0.15); }
+      ucObj(c.obj, x, y, S * (1 + 0.5 * Math.sin(q * Math.PI)), rot, 1, c.col, 0.6); }
+    if (p >= 0.45) ucHit(f, c.col, 1, 140);
+    if (p > 0.42 && p < 0.8) uxSheet(c.sheet || 'sheet_slash', tx, ty - 50, 400, (p - 0.42) / 0.38);
+  },
+  // vật thể khổng lồ quét ngang từ sau tướng tạo luồng gió/lửa đi qua sân
+  sweep(f, p, c) {
+    ucDark(p, 0.4); const [tx, ty] = tgtXY(f), px = f.x + 30, py = f.y - 40, S = c.size || 300;
+    const q = p < 0.25 ? ease3(p / 0.25) : 1, ang = p < 0.25 ? -1.2 * q : -1.2 + 2.4 * easeIn(Math.min(1, (p - 0.25) / 0.2));
+    if (p < 0.6) { ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ucObj(c.obj, 0, -S * 0.45, S * q, 0, 1 - Math.max(0, p - 0.5) * 10, c.col, 0.5); ctx.restore(); }
+    if (p > 0.4) { const q2 = ease3((p - 0.4) / 0.6), x = px + (W + 200 - px) * q2; ucObj(c.wave || c.obj, x, ty - 80, 260 + 120 * q2, q2 * 6, 1 - q2, c.col, 0.6);
+      if (c.tex) uxDraw(c.tex, x, ty - 90, 300, 1 - q2, 0); }
+    if (p >= 0.5) ucHit(f, c.col, 1, 0);
+    if (p > 0.45 && p < 0.85) uxSheet(c.sheet || 'sheet_slash', tx, ty - 50, 420, (p - 0.45) / 0.4);
+  },
+  // mưa vật thể rơi khắp vùng mục tiêu
+  rain(f, p, c) {
+    ucDark(p, 0.45); const [tx, ty] = tgtXY(f), n = c.n || 14, S = c.size || 70;
+    for (let i = 0; i < n; i++) { const t0 = (i * 0.618) % 1 * 0.45, q = (p - t0) / 0.3; if (q < 0 || q > 1.4) continue; const x = tx + ((i * 137) % 260 - 130), yEnd = ty - 20 + ((i * 53) % 60 - 30);
+      if (q <= 1) { const y = -60 + (yEnd + 60) * easeIn(q); ucObj(c.obj, x - (1 - q) * 80, y, S, c.tilt || 0.5, 1, c.col, 0.5); }
+      else { const qq = (q - 1) / 0.4; uxSheet(c.sheet || 'sheet_boom_gold', x, yEnd - 20, 140, qq); } }
+    if (p >= 0.5) ucHit(f, c.col, 1, 150);
+  },
+  // trồi lên từ mặt đất tại mục tiêu (bàn tay xương, lốc xoáy...), có thể hút quái về tâm
+  summon(f, p, c) {
+    ucDark(p, 0.5); const [tx, ty] = tgtXY(f), S = c.size || 260;
+    const q = p < 0.35 ? ease3(p / 0.35) : p < 0.75 ? 1 : 1 - (p - 0.75) / 0.25, rise = S * 0.9 * q;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, ty + 10); ctx.clip(); ucObj(c.obj, tx, ty + S * 0.45 - rise, S, Math.sin(p * 20) * 0.05, 1); ctx.restore();
+    { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(tx, ty, 0, tx, ty, S * 0.7); g.addColorStop(0, c.col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.globalAlpha = 0.45 * q; ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(tx, ty, S * 0.7, S * 0.3, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    if (c.pull && p > 0.2 && p < 0.7) for (const e of enemiesIn({ x: tx, y: ty }, 220)) if (!e.boss && !e.dead) { e.x += (tx - e.x) * 0.06; e.y += (ty - e.y) * 0.06; }
+    if (p >= 0.45) ucHit(f, c.col, 1, 160);
+    if (p > 0.4 && p < 0.8) uxSheet(c.sheet || 'sheet_crack', tx, ty, 460, (p - 0.4) / 0.4);
+  },
+  // hồi máu: vật thể lớn hiện trên đội, toả sáng, mưa hạt xuống từng đồng đội
+  heal(f, p, c) {
+    ucDark(p, 0.35); const al = alliesAlive(); const cx = al.length ? al.reduce((s, h) => s + h.x, 0) / al.length : f.x + 60, cy = 150;
+    const q = p < 0.3 ? ease3(p / 0.3) : p > 0.8 ? 1 - (p - 0.8) / 0.2 : 1;
+    if (c.under) ucObj(c.under, cx, (al.length ? Math.max(...al.map(h => h.y)) : f.y) + 10, 320 * q, 0, q * 0.85, c.col, 0.4);
+    ucObj(c.obj, cx, cy + Math.sin(p * 8) * 6, (c.size || 200) * q, c.tilt ? Math.sin(p * 4) * 0.2 - 0.3 : 0, q, c.col, 0.7);
+    if (c.pet) ucObj(c.pet, cx + 120, cy + 60, 110 * q, 0, q);
+    if (p > 0.25 && p < 0.85) for (const h of al) { if (Math.random() < 0.35) particles(h.x + (Math.random() - 0.5) * 30, h.y - 120 + Math.random() * 40, c.col, 1, 40, 4); }
+    if (p > 0.3 && p < 0.8) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; for (const h of al) { ctx.globalAlpha = 0.25 * q; ctx.fillStyle = c.col; ctx.fillRect(h.x - 22, cy, 44, h.y - cy); } ctx.restore(); }
+  },
+};
+// cấu hình tuyệt kỹ biên đạo cho từng tướng (dur, hit = thời điểm gây sát thương trong 0..1)
+const UCFG = {
+  batgioi: { t: 'smash', obj: 'rake', col: '#bfe0ff', len: 480 },
+  nata: { t: 'throw', obj: 'firewheel', n: 2, size: 120, col: '#ff7a2e', sheet: 'sheet_boom_gold' },
+  ngumavuong: { t: 'beast', run: 'bull_run', atk: 'bull_ram', size: 200, col: '#ff5a2a', sheet: 'sheet_boom_gold' },
+  honghainhi: { t: 'serpent', head: 'firedragon_head', body: 'firedragon_body', col: '#ff7a2e', sheet: 'sheet_boom_gold' },
+  quanam: { t: 'heal', obj: 'vase', under: 'lotus', size: 190, col: '#bfffd8', tilt: 1 },
+  datky: { t: 'beast', run: 'fox_run', atk: 'fox_pounce', size: 190, col: '#ff7ad9' },
+  duongtang: { t: 'drop', obj: 'buddha_palm', size: 300, col: '#ffe58a', beam: 1 },
+  khuongtanha: { t: 'drop', obj: 'scroll', size: 230, col: '#9fd0ff', sheet: 'sheet_boom_blue', beam: 1 },
+  vantieu: { t: 'drop', obj: 'bowl', size: 220, col: '#ffd34d', spin: 1.5 },
+  trieucongminh: { t: 'beast', run: 'tiger_run', atk: 'tiger_pounce', size: 190, col: '#ffd34d' },
+  thailaoquan: { t: 'heal', obj: 'furnace', size: 210, col: '#9fffd0' },
+  satang: { t: 'throw', obj: 'spade', n: 1, size: 180, col: '#d8e6f4', spinDir: -1 },
+  thietphien: { t: 'sweep', obj: 'bigfan', size: 320, col: '#7fe8a0', tex: 'ult_thietphien' },
+  litinh: { t: 'drop', obj: 'pagoda', size: 240, col: '#ffd34d', beam: 1 },
+  hangnga: { t: 'heal', obj: 'moon', pet: 'rabbit', size: 230, col: '#e0e8ff' },
+  bachcot: { t: 'summon', obj: 'bonehand', size: 300, col: '#c88aff' },
+  loichantu: { t: 'smash', obj: 'thunderrod', col: '#9fd0ff', len: 500, sheet: 'sheet_boom_blue' },
+  thohanhton: { t: 'drop', obj: 'rope', size: 220, col: '#ffd34d', spin: 3 },
+  thaiatchannhan: { t: 'drop', obj: 'firebell', size: 260, col: '#ff7a2e' },
+  thancongbao: { t: 'beast', run: 'leopard_run', atk: 'leopard_pounce', size: 180, col: '#6a7ad8', sheet: 'sheet_boom_blue' },
+  longnu: { t: 'heal', obj: 'pearl', size: 190, col: '#9fe8ff' },
+  kimgiac: { t: 'summon', obj: 'gourd', size: 240, col: '#b88aff', pull: 1 },
+  thaibachkimtinh: { t: 'rain', obj: 'star', n: 16, size: 70, col: '#ffe58a' },
+  culinhthan: { t: 'smash', obj: 'axe', col: '#ffd34d', len: 480 },
+  hoangphongquai: { t: 'sweep', obj: 'cloud', size: 300, col: '#e8c060', tex: 'ult_hoangphongquai' },
+};
+const UDUR = { smash: [1.7, 0.55], drop: [1.6, 0.5], beast: [1.7, 0.6], serpent: [2.4, 0.5], throw: [1.6, 0.45], sweep: [1.6, 0.5], rain: [1.8, 0.5], summon: [1.7, 0.45], heal: [1.8, 0.5] };
+const ucNeed = c => ['obj', 'run', 'atk', 'head', 'body', 'under', 'pet', 'wave'].map(k => c[k]).filter(Boolean);
+for (const id in UCFG) { const c = UCFG[id], d = UDUR[c.t], need = ucNeed(c); ULTC[id] = { dur: d[0], hit: d[1], need, draw: (f, p) => UTPL[c.t](f, p, c) }; }
+ULTC.duongtien.need = ['hound_run1', 'hound_run2', 'hound_leap', 'hound_bite']; ULTC.tieubachlong.need = ['dragon_head', 'dragon_long'];
+const ucReady = id => { const U = ULTC[id]; return !!U && (U.need || []).every(n => ucImg(n)); };   // ảnh chưa có -> dùng tuyệt kỹ cũ
+// Ngộ Không — Thất Thập Nhị Biến: 2 phân thân nhảy từ hai bên bổ gậy, rồi gậy thật phóng to quật xuống
+ULTC.ngokhong = { dur: 1.9, hit: 0.6, need: ['staff', 'ngk_jump', 'cloud'], draw(f, p) {
+  const J = ucImg('ngk_jump'), [tx, ty] = tgtXY(f);
+  if (J && p < 0.62) for (const side of [-1, 1]) {   // phân thân: xuất hiện trên mây, vọt lên rồi bổ xuống
+    const q = p / 0.62, sx = tx + side * 260, x = sx + (tx + side * 40 - sx) * ease3(q), y = (ty - 60) - Math.sin(q * Math.PI) * 220, w = 150 + 60 * q;
+    if (q < 0.25) ucObj('cloud', sx, ty - 30, 200 * (1 - q * 2), 0, 1 - q * 4);
+    ucObj('ngk_jump', x, y, w, side * (q - 0.5) * 0.6, q > 0.9 ? (1 - q) * 10 : 0.85, '#ffcf3f', 0.5, side < 0);
+  }
+  const q2 = Math.max(0, (p - 0.08) / 0.92); UTPL.smash(f, q2, { obj: 'staff', col: '#ffcf3f', len: 560, wk: 1.15 });
+  if (p > 0.55 && p < 0.6) ucOnce(f, 'clones', () => { fxBurst(tx - 40, ty - 40, 'burst_gold', 220); fxBurst(tx + 40, ty - 40, 'burst_gold', 220); });
+} };
+
+// ===================== HỢP KÍCH CHỦ ĐỘNG =====================
+function comboHero(id) { return B && B.heroes.find(h => h.id === id && !h.dead && !h.clone); }
+function comboList() {   // các hợp kích có thể dùng ngay
+  if (!B || B.over) return []; B.comboCd = B.comboCd || {};
+  return COMBOS.filter(c => { const a = comboHero(c.a), b = comboHero(c.b); return a && b && CX[c.a + '+' + c.b] && canCast(a, 'ult') && canCast(b, 'ult') && (B.comboCd[c.name] || 0) <= B.time && cxReady(c); });
+}
+function comboFor(u) {   // hợp kích của u: đã sẵn chưa / đồng đội sắp đầy nộ
+  B.comboCd = B.comboCd || {};
+  for (const c of COMBOS) { const o = c.a === u.id ? c.b : c.b === u.id ? c.a : null; if (!o || !CX[c.a + '+' + c.b]) continue;
+    const p = comboHero(o); if (!p || (B.comboCd[c.name] || 0) > B.time) continue;
+    return { c, ready: canCast(u, 'ult') && canCast(p, 'ult') && cxReady(c), near: p.mp >= 40 && p.dk <= 0 }; }
+  return null;
+}
+const cxReady = c => (CX[c.a + '+' + c.b].need || []).every(n => ucImg(n));
+function castCombo(c) {
+  const a = comboHero(c.a), b = comboHero(c.b); if (!a || !b) return;
+  const X = CX[c.a + '+' + c.b], lead = 0.95;
+  for (const u of [a, b]) { u.mp -= 60; u.cdU = 12; const sk_ = typeof Skel !== 'undefined' && Skel.has(u.id); u.castDur = sk_ ? 1.0 : 0.35; u.castT = u.castDur; u.castUlt = true; u.atkAnim = sk_ ? -1 : 0; }
+  B.comboCd[c.name] = B.time + 25;
+  const P = clusterPoint() || { x: W * 0.65, y: H * 0.6 }, tx = clamp(P.x, 160, W - 140), ty = clamp(P.y, 290, H - 60);
+  for (const u of [a, b]) u.f = tx >= u.x ? 1 : -1;
+  B.fx.push({ k: 'cx', key: c.a + '+' + c.b, c, a: { x: a.x, y: a.y - 34 * sizeOf(a) }, b: { x: b.x, y: b.y - 34 * sizeOf(b) }, x: a.x, y: a.y, tx, ty, t: -lead, dur: X.dur, sub: {}, done: {} });
+  B.banner = { text: 'HỢP KÍCH · ' + c.name, sub: HEROES[c.a].name + ' × ' + HEROES[c.b].name, t: 0, boss: true };
+  B.slowmo = 0.35; sfx('ult'); B.stat && (B.stat.combo = (B.stat.combo || 0) + 1);
+  const hits = X.hits, src = a;
+  hits.forEach((h, i) => B.later.push({ t: lead + X.dur * h, fn: () => {
+    if (!B || B.over) return; const last = i === hits.length - 1;
+    B.shake = Math.max(B.shake, last ? 1.1 : 0.7); B.flash = last ? 0.3 : 0.18; sfx('boom'); B.cam = { x: tx, y: ty - 40, t: 0, dur: 0.6 };
+    for (const e of enemiesIn({ x: tx, y: ty }, X.r || 240)) { dealDmg(src, e, c.mult / hits.length * (last ? 1.4 : 0.8), 'ult'); if (c.stun && last) e.stun = Math.max(e.stun || 0, c.stun); }
+    if (c.heal) for (const al of alliesAlive()) healAmD(src, al, getAtk(src) * c.heal / hits.length);
+    if (c.shield && last) for (const al of alliesAlive()) { al.shield = Math.max(al.shield, maxHp(al) * c.shield); al.shieldT = 6; }
+    if (last) B.decals.push({ x: tx, y: ty + 4, r: 200, t: 0, dur: 5 });
+  } }));
+}
+function updateComboBtn() {
+  const bar = $('#teamBar'); if (!bar) return;
+  let btn = $('#cxBtn'); const L = comboList(), c = L[0];
+  if (!c) { if (btn) btn.remove(); return; }
+  if (!btn) { btn = document.createElement('button'); btn.id = 'cxBtn'; btn.className = 'cx-btn'; bar.appendChild(btn); btn.onclick = () => { const k = btn.dataset.k, cc = comboList().find(x => x.name === k); if (cc) castCombo(cc); }; }
+  if (btn.dataset.k !== c.name) { btn.dataset.k = c.name; btn.innerHTML = `<span class="cx-faces"><img src="${porB(c.a, 64)}"><img src="${porB(c.b, 64)}"></span><b>HỢP KÍCH</b><small>${esc(c.name)}</small>`; }
+}
+const CXI = {}; function cxPor(id) { let i = CXI[id]; if (!i) { i = CXI[id] = new Image(); i.src = (ULTX[id] && ULTX[id].cut) ? 'art/ultx/' + ULTX[id].cut + '.webp' : porB(id, 256); } return i.complete && i.naturalWidth ? i : null; }
+function drawCX(f) {
+  const X = CX[f.key];
+  if (f.t < 0) {   // cut-in đôi: hai tướng trượt vào từ hai phía, tên hợp kích ở giữa
+    const q = 1 + f.t / 0.95, a = q < 0.15 ? q / 0.15 : q > 0.85 ? (1 - q) / 0.15 : 1, s = ease3(Math.min(1, q * 3));
+    ctx.save(); ctx.globalAlpha = a * 0.7; ctx.fillStyle = '#0a0614'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = a;
+    const band = H * 0.56, y0 = H / 2 - band / 2;
+    ctx.fillStyle = 'rgba(255,200,80,0.18)'; ctx.fillRect(0, y0, W, band);
+    for (const [id, side] of [[f.c.a, -1], [f.c.b, 1]]) { const im = cxPor(id); if (!im) continue; const h = band * 1.05, w = h * im.width / im.height, cx = W / 2 + side * (W * 0.24 + (1 - s) * W * 0.5);
+      ctx.save(); ctx.beginPath(); ctx.rect(side < 0 ? 0 : W / 2, y0, W / 2, band); ctx.clip(); ctx.translate(cx, H / 2); if (side > 0) ctx.scale(-1, 1); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
+    ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(W / 2 + 30, y0); ctx.lineTo(W / 2 - 30, y0 + band); ctx.stroke();
+    ctx.restore(); return;
+  }
+  const p = Math.min(1, f.t / f.dur);
+  ctx.save(); ctx.globalAlpha = 0.5 * Math.sin(Math.PI * p); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  UC_NODARK = true; try { X.draw(f, p); } finally { UC_NODARK = false; }
+}
+// một lớp biên đạo: chạy khuôn/hàm trong khoảng [a,b] của hợp kích, gốc ở tướng `who` (hoặc điểm tuỳ chọn)
+function cxL(f, key, who, p, a, b, fn, at) {
+  if (p < a || p > b) return; const o = at || f[who];
+  const s = f.sub[key] = f.sub[key] || { x: o.x, y: o.y, tx: f.tx, ty: f.ty, f: 1, done: {} }; fn(s, (p - a) / (b - a));
+}
+const T = (n, cfg) => (s, q) => UTPL[n](s, q, cfg);
+function cxStaffSpin(x, y, L, rot, a) { const im = ucImg('staff'); if (!im) return; const w = L * im.width / im.height * 1.15;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.globalAlpha = a;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * 0.5; ctx.filter = 'blur(10px)'; ctx.fillStyle = '#ffcf3f'; ctx.fillRect(-w, -L / 2, w * 2, L); ctx.restore();
+  ctx.drawImage(im, -w / 2, -L / 2, w, L); ctx.restore(); }
+function cxOrbit(obj, cx, cy, n, r, rot, S, a, col) { for (let i = 0; i < n; i++) { const t = rot + i * Math.PI * 2 / n; ucObj(obj, cx + Math.cos(t) * r, cy + Math.sin(t) * r * 0.45, S, rot * 3, a, col, 0.6); } }
+function cxArc(img, x0, y0, x1, y1, q, hgt, w, flip, col) {   // nhân vật/vật nhảy theo cung
+  const x = x0 + (x1 - x0) * q, y = y0 + (y1 - y0) * q - Math.sin(q * Math.PI) * hgt;
+  for (let k = 1; k <= 3; k++) { const qq = Math.max(0, q - k * 0.06); ucObj(img, x0 + (x1 - x0) * qq, y0 + (y1 - y0) * qq - Math.sin(qq * Math.PI) * hgt, w, 0, 0.15, null, 0, flip); }
+  ucObj(img, x, y, w, (q - 0.5) * 0.5, 1, col, 0.5, flip); return [x, y];
+}
+const CX = {
+  // Ngộ Không ném gậy → Hao Thiên Khuyển ngậm gậy xoay như chong chóng quét qua bầy quái → gậy khổng lồ giáng từ trời, chó lao cắn
+  'ngokhong+duongtien': { dur: 3.2, hits: [0.36, 0.48, 0.6, 0.86], need: ['staff', 'ngk_jump', 'hound_run1', 'hound_run2', 'hound_leap', 'hound_bite'], draw(f, p) {
+    const A = f.a, Bp = f.b, mx = (A.x + f.tx) / 2, hy = f.ty - 70;
+    cxL(f, 'ngk', 'a', p, 0, 0.3, (s, q) => { cxArc('ngk_jump', A.x, A.y, mx - 40, Math.max(A.y - 30, 230), q, 90, 150, false, '#ffcf3f');
+      if (q > 0.45) { const qq = (q - 0.45) / 0.55; cxStaffSpin(mx - 40 + 80 * qq, Math.max(A.y - 120, 170) + qq * (hy - Math.max(A.y - 120, 170)), 200, qq * 18, 1); } });
+    cxL(f, 'run', 'b', p, 0, 0.3, (s, q) => { const x = Bp.x + (mx - 60 - Bp.x) * ease3(q), y = Bp.y + 30 + (hy + 40 - Bp.y - 30) * q; ucObj(Math.floor(p / 0.035) % 2 ? 'hound_run1' : 'hound_run2', x, y, 150, 0, 1, '#ffcf3f', 0.4); });
+    cxL(f, 'prop', 'b', p, 0.3, 0.66, (s, q) => { const x = mx - 60 + (W + 160 - mx + 60) * q, y = hy - Math.sin(q * Math.PI) * 50;
+      for (let k = 1; k <= 4; k++) { const qq = Math.max(0, q - k * 0.04); cxStaffSpin(mx - 60 + (W + 160 - mx + 60) * qq, hy - Math.sin(qq * Math.PI) * 50, 380, (p - k * 0.012) * 70, 0.15); }
+      cxStaffSpin(x, y, 380, p * 70, 1); ucObj('hound_leap', x - 10, y + 6, 180, -0.1, 1, '#ffcf3f', 0.5);
+      if (Math.random() < 0.7) particles(x, y, '#ffe58a', 3, 200, 4); });
+    cxL(f, 'drop', 'a', p, 0.6, 1, T('drop', { obj: 'staff', hgt: 400, col: '#ffcf3f', beam: 1 }));
+    cxL(f, 'bite', 'b', p, 0.8, 1, (s, q) => ucObj('hound_bite', f.tx - 90 + Math.sin(q * 40) * 6, f.ty - 70, 230 - q * 30, 0.25, 1 - Math.max(0, q - 0.7) / 0.3, '#ffcf3f', 0.6));
+  } },
+  // hai sư huynh đệ: gậy + bồ cào cùng phóng to, bắt chéo hình chữ X quật xuống
+  'ngokhong+batgioi': { dur: 2.4, hits: [0.56, 0.7], need: ['staff', 'rake'], draw(f, p) {
+    cxL(f, 'st', 'a', p, 0, 1, T('smash', { obj: 'staff', col: '#ffcf3f', len: 560 }), { x: f.tx - 260, y: f.ty + 20 });
+    cxL(f, 'rk', 'b', p, 0.05, 1, T('smash', { obj: 'rake', col: '#bfe0ff', len: 520 }), { x: f.tx + 240, y: f.ty + 20 });
+  } },
+  // Ngộ Không cưỡi trâu thần húc thẳng, rồi nhảy khỏi lưng quật gậy
+  'ngokhong+ngumavuong': { dur: 2.8, hits: [0.45, 0.85], need: ['bull_run', 'bull_ram', 'ngk_jump', 'staff'], draw(f, p) {
+    cxL(f, 'ride', 'b', p, 0, 0.5, (s, q) => { const x = s.x - 60 + (f.tx - 40 - s.x + 60) * ease3(q), y = s.y + 40 + (f.ty - s.y - 40) * q - Math.abs(Math.sin(q * 16)) * 8;
+      for (let k = 1; k <= 3; k++) ucObj('bull_run', x - k * 34, y - 60, 210, 0, 0.14);
+      ucObj(q < 0.8 ? 'bull_run' : 'bull_ram', x, y - 60, 220, 0, 1, '#ff5a2a', 0.5); if (q < 0.85) ucObj('ngk_jump', x - 10, y - 150, 120, -0.1, 1);
+      if (Math.random() < 0.7) particles(x - 60, y, '#ff8a3a', 3, 120, 4); });
+    cxL(f, 'jump', 'a', p, 0.42, 0.62, (s, q) => cxArc('ngk_jump', f.tx - 50, f.ty - 150, f.tx - 120, f.ty - 260, q, 120, 150, false, '#ffcf3f'));
+    cxL(f, 'sm', 'a', p, 0.5, 1, T('smash', { obj: 'staff', col: '#ffcf3f', len: 560 }), { x: f.tx - 200, y: f.ty - 40 });
+  } },
+  // tháp Linh Lung giáng xuống, hai Phong Hoả Luân xoay quanh tháp rồi văng toả ra
+  'nata+litinh': { dur: 2.8, hits: [0.5, 0.78], need: ['pagoda', 'firewheel'], draw(f, p) {
+    cxL(f, 'pg', 'b', p, 0, 0.75, T('drop', { obj: 'pagoda', size: 250, col: '#ffd34d', beam: 1 }));
+    if (p > 0.35) { const q = (p - 0.35) / 0.65, r = 90 + q * q * 360; cxOrbit('firewheel', f.tx, f.ty - 80, 4, r, p * 14, 90, 1 - Math.max(0, q - 0.75) / 0.25, '#ff7a2e'); }
+  } },
+  // hoả long của Hồng Hài Nhi lao qua, hai Phong Hoả Luân bay hai bên dẫn đường
+  'nata+honghainhi': { dur: 2.8, hits: [0.5, 0.72], need: ['firedragon_head', 'firedragon_body', 'firewheel'], draw(f, p) {
+    cxL(f, 'dr', 'b', p, 0, 1, T('serpent', { head: 'firedragon_head', body: 'firedragon_body', col: '#ff7a2e', sheet: 'sheet_boom_gold', bh: 90, hs: 190 }));
+    cxL(f, 'wh', 'a', p, 0.25, 0.85, T('throw', { obj: 'firewheel', n: 2, size: 110, col: '#ff7a2e', sheet: 'sheet_boom_gold' }));
+  } },
+  // bàn tay Phật giáng xuống quái, sen nở dưới chân đội hồi máu
+  'quanam+duongtang': { dur: 2.6, hits: [0.55], need: ['buddha_palm', 'vase', 'lotus'], draw(f, p) {
+    cxL(f, 'hl', 'a', p, 0, 1, T('heal', { obj: 'vase', under: 'lotus', size: 170, col: '#fff3a0', tilt: 1 }));
+    cxL(f, 'pl', 'b', p, 0.15, 0.95, T('drop', { obj: 'buddha_palm', size: 320, col: '#ffe58a', beam: 1 }));
+  } },
+  // trăng lên, bình ngọc nghiêng rót cam lộ, sen nở – hồi máu cả đội
+  'quanam+hangnga': { dur: 2.6, hits: [0.4, 0.7], need: ['moon', 'rabbit', 'vase', 'lotus'], draw(f, p) {
+    cxL(f, 'hl', 'b', p, 0, 1, T('heal', { obj: 'moon', pet: 'rabbit', under: 'lotus', size: 240, col: '#e0e8ff' }));
+    const q = p < 0.25 ? p / 0.25 : p > 0.85 ? (1 - p) / 0.15 : 1, al = alliesAlive(), cx = al.length ? al.reduce((s, h) => s + h.x, 0) / al.length : f.a.x;
+    ucObj('vase', cx - 140, 150, 110 * q, -0.9, q, '#bfffd8', 0.6); if (Math.random() < 0.6 * q) particles(cx - 100, 175, '#bfffd8', 3, 80, 4);
+  } },
+  // Kim Đấu úp xuống nhốt quái, cọp đen lao tới vồ cả đấu
+  'vantieu+trieucongminh': { dur: 2.8, hits: [0.45, 0.85], need: ['bowl', 'tiger_run', 'tiger_pounce'], draw(f, p) {
+    cxL(f, 'bw', 'a', p, 0, 0.7, T('drop', { obj: 'bowl', size: 240, col: '#ffd34d', spin: 2 }));
+    cxL(f, 'tg', 'b', p, 0.38, 1, T('beast', { run: 'tiger_run', atk: 'tiger_pounce', size: 190, col: '#ffd34d' }));
+  } },
+  // Phong Thần Bảng mở trên trời, Hao Thiên Khuyển phóng ra từ bảng
+  'khuongtanha+duongtien': { dur: 2.8, hits: [0.45, 0.85], need: ['scroll', 'hound_run1', 'hound_bite'], draw(f, p) {
+    cxL(f, 'sc', 'a', p, 0, 0.7, T('drop', { obj: 'scroll', size: 240, col: '#9fd0ff', sheet: 'sheet_boom_blue', beam: 1 }));
+    cxL(f, 'hd', 'b', p, 0.38, 1, T('beast', { run: 'hound_run1', atk: 'hound_bite', size: 170, col: '#9fd0ff', sheet: 'sheet_slash' }), { x: f.tx - 320, y: 200 });
+  } },
+  // quạt Ba Tiêu quạt bão lửa, trâu thần theo gió lao húc
+  'thietphien+ngumavuong': { dur: 2.8, hits: [0.45, 0.85], need: ['bigfan', 'bull_run', 'bull_ram'], draw(f, p) {
+    cxL(f, 'fn', 'a', p, 0, 0.7, T('sweep', { obj: 'bigfan', size: 320, col: '#ff8a3a', tex: 'ult_thietphien' }));
+    cxL(f, 'bl', 'b', p, 0.35, 1, T('beast', { run: 'bull_run', atk: 'bull_ram', size: 210, col: '#ff5a2a', sheet: 'sheet_boom_gold' }));
+  } },
+  // lò Bát Quái rơi xuống, Ngộ Không phá lò bay ra quật gậy
+  'thailaoquan+ngokhong': { dur: 3.0, hits: [0.4, 0.85], need: ['furnace', 'ngk_jump', 'staff'], draw(f, p) {
+    cxL(f, 'fu', 'a', p, 0, 0.55, T('drop', { obj: 'furnace', size: 230, col: '#9fffd0' }));
+    cxL(f, 'out', 'b', p, 0.48, 0.7, (s, q) => { cxArc('ngk_jump', f.tx, f.ty - 80, f.tx - 170, f.ty - 200, q, 160, 160, false, '#ffcf3f'); if (q < 0.3) particles(f.tx, f.ty - 80, '#9fffd0', 6, 300, 5); });
+    cxL(f, 'sm', 'b', p, 0.55, 1, T('smash', { obj: 'staff', col: '#ffcf3f', len: 560 }), { x: f.tx - 230, y: f.ty - 20 });
+  } },
+  // ba bàn tay xương trồi lên giữ chặt quái, hồ ly chín đuôi vồ giữa vòng vây
+  'datky+bachcot': { dur: 2.8, hits: [0.45, 0.85], need: ['bonehand', 'fox_run', 'fox_pounce'], draw(f, p) {
+    for (const [k, dx, d0] of [['h1', -120, 0], ['h2', 0, 0.06], ['h3', 120, 0.12]]) cxL(f, k, 'b', p, d0, 0.75 + d0, T('summon', { obj: 'bonehand', size: 220, col: '#c88aff', sheet: 'sheet_crack' }), null), f.sub[k] && (f.sub[k].tx = f.tx + dx);
+    cxL(f, 'fx', 'a', p, 0.35, 1, T('beast', { run: 'fox_run', atk: 'fox_pounce', size: 190, col: '#ff7ad9' }));
+  } },
+  // xẻng Hàng Yêu bay vòng hộ vệ đội, bàn tay Phật giáng xuống
+  'satang+duongtang': { dur: 2.6, hits: [0.6], need: ['spade', 'buddha_palm'], draw(f, p) {
+    const al = alliesAlive(), cx = al.length ? al.reduce((s, h) => s + h.x, 0) / al.length : f.a.x, cy = al.length ? al.reduce((s, h) => s + h.y, 0) / al.length - 50 : f.a.y;
+    if (p < 0.7) { const q = p < 0.15 ? p / 0.15 : p > 0.55 ? (0.7 - p) / 0.15 : 1; cxOrbit('spade', cx, cy, 3, 150, p * 10, 110, q, '#d8e6f4');
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 * q; ctx.strokeStyle = '#ffe58a'; ctx.lineWidth = 10; ctx.beginPath(); ctx.ellipse(cx, cy, 160, 72, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+    cxL(f, 'pl', 'b', p, 0.2, 1, T('drop', { obj: 'buddha_palm', size: 320, col: '#ffe58a', beam: 1 }));
   } },
 };
 function drawUltTex(f) {
@@ -2113,8 +2438,9 @@ function drawProj(p) {
   ctx.restore();
 }
 function drawFx(f) {
-  if (f.k === 'sig') { if (f.t >= 0) { if (ULTC[f.id]) ULTC[f.id].draw(f, Math.min(1, f.t / f.dur)); else if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
+  if (f.k === 'sig') { if (f.t >= 0) { if (f.uc) ULTC[f.id].draw(f, Math.min(1, f.t / f.dur)); else if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
   if (f.k === 'combo') { drawComboX(f); return; }
+  if (f.k === 'cx') { drawCX(f); return; }
   const p = f.t / f.dur;
   ctx.save();
   switch (f.k) {
@@ -2827,6 +3153,7 @@ function updateHUD() {
     el.querySelector('.tm-ammo').textContent = waiting || u.dead || u.dk > 0 ? '' : (u.ammo == null ? ammoMax(u) : u.ammo);
     el.querySelector('.tm-trong').textContent = 'Tầng ' + trongOf(u);
   });
+  updateComboBtn();
 }
 function setCd(sel, p, ready, mpOk) {
   const b = $(sel); if (!b) return;
@@ -3272,6 +3599,9 @@ function route() {
         const u = B.heroes.find(x => x.id === um[1] && !x.dead);
         if (u) { u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; cast(u, 'ult'); for (let i = 0; i < +um[2] * 60; i++) update(1 / 60); }
       }
+      const xm = h.match(/(?:^|&)cx=(\w+),(\w+):([\d.]+)/);   // (chụp thử) hợp kích chủ động: &cx=ngokhong,duongtien:1.2
+      if (xm) { for (const id of [xm[1], xm[2]]) { const u = B.heroes.find(x => x.id === id) || B.deploy.find(x => x.id === id); if (u) { if (!B.heroes.includes(u)) { takeSlot(u); B.heroes.push(u); B.deploy = B.deploy.filter(x => x !== u); } u.mp = 100; u.cdU = 0; u.dk = 0; u.dead = false; } }
+        const c = COMBOS.find(c => c.a === xm[1] && c.b === xm[2]); if (c) { castCombo(c); for (let i = 0; i < +xm[3] * 60; i++) update(1 / 60); } }
     }
     });
   }

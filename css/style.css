@@ -495,3 +495,11 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .hm-left { gap: 2px; top: 62px; } .hm-ic img { width: 44px; height: 44px; } .hm-idle { bottom: 84px; } .hm-idle img { width: 58px; height: 58px; }
 
 .chap-el { margin: 0 4px 8px; font-size: 13px; background: rgba(255,255,255,.55); border-radius: 10px; padding: 4px 10px; border: 2px solid #e0b040; }
+
+/* nút HỢP KÍCH: hiện khi cặp tướng cùng đầy nộ */
+.cx-btn { position: relative; height: 62px; min-width: 120px; margin-left: 8px; border: 2px solid #3a0a00; border-radius: 12px; padding: 2px 10px 2px 4px; display: flex; align-items: center; gap: 6px;
+  background: linear-gradient(180deg, #ffe58a, #ff9a2e); color: #3a0a00; font-weight: 900; cursor: pointer; animation: cxPulse .8s ease-in-out infinite alternate; box-shadow: 0 0 14px #ffcf3f; }
+.cx-btn .cx-faces { display: flex; } .cx-btn .cx-faces img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid #fff; background: #fff6df; margin-right: -10px; }
+.cx-btn b { display: block; font-size: 14px; letter-spacing: 1px; margin-left: 10px; } .cx-btn small { display: block; font-size: 10px; font-weight: 800; margin-left: 10px; max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cx-btn > b, .cx-btn > small { text-align: left; }
+@keyframes cxPulse { from { transform: scale(1); box-shadow: 0 0 8px #ffcf3f; } to { transform: scale(1.06); box-shadow: 0 0 22px #ff9a2e; } }
