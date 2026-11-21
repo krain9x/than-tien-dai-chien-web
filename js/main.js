@@ -613,7 +613,7 @@ function deployNext() {
   placeHero(B.deploy.shift());
 }
 function openDeployPick() {
-  snd('pickup'); tutor('phu', 'Nhặt <b>Linh Phù</b> → chọn 1 tướng xuất trận. Đội tối đa 5 tướng.');
+  snd('pickup'); setTimeout(() => coach('c_phu', { img: 'art/ui/drop_phu.webp', title: 'Linh Phù', text: 'Quái rơi <b>Linh Phù</b> → chọn <b>1 Thần Tướng</b> ra sân. Mở trận chỉ có 2 tướng, đội tối đa 5. Đủ 5 rồi thì Linh Phù hồi máu cả đội.' }), 50);
   B.paused = true;
   const opts = B.deploy.slice(0, 4);
   const wrap = document.createElement('div');
@@ -734,7 +734,7 @@ function openBachGiam() {
   box.querySelector('#bgClose').onclick = () => box.remove();
 }
 function openCongPhap() {
-  snd('pickup', 0.8, 1.15); tutor('cp', 'Lên cấp hoặc nhặt Thiên Thư → <b>chọn 1 công pháp</b>. Chọn cơ bản trước, sau đó tiến bậc thành cao cấp. Tối đa 6 ô.');
+  snd('pickup', 0.8, 1.15); setTimeout(() => coach('c_cp', { img: 'art/ui/drop_thu.webp', title: 'Thiên Thư · Công pháp', text: 'Nhặt <b>Thiên Thư</b> hoặc lên cấp → <b>chọn 1 công pháp</b>. Chọn công pháp cơ bản của một hệ trước, sau đó tiến bậc thành công pháp cao cấp. Tối đa 6 ô.' }), 50);
   B.paused = true;
   let opts = rollCongPhap();
   const wrap = document.createElement('div');
@@ -1464,6 +1464,34 @@ function updateFx(dt) {
   if (B.tgtMark > 0) B.tgtMark -= dt;
 }
 
+
+// ---- HƯỚNG DẪN TÂN THỦ có tiêu điểm: khoét sáng mục tiêu, hình minh hoạ, tạm dừng trận
+function worldToScreen(wx, wy) { const r = cv.getBoundingClientRect(); return { x: r.left + (GATE_X + (wx - GATE_X) * VIEW_Z) * scale, y: r.top + (H * VIEW_PY + (wy - H * VIEW_PY) * VIEW_Z) * scale }; }
+function coach(key, o) {
+  S.tut = S.tut || {}; if (S.tut[key] || S.tut.all || (B && B.over) || document.querySelector('.coach')) return false;
+  S.tut[key] = 1; save();
+  let R = null;
+  if (o.sel) { const el = document.querySelector(o.sel); if (el) { const b = el.getBoundingClientRect(); R = { x: b.left - 8, y: b.top - 8, w: b.width + 16, h: b.height + 16 }; } }
+  if (!R && o.world) { const p = worldToScreen(o.world.x, o.world.y), s = (o.world.r || 60) * scale; R = { x: p.x - s, y: p.y - s * 1.3, w: s * 2, h: s * 2 }; }
+  const wasPaused = B ? B.paused : false; if (B) B.paused = true;
+  const ov = document.createElement('div'); ov.className = 'coach';
+  const vw = window.innerWidth, vh = window.innerHeight, below = R ? R.y + R.h / 2 < vh / 2 : true;
+  const bx = R ? Math.max(12, Math.min(vw - 352, R.x + R.w / 2 - 170)) : vw / 2 - 170, by = R ? (below ? R.y + R.h + 18 : Math.max(12, R.y - 190)) : vh * 0.3;
+  ov.innerHTML = `${R ? `<div class="coach-hole" style="left:${R.x}px;top:${R.y}px;width:${R.w}px;height:${R.h}px"></div><div class="coach-arrow ${below ? 'up' : 'down'}" style="left:${R.x + R.w / 2 - 14}px;top:${below ? R.y + R.h + 2 : R.y - 26}px"></div>` : '<div class="coach-dim"></div>'}
+    <div class="coach-box" style="left:${bx}px;top:${by}px">${o.img ? `<img src="${o.img}" alt="">` : ''}<div><b>${o.title}</b><p>${o.text}</p>
+    <div class="coach-btns"><button class="coach-skip">Bỏ qua hướng dẫn</button><button class="coach-ok">Đã hiểu</button></div></div></div>`;
+  const close = () => { ov.remove(); if (B) { B.paused = wasPaused; lastT = performance.now(); } };
+  ov.querySelector('.coach-ok').onclick = close;
+  ov.querySelector('.coach-skip').onclick = () => { S.tut.all = 1; save(); close(); };
+  document.body.appendChild(ov); return true;
+}
+function coachTick() {   // các bước theo thời điểm trong trận đầu
+  if (!B || B.over || B.paused || (S.tut && S.tut.all)) return;
+  if (B.time > 1.2) coach('c_gate', { sel: '#hGateBox', title: 'Bảo vệ cổng thành', text: 'Quái kéo tới từ bên phải để phá <b>cổng thành</b>. Cổng hết máu là thua. Diệt hết các đợt quái để thắng.' });
+  if (B.time > 4) { const e = B.enemies.find(x => !x.dead && x.x < VIEW_R() - 40); if (e) coach('c_tap', { world: { x: e.x, y: e.y - 30, r: 55 }, img: 'art/ui/ic_battle.webp', title: 'Chạm để nhắm', text: 'Tướng tự đánh. <b>Chạm vào quái</b> để <b>đội trưởng</b> (có vương miện 👑) tập trung đánh con đó.' }); }
+  const rd = document.querySelector('#teamBar .tm.ready'); if (rd) coach('c_ult', { sel: '#teamBar .tm.ready', img: rd.querySelector('img') && rd.querySelector('img').src, title: 'Tung tuyệt kỹ', text: 'Thẻ tướng <b>bốc lửa</b> là đã đầy nộ. <b>Chạm thẻ</b> (hoặc phím 1–5) để tung tuyệt kỹ.' });
+  if (B.time > 40) coach('c_tools', { sel: '#bAuto', title: 'Tự động và Hiệu ứng', text: 'Bật <b>Tự động</b> để máy tự tung tuyệt kỹ. Bấm nút <b>★ Hiệu ứng</b> bên cạnh để xem mọi buff đội đang có.' });
+}
 function tutor(key, text) {
   if (!S.tut) S.tut = {}; if (S.tut[key]) return; S.tut[key] = 1; save();
   const t = document.createElement('div'); t.className = 'tutor'; t.innerHTML = '<b>Hướng dẫn</b>' + text + '<small>Chạm để đóng</small>';
@@ -1490,8 +1518,9 @@ function updateMech(dt) {   // cơ chế riêng chương (GDD §2): bẫy (Thậ
 }
 function update(dt) {
   if (B && !B.over) updateMech(dt);
-  if (B && !B.over && B.time > 1.5 && B.time < 1.6) tutor('tap', 'Tướng tự đánh. <b>Chạm vào quái</b> để đội trưởng (vòng vàng) nhắm đánh con đó.');
-  if (B && !B.over && B.heroes.some(h => !h.dead && h.mp >= 60)) tutor('ult', 'Thẻ tướng phát sáng <b>TUYỆT KỸ</b> → chạm thẻ để tung tuyệt kỹ.');
+  coachTick();
+  if (false && B && !B.over && B.time > 1.5 && B.time < 1.6) tutor('tap', 'Tướng tự đánh. <b>Chạm vào quái</b> để đội trưởng (vòng vàng) nhắm đánh con đó.');
+  if (false && B && !B.over && B.heroes.some(h => !h.dead && h.mp >= 60)) tutor('ult', 'Thẻ tướng phát sáng <b>TUYỆT KỸ</b> → chạm thẻ để tung tuyệt kỹ.');
   if (B && !B.over && B.mech) tutor('mech_' + B.mech, { traps: 'Thập Tuyệt Trận: <b>vòng đỏ</b> là bẫy sắp nổ — chạm quái khác để đội trưởng tránh dồn chỗ.', speed: 'Thiên Cung: quái chạy <b>nhanh hơn</b>, dùng tuyệt kỹ sớm.', fire: 'Hoả Diệm Sơn: <b>lửa</b> rơi xuống chỗ tướng đứng định kỳ.', fog: 'Thuỷ tộc: nước đục che <b>nửa phải</b> màn hình.' }[B.mech] || '');
   if (B.over) { updateFx(dt); if (B.endT != null && (B.endT -= dt) <= 0) { B.endT = null; showResult(); } return; }
   B.time += dt;
@@ -1556,7 +1585,7 @@ function endBattle(win, reason) {
   qAdd('fight'); if (win) qAdd('win'); wqAdd('fight'); if (win) wqAdd('win'); if (B.st.tower && win) wqAdd('tower'); if (B.st.raid) wqAdd('raid'); qAdd('kill', B.kills || 0);
   if (win) {
     if (B.st.tower) { S.tower = Math.max(S.tower || 0, B.st.floor); lbPush(); }
-    if (B.st.nan) { const N = nanState(); if (N.run) { N.best = Math.max(N.best, B.st.nanN); N.run.n = B.st.nanN + 1; if (N.run.n <= 81) N.run.pick = nanPick3(); } }
+    if (B.st.nan) { const N = nanState(); if (N.run) { if (B.st.nanN > N.best) setTimeout(lbPush, 500); N.best = Math.max(N.best, B.st.nanN); N.run.n = B.st.nanN + 1; if (N.run.n <= 81) N.run.pick = nanPick3(); } }
     const first = !S.cleared[B.st.id];
     if (first && typeof B.si === 'number') B.chRew = chapterReward(B.st);
     B.reward.ngoc = first ? B.st.reward.ngoc : Math.round(B.st.reward.ngoc * 0.2);
@@ -4140,12 +4169,13 @@ function showRaid() {
 // ---- Bảng xếp hạng (Firestore, cần đăng nhập Google)
 function lbPush() {
   if (!(window.Cloud && Cloud.user && Cloud.lbSet)) return;
-  Cloud.lbSet({ name: (Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), power: totalPower(), tower: S.tower || 0, raid: (S.raidBest || {})[weekKey()] || 0, wk: weekKey(), ts: Date.now() }).catch(e => console.warn(e));
+  const row = { name: (Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), power: totalPower(), tower: S.tower || 0, raid: (S.raidBest || {})[weekKey()] || 0, wk: weekKey(), ts: Date.now(), nan: Math.min(81, (S.nan && S.nan.best) || 0) };
+  Cloud.lbSet(row).catch(e => { delete row.nan; Cloud.lbSet(row).catch(e2 => console.warn(e2)); });   // quy tắc cũ chưa có 'nan' → gửi lại không kèm
 }
 async function showRank(tab) {
   tab = tab || 'power';
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Bảng Xếp Hạng')}
-    <div class="chap-tabs">${[['power', 'Lực chiến'], ['tower', 'Tháp'], ['raid', 'Boss tuần']].map(([k, n]) => `<button class="btn small ${k === tab ? 'gold' : ''}" data-rk="${k}">${n}</button>`).join('')}</div>
+    <div class="chap-tabs">${[['power', 'Lực chiến'], ['tower', 'Tháp'], ['nan', '81 Nạn'], ['raid', 'Boss tuần']].map(([k, n]) => `<button class="btn small ${k === tab ? 'gold' : ''}" data-rk="${k}">${n}</button>`).join('')}</div>
     <div class="meta-list" id="rkL"><div class="hint">Đang tải…</div></div></div>`;
   $('#bBack').onclick = showHome; ui.querySelectorAll('[data-rk]').forEach(b => b.onclick = () => showRank(b.dataset.rk));
   if (!(window.Cloud && Cloud.ok && Cloud.lbTop)) { $('#rkL').innerHTML = '<div class="hint">Chưa kết nối máy chủ.</div>'; return; }

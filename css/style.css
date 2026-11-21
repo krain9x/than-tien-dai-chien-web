@@ -644,3 +644,18 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .nan-track span.cur { background: #c0392b; color: #fff; border-color: #ffd34d; box-shadow: 0 0 10px #ff8a5a; animation: hmPulse 1s infinite; }
 .nan-track span.boss { border-radius: 8px; }
 .story-ov { position: fixed; z-index: 300; } .story-head { top: max(14px, env(safe-area-inset-top, 0px)); }
+
+/* hướng dẫn có tiêu điểm */
+.coach { position: fixed; inset: 0; z-index: 400; }
+.coach-dim { position: absolute; inset: 0; background: rgba(8,3,1,.62); }
+.coach-hole { position: absolute; border-radius: 16px; box-shadow: 0 0 0 9999px rgba(8,3,1,.62), 0 0 0 3px #ffd34d, 0 0 24px #ffcf3f; animation: coachPulse 1.2s ease-in-out infinite; pointer-events: none; }
+@keyframes coachPulse { 50% { box-shadow: 0 0 0 9999px rgba(8,3,1,.62), 0 0 0 5px #ffe58a, 0 0 36px #ffcf3f; } }
+.coach-arrow { position: absolute; width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; animation: coachBob .7s ease-in-out infinite alternate; }
+.coach-arrow.up { border-bottom: 22px solid #ffd34d; } .coach-arrow.down { border-top: 22px solid #ffd34d; }
+@keyframes coachBob { to { translate: 0 6px; } }
+.coach-box { position: absolute; width: 340px; max-width: calc(100vw - 24px); display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: linear-gradient(#3a1c10, #1e0d07); border: 2px solid #e0b040; color: #ffe9b0; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+.coach-box img { width: 64px; height: 64px; object-fit: contain; flex: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); border-radius: 10px; }
+.coach-box b { display: block; color: #ffd34d; font-size: 16px; margin-bottom: 2px; } .coach-box p { margin: 0 0 8px; font-size: 13px; line-height: 1.45; } .coach-box p b { display: inline; font-size: inherit; color: #fff3c0; }
+.coach-btns { display: flex; justify-content: space-between; gap: 8px; }
+.coach-ok { border: 0; border-radius: 10px; padding: 6px 16px; font-weight: 900; background: linear-gradient(#ffe58a, #e29a12); color: #3a1404; cursor: pointer; }
+.coach-skip { border: 0; background: none; color: #c9a98a; font-size: 12px; text-decoration: underline; cursor: pointer; }
