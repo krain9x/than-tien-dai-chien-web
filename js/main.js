@@ -1797,7 +1797,9 @@ function poseFor(u) {
   }
   return null;
 }
+const HFIX = { kimgiac: 1.1, hoangphongquai: 1.06 };   // bù dáng đứng khom / tai nhọn để cao ngang các tướng khác
 function drawPose(u, name, t, h, alpha) {
+  h *= HFIX[u.id] || 1;
   const img = POSES[u.id][name], D = (window.SKEL_DEFS && SKEL_DEFS[u.id]) || (window.HPOSE && HPOSE[u.id]); if (!img || !D) return false;
   const k = h / D.H / 0.5, gx = D.gnd[0] * 0.5 * k, gy = D.gnd[1] * 0.5 * k;   // ảnh tư thế = hình gốc giảm nửa, đặt chân tại gốc xương root
   let sx = 1, sy = 1, rot = 0, ox = 0;
@@ -3289,7 +3291,7 @@ function renderShowcase() {
 // Màn hình chính: đội hình đứng trên bãi cỏ
 let homeBg = null, homeT = 0;
 function drawHomeHero(id, i, h, t) {
-  const P = POSES[id], D = window.SKEL_DEFS && SKEL_DEFS[id], fake = { id, hurt: 0 };
+  const P = POSES[id], D = (window.SKEL_DEFS && SKEL_DEFS[id]) || (window.HPOSE && HPOSE[id]), fake = { id, hurt: 0 };   // mọi tướng có dáng (kể cả đợt 2) vẽ cùng một cách → cùng cỡ
   if (P && P.idle1 && P.idle2 && D) {
     const T = 3.6, ph = (t + i * 0.83) % T, a = ph < 1.8 ? 0 : 1;   // đổi dáng dứt khoát (chuyển mờ làm 2 vũ khí chồng lên nhau trông như bị gãy/cong)
     drawPose(fake, a ? 'idle2' : 'idle1', ph, h, 1); return true;
