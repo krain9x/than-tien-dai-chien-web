@@ -3401,7 +3401,7 @@ function synergyHTML(ids) {
   }).join('');
   const cs = ids[0] ? capSkill(ids[0]) : null;
   const cb = COMBOS.filter(c => ids.includes(c.a) && ids.includes(c.b)).map(c => `<div class="syn on"><b>${esc(c.name)}</b> <small>${HEROES[c.a].name} + ${HEROES[c.b].name}</small><em>Hai người tung tuyệt kỹ cách nhau ≤3 giây → hợp kích</em></div>`).join('');
-  return `${cs ? `<h4>Kỹ năng đội trưởng</h4><div class="syn on"><b>${esc(cs.n)}</b> <em>${esc(cs.d)}</em></div>` : ''}<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}<h4>Duyên phận</h4>${bonds}<h4>Hợp kích</h4>${cb || '<small>Chưa có cặp hợp kích trong đội</small>'}`;
+  return `${cs ? `<h4>Kỹ năng đội trưởng</h4><div class="syn on"><b>${esc(cs.n)}</b> <em>${esc(cs.d)}</em></div>` : ''}<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}<h4>Duyên phận</h4>${bonds}`;
 }
 function showLineup() {
   const lu = S.lineup.filter(id => S.owned[id]);
@@ -3570,6 +3570,33 @@ function doPull(n) {
 }
 
 // ---------------- HUD
+
+// ---- Bảng hiệu ứng đang có trong trận
+const MOD_LABEL = { atkPct: ['Công', 1], crit: ['Bạo kích', 1], critDmg: ['ST bạo kích', 1], skillPct: ['ST chiêu thức', 1], kc: ['Giảm sát thương nhận', 1], mpRegen: ['Hồi nội công', 1], hpPct: ['Máu tối đa', 1], aspdPct: ['Tốc đánh', 1], ammo: ['Số đòn trước khi điều khí', 0], freeShot: ['Đòn không tốn lượt', 1], dkSpd: ['Tốc điều khí', 1], healPct: ['Hiệu quả hồi máu', 1] };
+const MECH_TXT = { traps: 'Bẫy trận đồ: mặt đất có bẫy gây sát thương theo thời gian.', summon: 'Triệu hồi: quái gọi thêm đồng bọn.', multiphase: 'Vạn Tiên Trận: boss đổi giai đoạn sẽ bất tử 2 giây và giáng sấm.', speed: 'Đại náo Thiên Cung: quái nhanh hơn 35%.', fire: 'Hoả Diệm Sơn: lửa thiêu trên sân.', fog: 'Thuỷ tộc: nước đục che tầm nhìn phía xa.' };
+function showBuffs() {
+  if (!B || B.over) return; const wasPaused = B.paused; B.paused = true;
+  const ids = [...B.heroes, ...B.deploy].filter(h => !h.clone).map(h => h.id), info = teamInfo(ids), cap = B.cap, cs = cap ? capSkill(cap.id) : null;
+  const pct = v => (v > 0 ? '+' : '') + Math.round(v * 100) + '%';
+  const sec = (t, body) => body ? `<section><h4>${t}</h4>${body}</section>` : '';
+  const row = (b, d, cls) => `<div class="bf ${cls || ''}"><b>${b}</b><span>${d}</span></div>`;
+  const capH = cap ? row('👑 ' + esc(cap.name) + ' · ' + esc(cs.n), esc(cs.d) + ' (cả đội)') + row('Riêng đội trưởng', '+20% tốc đánh · +10% sát thương chiêu và tuyệt kỹ · chạm quái để nhắm mục tiêu') : '';
+  const facH = info.facs.filter(f => f.pct).map(f => row(FACTIONS[f.f] + ' × ' + f.n, pct(f.pct) + ' máu và công')).join('');
+  const bondH = info.bonds.map(b => row(esc(b.name), esc(b.desc))).join('');
+  const cpH = B.slots.map(sl => { const c = cpOf(sl.id); return c ? row(esc(c.name) + (sl.lv > 1 ? ' · Cấp ' + sl.lv : '') + (sl.e2 ? ' · Tiến bậc 2' : ''), esc((c.desc || '').replace(/ ?\[VLĐMT\]/g, ''))) : ''; }).join('');
+  const modH = Object.keys(MOD_LABEL).filter(k => B.mods[k]).map(k => row(MOD_LABEL[k][0], MOD_LABEL[k][1] ? pct(B.mods[k]) : '+' + B.mods[k], 'num')).join('');
+  const tierH = [...B.heroes, ...B.deploy].filter(h => !h.clone && trongOf(h) > 1).map(h => row(esc(h.name) + ' · ' + (trongOf(h) >= 5 ? 'Đại thành' : 'Tầng ' + trongOf(h)), (h.d.tang || []).slice(0, trongOf(h) - 1).map(t => esc(t.d)).join(' · '))).join('');
+  const tr = new Set(); for (const w of B.st.waves || []) for (const [t] of w.list || []) if (ENEMIES[t] && ENEMIES[t].trait) tr.add(ENEMIES[t].trait);
+  const stH = (B.mech && MECH_TXT[B.mech] ? row('Cơ chế ải', MECH_TXT[B.mech]) : '') + [...tr].map(k => row(TRAIT_INFO[k].ico + ' ' + TRAIT_INFO[k].name, esc(TRAIT_INFO[k].desc))).join('');
+  const wrap = document.createElement('div'); wrap.className = 'modal buff-modal';
+  wrap.innerHTML = `<div class="buff-box"><div class="cp-title"><span>Hiệu ứng đang có</span><small>Trận đang tạm dừng</small></div><div class="buff-body">
+    ${sec('Đội trưởng', capH)}${sec('Cộng hưởng phe', facH)}${sec('Duyên phận', bondH)}${sec('Công pháp đã học', cpH || '<small>Chưa học công pháp nào. Nhặt Thiên Thư hoặc lên cấp để chọn.</small>')}
+    ${sec('Tổng chỉ số cộng thêm', modH)}${sec('Tầng tướng', tierH)}${sec('Ải này', stH)}</div>
+    <div class="res-btns"><button class="btn gold" id="bfClose">Tiếp tục</button></div></div>`;
+  ui.appendChild(wrap);
+  const close = () => { wrap.remove(); if (B) B.paused = wasPaused; };
+  $('#bfClose').onclick = close; wrap.addEventListener('click', e => { if (e.target === wrap) close(); });
+}
 function showHUD() {
   ui.innerHTML = `<div class="hud">
     <div id="pad"></div>
@@ -3579,6 +3606,7 @@ function showHUD() {
         <div class="h2-waves" id="hWaves">${B.st.waves.map(w => `<i class="${w.boss ? 'boss' : ''}"></i>`).join('')}</div></div>
       <div class="h2-gate" id="hGateBox"><span class="h2-gico">⛩</span><div class="h2-gbar"><i id="hGate"></i><em id="hGateTxt"></em></div></div>
       <div class="h2-mini"><span class="ht-time" id="hTime">0:00</span><span class="h2-lv"><b id="hLv">Cấp 1</b><span class="bar"><i id="hXp"></i></span></span></div>
+      <button class="ic-btn" id="bBuff" title="Hiệu ứng đang có"><svg viewBox="0 0 24 24"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 15.6 6.6 18.5l1.2-6L3.3 8.3l6.1-.7z" fill="currentColor"/></svg><small>Hiệu ứng</small></button>
       <button class="ic-btn" id="bAuto" title="Tự động"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 7.4 5H17l3.5 4 3.5-4h-2.1A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8zm0 16a8 8 0 0 1-7.4-5H7l-3.5-4L0 15h2.1A10 10 0 0 0 22 12h-2a8 8 0 0 1-8 8z" fill="currentColor"/></svg><small>Tự động</small></button>
       <button class="ic-btn sp" id="bSpeed" title="Tốc độ">x1</button>
       <button class="ic-btn" id="bMute" title="Âm thanh">${S.mute ? `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>` : `<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`}</button>
@@ -3590,6 +3618,7 @@ function showHUD() {
   const pad = $('#pad');
   pad.addEventListener('pointerdown', e => { const l = logical(e); tapTarget({ x: GATE_X + (l.x - GATE_X) / VIEW_Z, y: H * VIEW_PY + (l.y - H * VIEW_PY) / VIEW_Z }); const h = $('#hintTap'); if (h) h.remove(); });
   $('#bPause').onclick = openPause;
+  $('#bBuff').onclick = showBuffs;
   $('#bMute').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); $('#bMute').innerHTML = S.mute ? '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'; audioOn(); };
   setTimeout(() => { const h = $('#hintTap'); if (h) h.classList.add('gone'); }, 6000);
   $('#bAuto').onclick = () => { B.auto = !B.auto; $('#bAuto').classList.toggle('on', B.auto); };
@@ -4087,6 +4116,7 @@ function route() {
         const u = B.heroes.find(x => x.id === um[1] && !x.dead);
         if (u) { u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; cast(u, 'ult'); for (let i = 0; i < +um[2] * 60; i++) update(1 / 60); }
       }
+      if (/(?:^|&)buffs(?:&|$)/.test(h)) setTimeout(showBuffs, 300);   // (chụp thử) mở bảng hiệu ứng
       const tm = h.match(/(?:^|&)tier=(\d)/);   // (chụp thử) đặt tầng cho cả đội
       if (tm) for (const u of [...B.heroes, ...B.deploy]) { u.trong = +tm[1]; rebuildTang(u); }
       const bm = h.match(/(?:^|&)boss=(\w+)/);   // (chụp thử) gọi boss ngay

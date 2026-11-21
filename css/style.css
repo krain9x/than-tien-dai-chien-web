@@ -609,3 +609,12 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .team .tm.dthanh .tm-trong { background: linear-gradient(#fff6c8, #ff9a2e); }
 
 .cp-title .cp-ico { width: 46px; height: 46px; object-fit: contain; vertical-align: middle; margin-right: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); animation: hmPulse 1.6s ease-in-out infinite; }
+
+.buff-modal { display: grid; place-items: center; }
+.buff-box { width: min(640px, 94vw); max-height: 86vh; display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(#3a1c10, #1e0d07); border: 2px solid #e0b040; box-shadow: 0 10px 40px rgba(0,0,0,.6); color: #ffe9b0; }
+.buff-body { overflow-y: auto; display: grid; gap: 10px; padding-right: 4px; }
+.buff-body h4 { margin: 0 0 4px; color: #ffd34d; font-size: 14px; letter-spacing: .03em; border-bottom: 1px solid rgba(224,176,64,.35); padding-bottom: 3px; }
+.buff-body .bf { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 8px; padding: 4px 0; font-size: 13px; border-bottom: 1px dashed rgba(224,176,64,.15); }
+.buff-body .bf b { color: #fff3c0; } .buff-body .bf span { color: #e8d2b0; line-height: 1.35; min-width: 0; }
+.buff-body .bf.num span { color: #8aff9a; font-weight: 800; }
+.buff-body small { color: #c9a98a; }
