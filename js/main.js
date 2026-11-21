@@ -88,6 +88,8 @@ function drawEnemyPose(u, alpha) {
   const img = P[n] || P.master; if (!img) return false;
   const h = spriteH(u), k = h / D.h, bob = u.walk ? Math.abs(Math.sin(u.t * 9)) * 2 : Math.sin(u.t * 2.4) * 1;
   ctx.save(); ctx.scale(u.f, 1); ctx.globalAlpha *= alpha;
+  const FORM = u.d.forms && u.d.forms[(u.phase || 1) - 1];   // boss biến hình: mỗi giai đoạn một dáng (màu/cỡ)
+  if (FORM) { ctx.filter = FORM.f; ctx.scale(FORM.s, FORM.s); }
   if (u.hurt > 0) ctx.filter = 'brightness(2) saturate(0.6)';
   if (n === 'attack') ctx.translate(8, 0);
   ctx.drawImage(img, -D.gx * k, -D.gy * k - bob, img.width * k, img.height * k);
@@ -311,7 +313,7 @@ function startBattleNow(si) {
     st, si, time: 0, wave: -1, waveStart: 0, nextT: null, spawnQ: [], waveDef: null, waveDropped: false,
     heroes: [], enemies: [], projs: [], fx: [], parts: [], floaters: [], drops: [], zones: [], warns: [],
     mods: {}, cp: {}, gate: { hp: st.gate, max: st.gate }, gateHurt: 0,
-    mech: (CHAPTERS[st.chap] || {}).mk || null, mechT: 4, fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
+    stat: {}, mech: (CHAPTERS[st.chap] || {}).mk || null, mechT: 4, fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
     cutin: null, rerolls: 2, soul: 0, amMode: 'duong', amT: 5, gateT: 10, field: {}, slots: [], kcT: 12, lv: 1, xp: 0, pickQ: [], dodgeCd: 0, deaths: 0, kills: 0, banner: null, endT: null, win: false, joy: null,
     bg: (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
   };
@@ -364,6 +366,7 @@ function floater(x, y, txt, color, size, crit) {
   B.floaters.push({ x: x + rand(-6, 6), y, txt: String(txt), color: color || '#fff', size: size || 16, t: 0, crit: !!crit });
 }
 function particles(x, y, color, n, spd, size) {
+  if (gfxLow()) n = Math.ceil(n / 3);
   for (let i = 0; i < n; i++) {
     const a = Math.random() * TAU, s = rand(0.3, 1) * (spd || 160);
     B.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, life: rand(0.35, 0.7), max: 0.7, color, size: rand(2, size || 4.5) });
@@ -414,6 +417,11 @@ function dealDmg(src, tgt, mult, kind) {
   }
   let rem = a;
   if (tgt.shield > 0) { const s = Math.min(tgt.shield, rem); tgt.shield -= s; rem -= s; }
+  if (B.stat) {   // thống kê sau trận (phân thân tính cho tướng gốc)
+    const sid = src.side === 'h' ? src.id : null, tid = tgt.side === 'h' ? tgt.id : null, dmg = Math.min(a, tgt.hp + (tgt.shield || 0));
+    if (sid) { const r = B.stat[sid] || (B.stat[sid] = { d: 0, t: 0, h: 0 }); r.d += dmg; }
+    if (tid) { const r = B.stat[tid] || (B.stat[tid] = { d: 0, t: 0, h: 0 }); r.t += dmg; }
+  }
   tgt.hp -= rem; tgt.hurt = 0.1; if (rem > maxHp(tgt) * 0.04) tgt.hitT = 0.35;
   if (kind === 'ult' && tgt.side === 'e' && !tgt.boss && !tgt.dead) { tgt.x = Math.min(W + 30, tgt.x + 34); tgt.hitT = 0.35; }   // tuyệt kỹ hất văng
   if (crit && src.side === 'h') sfx('crit');
@@ -470,6 +478,7 @@ function adLose(u, amt) {
 function healAmD(src, u, amt) {   // hồi máu của tướng; Lưỡng Nghi: gây sát thương quái gần; hồi thừa → khiên
   if (!u || u.dead) return;
   const room = maxHp(u) - u.hp;
+  if (B && B.stat && src && src.side === 'h') { const r = B.stat[src.id] || (B.stat[src.id] = { d: 0, t: 0, h: 0 }); r.h += Math.max(0, Math.min(amt, room)); }
   healU(u, amt, true);
   if (M('overShield') && amt > room) { u.shield = Math.max(u.shield, amt - room); u.shieldT = 5; }
   if (M('healDmg')) { const e = nearestEnemy(u, 500); if (e) rawDmg(e, amt * M('healDmg'), '#7dffb0'); }
@@ -1279,10 +1288,13 @@ function bossSpecial(e, dt) {
       e.phase++;
       if (nx.enrage) e.buffs.push({ k: 'aspd', v: nx.enrage, t: 9999 });
       if (nx.heal) e.hp = Math.min(maxHp(e), e.hp + maxHp(e) * nx.heal);
+      if (B.mech === 'multiphase') {   // Vạn Tiên Trận: mỗi lần đổi giai đoạn boss bất tử 2 giây và giáng sấm lên cả đội
+        e.inv = 2; for (const h of B.heroes) if (!h.dead) B.warns.push({ x: h.x, y: h.y, r: 60, t: 1.6, dur: 1.6, src: e, mult: 1.6 });
+      }
       if (nx.shield) { e.shield = Math.max(e.shield || 0, maxHp(e) * nx.shield); e.shieldT = 30; }
       B.banner = { text: nx.text, sub: nx.sub, t: 0, boss: true }; B.shake = 0.5;
       if (nx.summon) for (let i = 0; i < nx.summon[1]; i++) B.enemies.push(makeEnemy(nx.summon[0], B.st.lvl, clamp(e.x + rand(-120, 120), 30, W - 30), e.y + rand(-40, 40)));
-      if (typeof fxBurst === 'function') { fxBurst(e.x, e.y - 60, 'burst_gold', 300); fxBurst(e.x, e.y - 40, 'petal', 260); }
+      if (typeof fxBurst === 'function') { fxBurst(e.x, e.y - 60, e.d.forms ? 'smoke' : 'burst_gold', 320); fxBurst(e.x, e.y - 40, 'petal', 260); }
     }
   } else if (e.phase === 1 && e.hp < maxHp(e) * 0.5) {
     e.phase = 2;
@@ -1358,6 +1370,13 @@ function tutor(key, text) {
 }
 function updateMech(dt) {   // cơ chế riêng chương (GDD §2): bẫy (Thập Tuyệt Trận), lửa (Hoả Diệm Sơn)
   if (!B.mech || B.over) return;
+  if (B.mech === 'summon') {   // Kim Ngâu & Tam Tiêu: boss gọi quái theo đợt, mỗi đợt đông hơn
+    const bo = B.enemies.find(e => e.boss && !e.dead && e.entered);
+    if (bo) { B.mechT -= dt; if (B.mechT <= 0) { B.mechT = 11; bo.callN = (bo.callN || 1) + 1; const t = (CHAPTERS[B.st.chap].mobs || {}).tieuyeu || 'tieuyeu';
+      for (let i = 0; i < Math.min(6, bo.callN); i++) B.enemies.push(makeEnemy(t, B.st.lvl, clamp(bo.x + rand(-140, 60), 40, W - 30), bo.y + rand(-60, 60)));
+      B.banner = { text: 'Boss gọi viện binh!', sub: 'Đợt ' + bo.callN, t: 0, small: true }; } }
+    return;
+  }
   if (B.mech === 'traps' || B.mech === 'fire') {
     B.mechT -= dt; if (B.mechT > 0) return;
     const src = B.enemies.find(e => !e.dead); const live = B.heroes.filter(h => !h.dead && !h.clone);
@@ -1473,7 +1492,7 @@ function drawUnit(u) {
     const q = u.atkAnim, lunge = (q < 0.35 ? Math.sin(q / 0.35 * Math.PI / 2) : Math.max(0, 1 - (q - 0.35) / 0.5)) * (LUNGE[ATK_STYLE[u.id].pat] || 8);
     ctx.translate(u.f * lunge, 0);
     if (lunge > 3) {   // bóng mờ kéo theo phía sau
-      B.ghosts.push({ id: u.id, x: u.x + u.f * lunge, y: u.y, f: u.f, t: 0, st: rigState(u) });
+      if (!gfxLow()) B.ghosts.push({ id: u.id, x: u.x + u.f * lunge, y: u.y, f: u.f, t: 0, st: rigState(u) });
     }
   }
   if (u.side === 'h' && u.dead && !hasSkel(u.id)) ctx.rotate(-1.35);   // rig xương có động tác ngã riêng
@@ -1728,7 +1747,7 @@ const PFX = {
 function drawProjFX(p) {
   const S = PFX[p.type]; if (!S || p.side !== 'h') return;
   const h = p.hist || [];
-  if (h.length > 1) {   // dải đuôi: nhiều đoạn thon dần, hoà sáng
+  if (h.length > 1 && !gfxLow()) {   // dải đuôi: nhiều đoạn thon dần, hoà sáng
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
     for (let i = 1; i < h.length; i++) {
       const q = i / h.length; ctx.globalAlpha = q * 0.55; ctx.strokeStyle = S.trail; ctx.lineWidth = (p.r || 8) * 1.6 * q;
@@ -1755,7 +1774,7 @@ function drawUltTex(f) {
   ctx.globalAlpha = a; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, S * 0.62, 0, TAU); ctx.fill();
   ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * 0.85; ctx.drawImage(im, x - S / 2, y - S / 2, S, S); ctx.restore();
 }
-function fxBurst(x, y, name, size, a) { B.fxb.push({ x, y, name, size, a: a || 0, t: 0, dur: 0.32 }); }
+function fxBurst(x, y, name, size, a) { if (gfxLow() && (B.fxb.length > 10 || name === 'flare' || name === 'smoke')) return; B.fxb.push({ x, y, name, size, a: a || 0, t: 0, dur: 0.32 }); }
 function drawFxBursts() {
   for (const b of B.fxb) { const k = b.t / b.dur; fxGlow(b.name, b.x, b.y, b.size * (0.55 + 0.75 * Math.sqrt(k)), b.a + k * 0.6, (1 - k) * 1.1); }
 }
@@ -2221,10 +2240,16 @@ function renderHome() {
 
 // ------------------------------------------------------------------ LOOP
 let lastT = performance.now();
+let _fpsAcc = 0, _fpsN = 0, _fpsT = 0;
+function gfxLow() { return S.gfx === 'low' || (S.gfx !== 'high' && window.__autoLow); }
 function frame(now) {
   let dt = Math.min(0.05, (now - lastT) / 1000);
   lastT = now;
   homeT += dt;
+  if (B && !B.paused && !B.over && dt > 0) {   // đo FPS trong trận: dưới 40 suốt 3 giây → tự giảm hiệu ứng (chế độ Tự động)
+    _fpsAcc += dt; _fpsN++; _fpsT += dt;
+    if (_fpsT >= 3) { const fps = _fpsN / _fpsAcc; if (fps < 40 && !window.__autoLow) { window.__autoLow = true; if (S.gfx !== 'high') toast('Đã giảm hiệu ứng cho mượt hơn'); } _fpsAcc = _fpsN = _fpsT = 0; }
+  }
   if (B && !B.paused) {
     if (B.hitstop > 0) { B.hitstop -= dt; dt = 0; } // đứng hình khi trúng đòn mạnh
     if (B.slowmo > 0) { B.slowmo -= dt; dt *= 0.35; }
@@ -2589,11 +2614,13 @@ function openPause() {
   wrap.innerHTML = `<h3>Tạm dừng</h3>
     <div class="cp-mini">${B.slots.length ? B.slots.map(sl => { const c = cpOf(sl.id); return `<div><b>${esc(sl.tier === 3 ? c.evo.name : c.name)}</b> <i>${SYS_NAME[c.sys]} · ${CP_RAR[sl.tier].name}${c.lp ? ' · ' + LUUPHAI[c.lp].name : ''}</i><small>${dsc(c.desc)}${sl.tier === 3 ? ' · ' + dsc(c.evo.desc) : ''}</small></div>`; }).join('') : '<small>Chưa có công pháp</small>'}</div>
     <button class="btn gold" id="pRes">Tiếp tục</button>
+    <button class="btn" id="pGfx">Đồ hoạ: ${{ auto: 'Tự động', high: 'Cao', low: 'Thấp' }[S.gfx || 'auto']}</button>
     <button class="btn" id="pRetry">Đánh lại</button>
     <button class="btn red" id="pQuit">Rời trận</button>`;
   ui.appendChild(wrap);
   $('#pRes').onclick = () => { wrap.remove(); B.paused = false; lastT = performance.now(); };
   $('#pRetry').onclick = () => { const si = B.si; wrap.remove(); enterStage(si); };
+  $('#pGfx').onclick = () => { S.gfx = { auto: 'high', high: 'low', low: 'auto' }[S.gfx || 'auto']; save(); $('#pGfx').textContent = 'Đồ hoạ: ' + { auto: 'Tự động', high: 'Cao', low: 'Thấp' }[S.gfx]; };
   $('#pQuit').onclick = () => { wrap.remove(); showStages(); B = null; };
 }
 function showResult() {
@@ -2606,7 +2633,17 @@ function showResult() {
     ${win ? `<div class="res-stars">${[0, 1, 2].map(i => `<span class="${i < B.stars ? 'on' : ''}" style="animation-delay:${0.3 + i * 0.25}s">★</span>`).join('')}</div>
       <ul class="res-cond"><li class="on">Qua ải</li><li class="${B.deaths === 0 ? 'on' : ''}">Không tướng nào ngã</li><li class="${B.time <= B.st.par ? 'on' : ''}">Dưới ${B.st.par} giây (${t}s)</li></ul>`
       : `<p class="res-reason">${esc(B.reason)}</p><p class="hint">Gợi ý: nâng cấp tướng, đổi đội trưởng, hoặc nhặt Linh Phù sớm để gọi đủ đội.</p>`}
-    <div class="res-team">${B.ids.map(id => `<img src="${por(id, 56)}">`).join('')}</div>
+    ${(() => {   // bảng thống kê: sát thương / chịu đòn / hồi máu, MVP
+      const ids = Object.keys(B.stat).filter(id => HEROES[id]); if (!ids.length) return `<div class="res-team">${B.ids.map(id => `<img src="${por(id, 56)}">`).join('')}</div>`;
+      const mx = k => Math.max(1, ...ids.map(id => B.stat[id][k])), md = mx('d'), mt = mx('t'), mh = mx('h');
+      const mvp = ids.reduce((a, b) => (B.stat[b].d + B.stat[b].h * 0.8 + B.stat[b].t * 0.3 > B.stat[a].d + B.stat[a].h * 0.8 + B.stat[a].t * 0.3 ? b : a));
+      return `<div class="res-stat">${ids.sort((a, b) => B.stat[b].d - B.stat[a].d).map(id => { const r = B.stat[id];
+        return `<div class="rs-row ${id === mvp ? 'mvp' : ''}"><img src="${por(id, 40)}"><b>${esc(HEROES[id].name)}${id === mvp ? ' <em>MVP</em>' : ''}</b>
+          <span class="rs-b d"><i style="width:${r.d / md * 100}%"></i><small>${fmt(r.d)}</small></span>
+          <span class="rs-b t"><i style="width:${r.t / mt * 100}%"></i><small>${fmt(r.t)}</small></span>
+          <span class="rs-b h"><i style="width:${r.h / mh * 100}%"></i><small>${fmt(r.h)}</small></span></div>`; }).join('')}
+        <div class="rs-leg"><span class="d">Sát thương</span><span class="t">Chịu đòn</span><span class="h">Hồi máu</span></div></div>`;
+    })()}
     <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span></div>
     <div class="res-btns">
       <button class="btn" id="rHome">Về sảnh</button>
@@ -2813,6 +2850,7 @@ function route() {
         if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; }
       }
       if (secs) { B.banner = null; B.cutin = null; updateHUD(); }
+      if (/(^|&)end(&|$)/.test(h) && !B.over) { ui.querySelectorAll(".modal").forEach(x => x.remove()); endBattle(true); B.endT = null; B.paused = false; showResult(); }   // (chụp thử) kết thúc trận để xem bảng thống kê
       // &ult=ngokhong:0.9 — (chụp thử) cho tướng tung tuyệt kỹ rồi tua thêm 0.9 giây
       if (/(^|&)cp(&|$)/.test(h)) openCongPhap();
       if (/(^|&)cpbg(&|$)/.test(h)) { openCongPhap(); openBachGiam(); }   // (chụp thử) mở Thiên Thư

@@ -539,7 +539,7 @@ const ENEMIES = {
   thanhanhboss: { name: 'Thánh Anh Đại Vương', hp: 32000, atk: 135, def: 90, aspd: 0.8, range: 70, move: 48, el: 'hoa', boss: true,
     phases: [{ at: 0.5, text: 'Tam Muội Chân Hoả!', sub: 'Gọi hoả hồn, tốc đánh +30%', summon: ['hoahon', 4], enrage: 0.3 }],
     look: { style: 'brute', skin: '#c9a27a', hair: '#2a1a10', outfit: '#6a1a2a', outfit2: '#ffcc33', belt: '#ffcc33', weapon: 'club', evil: true, size: 2.0 } },
-  bachcotboss: { name: 'Bạch Cốt Tinh', hp: 30000, atk: 130, def: 90, aspd: 0.8, range: 70, move: 48, el: 'tho', boss: true,
+  bachcotboss: { name: 'Bạch Cốt Tinh', forms: [{ f: 'sepia(0.5) hue-rotate(-15deg) saturate(1.3)', s: 0.9 }, { f: 'grayscale(0.6) brightness(0.9)', s: 0.95 }, { f: 'hue-rotate(40deg) saturate(1.6) brightness(1.1)', s: 1.05 }, { f: 'none', s: 1.2 }], hp: 30000, atk: 130, def: 90, aspd: 0.8, range: 70, move: 48, el: 'tho', boss: true,
     phases: [{ at: 0.75, text: 'Hoá thân lần 1: Thôn nữ', sub: 'Hồi 10% máu', heal: 0.1, summon: ['khaulau', 3] }, { at: 0.5, text: 'Hoá thân lần 2: Lão bà', sub: 'Hồi 10% máu', heal: 0.1, summon: ['thiyeu', 3] }, { at: 0.25, text: 'Hoá thân lần 3: Bạch Cốt', sub: 'Lộ nguyên hình, tốc đánh +40%', heal: 0.1, enrage: 0.4 }],
     look: { style: 'brute', skin: '#c9a27a', hair: '#2a1a10', outfit: '#6a1a2a', outfit2: '#ffcc33', belt: '#ffcc33', weapon: 'club', evil: true, size: 2.0 } },
   kimthach: { name: 'Kim Thạch Yêu Vương', hp: 36000, atk: 135, def: 90, aspd: 0.8, range: 70, move: 48, el: 'tho', boss: true,
