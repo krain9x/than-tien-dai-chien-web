@@ -244,9 +244,9 @@ function makeEnemy(type, lvl, x, y) {
   const d = ENEMIES[type], m = 1 + 0.32 * (lvl - 1), spd = B && B.mech === 'speed' ? 1.35 : 1;   // chương Đại náo Thiên Cung: quái nhanh hơn
   const e = {
     side: 'e', id: type, d, look: d.look, name: d.name, el: d.el, level: lvl,
-    base: { hp: d.hp * m, atk: d.atk * m, def: d.def * (1 + 0.1 * (lvl - 1)) },
+    base: { hp: d.hp * m * ((B && B.st.ehp) || 1) * (d.boss && B && B.st.raid ? 60 : 1), atk: d.atk * m * ((B && B.st.eatk) || 1), def: d.def * (1 + 0.1 * (lvl - 1)) },
     bonus: { hpPct: 0, atkPct: 0, crit: 0, dmgTaken: 0 },
-    aspd: d.aspd, range: d.range, move: d.move * spd, ranged: !!d.ranged, proj: d.proj,
+    aspd: d.aspd, range: d.range, move: d.move * spd * ((B && B.st.espd) || 1), ranged: !!d.ranged, proj: d.proj,
     x, y, hp: d.hp * m, cdA: rand(0.3, 1.2), buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0,
     shield: 0, shieldT: 0, inv: 0,
     dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
@@ -301,14 +301,14 @@ function applyBonuses(u, info) {
 
 function startBattle(si) {   // nạp rig + tư thế của đội trước khi vào trận
   const need = S.lineup.filter(id => S.owned[id]);
-  const en = stageEnemyIds(STAGES[si]);
+  const en = stageEnemyIds(typeof si === 'object' ? si : STAGES[si]);
   if (need.every(id => _heroLoaded[id] && _heroLoaded[id].done) && en.every(id => !(window.EPOSE || {})[id] || (_enemyLoaded[id] && _enemyLoaded[id].done))) { startBattleNow(si); return; }
   let ov = document.getElementById('loadov');
   if (!ov) { ov = document.createElement('div'); ov.id = 'loadov'; ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,24,12,.72);color:#ffe9b0;font:800 22px Baloo 2,sans-serif;z-index:99'; ov.textContent = 'Đang tải tướng…'; document.body.appendChild(ov); }
   Promise.all([ensureHeroAssets(need), ensureEnemyAssets(en)]).then(() => { need.forEach(id => { _heroLoaded[id].done = true; }); en.forEach(id => { if (_enemyLoaded[id]) _enemyLoaded[id].done = true; }); ov.remove(); startBattleNow(si); });
 }
 function startBattleNow(si) {
-  const st = STAGES[si];
+  const st = typeof si === 'object' ? si : STAGES[si];
   const ids = S.lineup.filter(id => S.owned[id]);
   if (!ids.length) { toast('Cần ít nhất 1 tướng trong đội hình'); return; }
   B = {
@@ -327,6 +327,9 @@ function startBattleNow(si) {
     if (i < 2) { takeSlot(u); B.heroes.push(u); if (i === 0) B.cap = u; } else B.deploy.push(u);   // mở trận: đội trưởng + 1 tướng; còn lại ra bằng Linh Phù
   });
   showHUD();
+  if (st.hmods) addMods(st.hmods);
+  if (st.gateK) { B.gate.hp *= st.gateK; B.gate.max *= st.gateK; }
+  if (st.bookN) for (let i = 0; i < st.bookN; i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1200 + i * 300);
   nextWave();
   { let extra = 0; for (const sy of Object.keys(SYS_NAME)) { const b = btBonus(sy); if (b.all && b.tot >= 15) extra++; }   // Hợp Nhất: thêm Thiên Thư đầu trận
     for (let i = 0; i < Math.min(2, extra); i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1500 + i * 300); }
@@ -430,6 +433,7 @@ function dealDmg(src, tgt, mult, kind) {
     if (sid) { const r = B.stat[sid] || (B.stat[sid] = { d: 0, t: 0, h: 0 }); r.d += dmg; }
     if (tid) { const r = B.stat[tid] || (B.stat[tid] = { d: 0, t: 0, h: 0 }); r.t += dmg; }
   }
+  if (tgt.boss && src.side === 'h' && B.st.raid) B.raidDmg = (B.raidDmg || 0) + Math.min(rem, tgt.hp);
   tgt.hp -= rem; tgt.hurt = 0.1; if (rem > maxHp(tgt) * 0.04) tgt.hitT = 0.35;
   if (kind === 'ult' && tgt.side === 'e' && !tgt.boss && !tgt.dead) { tgt.x = Math.min(W + 30, tgt.x + 34); tgt.hitT = 0.35; }   // tuyệt kỹ hất văng
   if (crit && src.side === 'h') sfx('crit');
@@ -1448,6 +1452,7 @@ function update(dt) {
     B.nextT = B.time; // sóng ra theo thời gian, không chờ dọn xong (kiểu VLĐMT)
   }
   if (B.nextT != null && B.time >= B.nextT && !B.over) nextWave();
+  if (B.st.raid && !B.over && B.time >= B.st.raid) endBattle(true, 'Hết giờ');
   if (B.gate.hp <= 0) { B.gate.hp = 0; if (!offerRevive('gate')) endBattle(false, 'Cổng thành đã vỡ'); }
   else if (!B.heroes.some(h => !h.dead && !h.clone)) { if (!offerRevive('team')) endBattle(false, 'Cả đội đã trọng thương'); }
 }
@@ -1472,12 +1477,16 @@ function offerRevive(why) {   // hồi sinh 1 lần/trận bằng ngọc (sau n�
 }
 function endBattle(win, reason) {
   if (B.over) return;
+  if (B.st.raid) win = true;
   B.over = true; B.win = win; B.reason = reason || '';
   B.endT = win ? 1.2 : 1.0;
   B.stars = win ? 1 + (B.deaths === 0 ? 1 : 0) + (B.time <= B.st.par ? 1 : 0) : 0;
   B.reward = { ngoc: 0, vang: 0 };
-  qAdd('fight'); if (win) qAdd('win'); qAdd('kill', B.kills || 0);
+  if (B.st.raid) { const d = Math.round(B.raidDmg || 0), wk = weekKey(); S.raidBest = S.raidBest || {}; if (d > (S.raidBest[wk] || 0)) S.raidBest[wk] = d;
+    const tier = RAID_TIER.filter(t => d >= t[0]).pop(); B.st.reward = { ngoc: tier ? tier[1] : 20, vang: Math.round(d / 50) }; B.raidScore = d; lbPush(); win = true; }
+  qAdd('fight'); if (win) qAdd('win'); wqAdd('fight'); if (win) wqAdd('win'); if (B.st.tower && win) wqAdd('tower'); if (B.st.raid) wqAdd('raid'); qAdd('kill', B.kills || 0);
   if (win) {
+    if (B.st.tower) { S.tower = Math.max(S.tower || 0, B.st.floor); lbPush(); }
     const first = !S.cleared[B.st.id];
     B.reward.ngoc = first ? B.st.reward.ngoc : Math.round(B.st.reward.ngoc * 0.2);
     B.reward.vang = first ? B.st.reward.vang : Math.round(B.st.reward.vang * 0.5);
@@ -2355,6 +2364,7 @@ function showHome() {
       <button class="hm-ic" id="hQuest"><img src="art/ui/ic_quest.webp">${qDot ? '<i class="dot"></i>' : ''}<span>Nhiệm Vụ</span></button>
       <button class="hm-ic" id="hGift"><img src="art/ui/ic_gift.webp">${(() => { const L = loginState(); return LOGIN7.some((r, i) => i < L.d && !L.got.includes(i)) ? '<i class="dot"></i>' : ''; })()}<span>Tân Thủ</span></button>
       <button class="hm-ic" id="hSave"><img src="art/ui/ic_book.webp"><span>Dữ liệu</span></button>
+      <button class="hm-ic" id="hEv"><img src="art/ui/ic_gift.webp">${monthState().last !== dayKey() ? '<i class="dot"></i>' : ''}<span>Sự Kiện</span></button>
     </div>
     <button class="hm-idle" id="hIdle"><img src="art/ui/ic_chest.webp">${ir.m >= 1 ? '<i class="dot"></i>' : ''}<b>Treo máy</b><small>${icon('vang')}${fmt(ir.vang)}</small></button>
     <button class="hm-battle" id="hFight"><img src="art/ui/ic_battle.webp"><b>Chiến Dịch</b><small>Ải ${nx.id} · ${esc(nx.name)}</small></button>
@@ -2363,6 +2373,9 @@ function showHome() {
       <button id="hLineup"><img src="art/ui/ic_team.webp"><span>Đội Hình</span></button>
       <button id="hGacha"><img src="art/ui/ic_summon.webp"><span>Chiêu Mộ</span></button>
       <button id="hBt"><img src="art/ui/ic_book.webp"><span>Tàng Kinh</span></button>
+      <button id="hTower"><img src="art/ui/ic_battle.webp"><span>Tháp</span></button>
+      <button id="hRaid"><img src="art/ui/ic_chest.webp"><span>Boss Ngày</span></button>
+      <button id="hRank"><img src="art/ui/ic_team.webp"><span>Xếp Hạng</span></button>
     </nav>
     <button class="link hm-reset" id="hReset">Xoá dữ liệu chơi thử</button>
     ${(!IS_APP && IS_IOS && !S.a2hs) ? '<div class="a2hs" id="a2hs">Để chơi full màn hình: bấm <b>Chia sẻ</b> ⬆ rồi <b>Thêm vào MH chính</b>. <u>Đóng</u></div>' : ''}
@@ -2373,7 +2386,8 @@ function showHome() {
   $('#hGacha').onclick = showGacha;
   $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle;
-  $('#hGift').onclick = showGift; $('#hSave').onclick = showSaveTransfer;
+  $('#hGift').onclick = showGift; $('#hSave').onclick = showSaveTransfer; $('#hEv').onclick = showEvents;
+  $('#hTower').onclick = showTower; $('#hRaid').onclick = showRaid; $('#hRank').onclick = () => showRank();
   $('#hAcc').onclick = async () => {
     if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
     if (Cloud.user) { if (confirm('Đăng xuất? Dữ liệu vẫn được giữ trên mạng và trên máy này.')) { await Cloud.signOut(); showHome(); } return; }
@@ -2692,8 +2706,8 @@ function showResult() {
   const wrap = document.createElement('div');
   wrap.className = 'modal result-modal ' + (win ? 'win' : 'lose');
   const t = Math.floor(B.time);
-  const next = win && B.si < STAGES.length - 1;
-  wrap.innerHTML = `<div class="res-title">${win ? 'Chiến Thắng' : 'Thất Bại'}</div>
+  const next = win && typeof B.si === 'number' && B.si < STAGES.length - 1;
+  wrap.innerHTML = `<div class="res-title">${B.st.raid ? 'Kết Thúc' : win ? 'Chiến Thắng' : 'Thất Bại'}</div>
     ${win ? `<div class="res-stars">${[0, 1, 2].map(i => `<span class="${i < B.stars ? 'on' : ''}" style="animation-delay:${0.3 + i * 0.25}s">★</span>`).join('')}</div>
       <ul class="res-cond"><li class="on">Qua ải</li><li class="${B.deaths === 0 ? 'on' : ''}">Không tướng nào ngã</li><li class="${B.time <= B.st.par ? 'on' : ''}">Dưới ${B.st.par} giây (${t}s)</li></ul>`
       : `<p class="res-reason">${esc(B.reason)}</p><p class="hint">Gợi ý: nâng cấp tướng, đổi đội trưởng, hoặc nhặt Linh Phù sớm để gọi đủ đội.</p>`}
@@ -2708,6 +2722,7 @@ function showResult() {
           <span class="rs-b h"><i style="width:${r.h / mh * 100}%"></i><small>${fmt(r.h)}</small></span></div>`; }).join('')}
         <div class="rs-leg"><span class="d">Sát thương</span><span class="t">Chịu đòn</span><span class="h">Hồi máu</span></div></div>`;
     })()}
+    ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
     <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
     <div class="res-btns">
       <button class="btn" id="rHome">Về sảnh</button>
@@ -2738,7 +2753,10 @@ function tkSpend(n) {
   if (S.tk.v >= TK_MAX) S.tk.t = nowS();
   S.tk.v -= n; save(); return true;
 }
-function enterStage(si) { if (tkSpend(tkCost(STAGES[si]))) startBattle(si); }
+function enterStage(si) {
+  if (typeof si === 'object') { if (si.raid) { if (!raidUse()) return; } else if (si.tower && si.floor !== (S.tower || 0) + 1) { showTower(); return; } startBattle(si); return; }
+  if (tkSpend(tkCost(STAGES[si]))) startBattle(si);
+}
 
 // ---- Nhiệm vụ ngày
 const DAILY = [
@@ -2816,6 +2834,10 @@ const BANNERS = [
   { name: 'Thiên Thư Khai Quang', feat: [], desc: 'Toàn bộ tướng, SSR 2,5% · SR 15%' },
   { name: 'Tân Binh Hạ Giới', feat: ['duongtien', 'vantieu', 'thailaoquan'], desc: 'Tăng 50% tỉ lệ khi ra SSR: Dương Tiễn · Vân Tiêu · Thái Thượng Lão Quân' },
 ];
+(function weeklyBanner() {   // banner tuần: xoay vòng 1 SSR nổi bật mỗi tuần
+  const pool = SSR_POOL.filter(id => HEROES[id]), w = parseInt(String(new Date().getTime() / 6048e5), 10), f = pool[w % pool.length];
+  BANNERS.push({ name: 'Tướng Tuần · ' + HEROES[f].name, feat: [f, pool[(w + 1) % pool.length], pool[(w + 2) % pool.length]].filter((x, i, a) => a.indexOf(x) === i), desc: 'Tuần này: ' + HEROES[f].name + ' tỉ lệ cao (50% khi ra SSR)' });
+})();
 
 
 // ---- Chuyển dữ liệu giữa các máy: mã lưu (chưa có máy chủ — chép mã rồi dán ở máy kia)
@@ -2940,6 +2962,104 @@ function showLore(hid) {
   w.querySelectorAll('[data-lo]').forEach(b => b.onclick = () => { const i = +b.dataset.lo; o.lore.push(i); S.ngoc += LORE_REW[i]; save(); w.remove(); showLore(hid); });
 }
 
+
+// =====================================================================
+// CHẾ ĐỘ PHỤ: Tháp Thập Tuyệt (100 tầng, chọn cặp lợi/hại) · Boss xâm lược hằng ngày · Bảng xếp hạng
+// =====================================================================
+const BOON = [   // lợi cho đội
+  { t: 'Thần Tướng công +30%', m: { atkPct: 0.30 } }, { t: 'Tốc đánh +25%', m: { aspdPct: 0.25 } }, { t: 'Bạo kích +15%', m: { crit: 0.15 } },
+  { t: 'ST chiêu thức +40%', m: { skillPct: 0.40 } }, { t: 'Nhận thêm 2 Thiên Thư đầu trận', book: 2 }, { t: 'ST cuối +20%', m: { dmgPct: 0.20 } }];
+const BANE = [   // hại (quái mạnh lên)
+  { t: 'Quái máu +40%', ehp: 1.4 }, { t: 'Quái công +40%', eatk: 1.4 }, { t: 'Quái chạy nhanh +30%', espd: 1.3 }, { t: 'Cổng thành −30% máu', gate: 0.7 },
+  { t: 'Quái máu +25%, công +25%', ehp: 1.25, eatk: 1.25 }];
+const TOWER_MECH = [null, 'traps', 'speed', 'fire', 'fog', 'summon'];
+function towerStage(f, pair) {
+  const c = Math.min(11, Math.floor((f - 1) / 9)), ch = CHAPTERS[c], boss = f % 10 === 0;
+  const base = STAGES[c * 10 + (boss ? 9 : Math.min(8, (f - 1) % 10))];
+  const st = { ...base, id: 'T' + f, tower: true, floor: f, kind: boss ? 'boss' : 'normal', lvl: 2 + Math.floor(f * 0.6), name: 'Tháp Thập Tuyệt · Tầng ' + f,
+    reward: { ngoc: 40 + f * 4 + (boss ? 150 : 0), vang: 500 + f * 80 }, mech: TOWER_MECH[(f / 10 | 0) % TOWER_MECH.length], gate: 3000 + f * 60, par: 150 };
+  st.waves = base.waves.slice(0, boss ? base.waves.length : 10);
+  st.ehp = (pair.bane.ehp || 1) * (1 + f * 0.02); st.eatk = (pair.bane.eatk || 1) * (1 + f * 0.015); st.espd = pair.bane.espd || 1; st.gateK = pair.bane.gate || 1;
+  st.hmods = pair.boon.m || null; st.bookN = pair.boon.book || 0;
+  return st;
+}
+function towerPairs(f) {   // 2 lựa chọn cố định theo tầng
+  const r = i => { const x = Math.sin(f * 91.7 + i * 13.3) * 10000; return x - Math.floor(x); };
+  return [0, 1].map(i => ({ boon: BOON[Math.floor(r(i) * BOON.length)], bane: BANE[(Math.floor(r(5) * BANE.length) + i * 2) % BANE.length] }));
+}
+function showTower() {
+  const f = (S.tower || 0) + 1, P = towerPairs(f);
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Tháp Thập Tuyệt')}
+    <p class="chap-story">Đã qua <b>${S.tower || 0}</b>/100 tầng. Mỗi tầng chọn 1 cặp <b style="color:#2a9a4a">lợi</b> / <b style="color:#c0392b">hại</b>. Mỗi 10 tầng là trận tuyệt có boss. Không tốn Tiên Khí.</p>
+    ${f > 100 ? '<h3 style="text-align:center">Đã chinh phục toàn bộ Tháp!</h3>' : `<h3 style="margin:6px 4px">Tầng ${f}${f % 10 === 0 ? ' · TRẬN TUYỆT (Boss)' : ''}</h3>
+    <div class="tw-pairs">${P.map((p, i) => `<button class="tw-pair" data-tp="${i}"><span class="boon">＋ ${esc(p.boon.t)}</span><span class="bane">－ ${esc(p.bane.t)}</span><em>Chọn & vào trận</em></button>`).join('')}</div>`}
+    <div class="hint">Thưởng tầng ${f}: ${icon('ngoc')}${40 + f * 4 + (f % 10 === 0 ? 150 : 0)} ${icon('vang')}${fmt(500 + f * 80)}</div></div>`;
+  $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => enterStage(towerStage(f, P[+b.dataset.tp])));
+}
+// ---- Boss xâm lược hằng ngày: 3 lượt/ngày, 90 giây, thưởng theo sát thương
+const RAID_TIER = [[20000, 60], [80000, 120], [200000, 200], [500000, 320], [1000000, 500]];
+const RAID_BOSS = ['datkyboss', 'vantrong', 'congminhboss', 'vantieuboss', 'thongthien', 'nguumaboss', 'bachcotboss'];
+function weekKey() { const d = new Date(), j = new Date(d.getFullYear(), 0, 1); return d.getFullYear() + 'W' + Math.ceil(((d - j) / 864e5 + j.getDay() + 1) / 7); }
+function raidToday() { const k = dayKey(); if (!S.raid || S.raid.d !== k) S.raid = { d: k, n: 0 }; return S.raid; }
+function raidUse() { const r = raidToday(); if (r.n >= 3) { toast('Hết lượt hôm nay'); return false; } r.n++; save(); return true; }
+function raidStage() {
+  const b = RAID_BOSS[new Date().getDay() % RAID_BOSS.length], lv = 8 + Math.floor(STAGES.filter(s => S.cleared[s.id]).length / 4);
+  return { id: 'RAID', raid: 90, eatk: 0.6, kind: 'boss', name: 'Boss Xâm Lược · ' + ENEMIES[b].name, lvl: lv, par: 90, gate: 999999, theme: 'heaven', seed: 5, chap: 0,
+    reward: { ngoc: 0, vang: 0 }, waves: [{ list: [[b, 1], ['tieuyeu', 6]], boss: true }, { list: [['tieuyeu', 10]], gap: 20 }, { list: [['tieuyeu', 12]], gap: 20 }] };
+}
+function showRaid() {
+  const r = raidToday(), st = raidStage(), best = (S.raidBest || {})[weekKey()] || 0;
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Boss Xâm Lược')}
+    <h3 style="margin:6px 4px">${esc(st.name)}</h3>
+    <p class="chap-story">Boss đổi mỗi ngày, máu cực lớn. Gây càng nhiều sát thương trong <b>90 giây</b> càng nhiều thưởng. Còn <b>${3 - r.n}</b>/3 lượt hôm nay. Kỷ lục tuần: <b>${fmt(best)}</b></p>
+    <div class="meta-list">${RAID_TIER.map(t => `<div class="meta-row"><div><b>≥ ${fmt(t[0])} sát thương</b></div><span class="rew">${icon('ngoc')}${t[1]}</span></div>`).join('')}</div>
+    <div style="text-align:center"><button class="btn gold big" id="rdGo" ${r.n >= 3 ? 'disabled' : ''}>Khiêu chiến</button></div></div>`;
+  $('#bBack').onclick = showHome; $('#rdGo').onclick = () => enterStage(raidStage());
+}
+// ---- Bảng xếp hạng (Firestore, cần đăng nhập Google)
+function lbPush() {
+  if (!(window.Cloud && Cloud.user && Cloud.lbSet)) return;
+  Cloud.lbSet({ name: (Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), power: totalPower(), tower: S.tower || 0, raid: (S.raidBest || {})[weekKey()] || 0, wk: weekKey(), ts: Date.now() }).catch(e => console.warn(e));
+}
+async function showRank(tab) {
+  tab = tab || 'power';
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Bảng Xếp Hạng')}
+    <div class="chap-tabs">${[['power', 'Lực chiến'], ['tower', 'Tháp'], ['raid', 'Boss tuần']].map(([k, n]) => `<button class="btn small ${k === tab ? 'gold' : ''}" data-rk="${k}">${n}</button>`).join('')}</div>
+    <div class="meta-list" id="rkL"><div class="hint">Đang tải…</div></div></div>`;
+  $('#bBack').onclick = showHome; ui.querySelectorAll('[data-rk]').forEach(b => b.onclick = () => showRank(b.dataset.rk));
+  if (!(window.Cloud && Cloud.ok && Cloud.lbTop)) { $('#rkL').innerHTML = '<div class="hint">Chưa kết nối máy chủ.</div>'; return; }
+  if (!Cloud.user) { $('#rkL').innerHTML = '<div class="hint">Đăng nhập Google ở trang chủ để xem và có tên trên bảng.</div>'; return; }
+  lbPush();
+  try {
+    const rows = (await Cloud.lbTop(tab, 50)).filter(r => tab !== 'raid' || r.wk === weekKey());
+    const el = $('#rkL'); if (!el) return;
+    el.innerHTML = rows.length ? rows.map((r, i) => `<div class="meta-row ${r.uid === Cloud.user.uid ? 'me' : ''}"><div><b>${i + 1}. ${esc(r.name || '?')}</b></div><span class="rew">${fmt(r[tab] || 0)}</span></div>`).join('') : '<div class="hint">Chưa có ai.</div>';
+  } catch (e) { const el = $('#rkL'); if (el) el.innerHTML = `<div class="hint">Lỗi tải bảng: ${esc(e.code || e.message)} (cần cập nhật quy tắc Firestore)</div>`; }
+}
+// ---- Nhiệm vụ tuần + điểm danh tháng
+const WEEKLY = [
+  { id: 'fight', name: 'Chiến đấu 25 trận', need: 25, rew: { ngoc: 300 } }, { id: 'win', name: 'Thắng 15 trận', need: 15, rew: { vang: 20000 } },
+  { id: 'tower', name: 'Leo 5 tầng Tháp', need: 5, rew: { ngoc: 400 } }, { id: 'raid', name: 'Đánh Boss Xâm Lược 10 lần', need: 10, rew: { ngoc: 300, univ: 10 } }];
+function wq() { const k = weekKey(); if (!S.weekly || S.weekly.w !== k) S.weekly = { w: k, p: {}, c: {} }; return S.weekly; }
+function wqAdd(id, n) { const w = wq(); w.p[id] = (w.p[id] || 0) + (n == null ? 1 : n); save(); }
+const MONTH_REW = i => (i + 1) % 7 === 0 ? { ngoc: 200 } : (i + 1) % 5 === 0 ? { univ: 5 } : i % 2 ? { vang: 3000 } : { ngoc: 50 };
+function monthState() { const d = new Date(), k = d.getFullYear() + '-' + (d.getMonth() + 1); if (!S.month || S.month.m !== k) S.month = { m: k, n: 0, last: null }; return S.month; }
+function showEvents() {
+  const w = wq(), mo = monthState(), today = dayKey(), canSign = mo.last !== today && mo.n < 30;
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Sự Kiện')}
+    <h4 style="margin:6px 4px">Điểm danh tháng (${mo.n}/30)</h4>
+    <div class="m30">${Array.from({ length: 30 }, (_, i) => `<div class="m30d ${i < mo.n ? 'got' : i === mo.n && canSign ? 'ok' : ''}"><b>${i + 1}</b><small>${rewTxt(MONTH_REW(i))}</small></div>`).join('')}</div>
+    <div style="text-align:center;margin:6px"><button class="btn gold" id="evSign" ${canSign ? '' : 'disabled'}>${canSign ? 'Điểm danh hôm nay' : 'Đã điểm danh'}</button></div>
+    <h4 style="margin:6px 4px">Nhiệm vụ tuần</h4>
+    <div class="meta-list">${WEEKLY.map(q => { const p = Math.min(q.need, w.p[q.id] || 0), done = p >= q.need, got = w.c[q.id];
+      return `<div class="meta-row"><div><b>${q.name}</b><small>${p}/${q.need}</small><div class="bar"><i style="width:${p / q.need * 100}%"></i></div></div><span class="rew">${rewTxt(q.rew)}</span>
+        <button class="btn small ${done && !got ? 'gold' : ''}" data-wq="${q.id}" ${done && !got ? '' : 'disabled'}>${got ? 'Đã nhận' : done ? 'Nhận' : 'Chưa xong'}</button></div>`; }).join('')}</div></div>`;
+  $('#bBack').onclick = showHome;
+  $('#evSign').onclick = () => { grant(MONTH_REW(mo.n)); mo.n++; mo.last = today; save(); showEvents(); };
+  ui.querySelectorAll('[data-wq]').forEach(b => b.onclick = () => { const q = WEEKLY.find(x => x.id === b.dataset.wq); w.c[q.id] = 1; grant(q.rew); save(); showEvents(); });
+}
+
 // ------------------------------------------------------------------ BOOT
 // Đường dẫn nhanh: #battle=1 (vào ải 1, bật tự động), #gacha, #heroes, #lineup, #stages, #hero=nata
 function route() {
@@ -2947,7 +3067,15 @@ function route() {
   window.__chibi = !/(^|&)anime(&|$)/.test(h);   // trong trận mặc định dùng chibi; thêm &anime để xem bản anime
   const [main, simPart] = h.split('&').filter(x => x !== 'chibi').concat([undefined]);
   const [k, v] = main.split('=');
-  if (k === 'battle') {
+  if (k === 'towertest' || k === 'raidtest') {   // (chụp thử) vào trận Tháp tầng 1 / Boss ngày
+    const tm = h.match(/(?:^|&)team=([\w,]+)/); if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
+    const st = k === 'towertest' ? towerStage(1, towerPairs(1)[0]) : raidStage();
+    ensureHeroAssets(S.lineup).then(() => ensureEnemyAssets(stageEnemyIds(st))).then(() => { startBattleNow(st); B.auto = true;
+      const secs = simPart && simPart.startsWith('sim=') ? +simPart.slice(4) : 0;
+      for (let i = 0; i < secs * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const mm = ui.querySelector('.cp-modal'); const bb = mm && mm.querySelector('.cp-card'); if (bb) bb.click(); else B.paused = false; } }
+      if (B.over && B.endT != null) { B.endT = null; showResult(); } });
+  }
+  else if (k === 'battle') {
     const tm = h.match(/(?:^|&)team=([\w,]+)/); // &team=nata,quanam (chụp thử): đội hình tạm
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
     Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(STAGES[clamp((+v || 1) - 1, 0, STAGES.length - 1)]))]).then(() => {
@@ -2993,6 +3121,10 @@ function route() {
   }
   else if (k === 'gacha') showGacha();
   else if (k === 'quests') showQuests();
+  else if (k === 'tower') showTower();
+  else if (k === 'raid') showRaid();
+  else if (k === 'rank') showRank();
+  else if (k === 'events') showEvents();
   else if (k === 'tangkinh') showTangKinh();
   else if (k === 'heroes') showHeroes();
   else if (k === 'hero' && HEROES[v]) showHeroDetail(v);

@@ -25,5 +25,7 @@
     await db.collection('users').doc(C.user.uid).set({ save: JSON.stringify(data), ts: data.ts || Date.now(), name: C.user.displayName || '', v: 1 });
     C.lastPush = Date.now();
   };
+  C.lbSet = d => C.user ? db.collection('lb').doc(C.user.uid).set(d) : Promise.resolve();
+  C.lbTop = async (field, n) => { const q = await db.collection('lb').orderBy(field, 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
   C.push = S => { if (!C.user) return; clearTimeout(C._t); C._t = setTimeout(() => C.pushNow(S).catch(e => { C.err = e.message; console.warn('cloud', e); }), 3000); };
 })();
