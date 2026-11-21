@@ -766,3 +766,18 @@ const CAP_SPECIAL = {
   duongtien: { n: 'Thiên Nhãn Thấu Thị', d: 'Bạo kích cả đội +15%', m: { crit: 0.15 } },
 };
 const capSkill = id => CAP_SPECIAL[id] || CAP_ROLE[(HEROES[id] || {}).role] || CAP_ROLE.sat;
+
+// KIỂU QUÁI ĐẶC BIỆT (tham khảo VLĐMT) — gắn cho quái có sẵn theo đúng tính chất
+const TRAIT_INFO = {
+  fly: { ico: '🪽', name: 'Bay', desc: 'Bay nhanh qua đầu tướng, lao thẳng vào cổng. Tướng cận chiến không đánh tới.' },
+  stealth: { ico: '👁', name: 'Tàng hình', desc: 'Ẩn thân, chỉ lộ khi tới gần tướng hoặc trúng chiêu diện rộng.' },
+  bomb: { ico: '💥', name: 'Tự nổ', desc: 'Chạy rất nhanh, áp sát thì nổ gây sát thương lớn quanh mình.' },
+  heal: { ico: '✚', name: 'Chữa trị', desc: 'Đứng sau hồi máu cho quái xung quanh. Nên diệt trước.' },
+  shield: { ico: '🛡', name: 'Khiên', desc: 'Giơ khiên che chắn: quái đứng sau nó chỉ nhận 40% sát thương.' },
+  burrow: { ico: '⛏', name: 'Chui đất', desc: 'Lặn dưới đất (không đánh được), trồi lên sát tướng làm choáng.' },
+  split: { ico: '✦', name: 'Chia đôi', desc: 'Khi chết tách thành 2 con nhỏ.' },
+  seal: { ico: '🔒', name: 'Phong ấn', desc: 'Dán bùa phong ấn một tướng: không dùng được chiêu trong 4 giây.' },
+};
+const ETRAIT = { philiem: 'fly', hoanha: 'fly', hotinh: 'stealth', oanhon: 'stealth', hoahon: 'bomb', yeutien: 'heal', tiennu: 'heal',
+  thienbinh: 'shield', thachtinh: 'shield', thiyeu: 'burrow', haiyeu: 'split', mala: 'split', phapsu: 'seal', daonhan: 'seal' };
+for (const k in ETRAIT) if (ENEMIES[k]) ENEMIES[k].trait = ETRAIT[k];

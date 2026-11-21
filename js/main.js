@@ -254,7 +254,7 @@ function makeEnemy(type, lvl, x, y) {
     bonus: { hpPct: 0, atkPct: 0, crit: 0, dmgTaken: 0 },
     aspd: d.aspd, range: d.range, move: d.move * spd * ((B && B.st.espd) || 1), ranged: !!d.ranged, proj: d.proj,
     x, y, hp: d.hp * m, cdA: rand(0.3, 1.2), buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0,
-    shield: 0, shieldT: 0, inv: 0,
+    shield: 0, shieldT: 0, inv: 0, trait: d.trait || null,
     dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
     elite: !!d.elite, boss: !!d.boss, forced: null, forcedT: 0, special: 4, phase: 1,
   };
@@ -366,11 +366,22 @@ function nextWave() {
   else if (B.wave === 0 || last) B.banner = { text: last ? 'Đợt cuối' : 'Bắt đầu!', sub: '', t: 0, small: true };
   if (M('waveMp')) for (const h of B.heroes) if (!h.dead) h.mp = Math.min(100, h.mp + M('waveMp'));
 }
+function initTrait(e) {   // gán thuộc tính theo kiểu quái
+  if (e.trait && !e.elite && !e.boss && Math.random() > 0.4) e.trait = null;   // chỉ ~40% quái thường mang kiểu đặc biệt (trộn lẫn)
+  const t = e.trait; if (!t) return e;
+  if (t === 'fly') { e.flyH = 48; e.move *= 1.5; }
+  if (t === 'stealth') e.hidden = true;
+  if (t === 'bomb') e.move *= 1.8;
+  if (t === 'heal') e.healCd = 2.5;
+  if (t === 'burrow') { e.under = true; e.move *= 1.4; }
+  if (t === 'seal') e.sealCd = 3.5;
+  return e;
+}
 function spawnEnemy(q) {
   let x = VIEW_R() + rand(20, 60), y = rand(LANE_Y0, LANE_Y1);
   if (q.side && Math.random() < 0.4 && !ENEMIES[q.type].boss) { x = rand(W * 0.55, W - 40); y = Math.random() < 0.5 ? LANE_Y0 - 30 : LANE_Y1 + 30; }
   if (ENEMIES[q.type].boss) { x = VIEW_R() + 60; y = H * 0.56; }
-  const e = makeEnemy(q.type, B.st.lvl, x, y);
+  const e = initTrait(makeEnemy(q.type, B.st.lvl, x, y));
   e.drop = q.drop || null;
   if (e.boss && B.st.bossName && q.type === 'hoyeu') e.name = B.st.bossName;
   B.enemies.push(e);
@@ -391,6 +402,8 @@ function particles(x, y, color, n, spd, size) {
 }
 function dealDmg(src, tgt, mult, kind) {
   if (!tgt || tgt.dead) return 0;
+  if (tgt.side === 'e' && tgt.trait === 'stealth' && kind !== 'dot') tgt.revealT = 2.5;
+  if (tgt.side === 'e' && src.side === 'h' && kind !== 'dot') { for (const s of B.enemies) if (s !== tgt && !s.dead && s.trait === 'shield' && s.x < tgt.x && tgt.x - s.x < 120 && Math.abs(s.y - tgt.y) < 70) { mult *= 0.4; if (Math.random() < 0.15) floater(tgt.x, tgt.y - 60, 'Chặn', '#bcd4f0', 12); break; } }
   if (tgt.inv > 0) { if (kind !== 'dot') floater(tgt.x, tgt.y - 60, 'Né', '#bff3ff', 14); return 0; }
   let a = getAtk(src) * mult;
   if (src.side === 'e' && B.alive >= 40) a *= B.alive >= 50 ? 1.8 : 1.5;   // quái đông trên sân thì mạnh hơn (VLĐMT): ≥40 +50%, ≥50 +80%
@@ -513,6 +526,7 @@ function kill(t, src) {
   if (t.dead) return;
   t.dead = true; t.hp = 0; t.deathT = 0;
   if (t.side === 'e') {
+    if (t.trait === 'split' && !t.mini) for (const dy of [-26, 26]) { const c = makeEnemy(t.id, t.level, t.x + 10, clamp(t.y + dy, LANE_Y0, LANE_Y1)); c.mini = true; c.trait = null; c.look = { ...c.look, size: sizeOf(t) * 0.65 }; c.base.hp *= 0.35; c.hp = maxHp(c); c.move *= 1.2; B.enemies.push(c); particles(c.x, c.y - 20, '#9fe0ff', 8, 120, 3); }
     B.kills++; sfx('pop'); if (B.fxb.length < 40) fxBurst(t.x, t.y - 22, 'smoke', 120);
     if (M('soul') && Math.random() < 0.10 && B.soul < 40 + M('soulMax')) { B.soul++; floater(t.x, t.y - 60, 'Hồn Phách ' + B.soul, '#9ad0ff', 12); }
     B.xp += t.boss ? 30 : t.elite ? 5 : 1;
@@ -831,13 +845,13 @@ function updateField(dt) {
 }
 function nearestEnemy(p, maxD) {
   let best = null, bd = maxD || 1e9;
-  for (const e of B.enemies) { if (e.dead) continue; const d = dist(p, e); if (d < bd) { bd = d; best = e; } }
+  for (const e of B.enemies) { if (e.dead || e.under || (e.hidden && !(e.revealT > 0))) continue; const d = dist(p, e); if (d < bd) { bd = d; best = e; } }
   return best;
 }
-function enemiesIn(p, r) { return B.enemies.filter(e => !e.dead && dist(p, e) <= r + unitR(e)); }
+function enemiesIn(p, r) { return B.enemies.filter(e => !e.dead && !e.under && dist(p, e) <= r + unitR(e)); }
 function alliesAlive() { return B.heroes.filter(h => !h.dead && !h.clone); }
 function canCast(u, w) {
-  if (!u || u.dead || u.clone || u.stun > 0 || u.dk > 0) return false;
+  if (!u || u.dead || u.clone || u.stun > 0 || u.dk > 0 || u.sealT > B.time) return false;
   const cost = w === 'ult' ? 60 : 30;
   if (u.mp < cost) return false;
   return w === 'ult' ? u.cdU <= 0 : u.cdS <= 0;
@@ -1173,7 +1187,7 @@ function findTarget(u) {
   if (u === B.cap && B.capTgt && !B.capTgt.dead && (u.ranged || dist(u, B.capTgt) <= u.range + unitR(B.capTgt))) return B.capTgt;
   let best = null, bd = 1e9;
   for (const e of B.enemies) {
-    if (e.dead || e.x > VIEW_R() + 5) continue;
+    if (e.dead || e.x > VIEW_R() + 5 || e.under || (e.hidden && !(e.revealT > 0)) || (e.flyH && !u.ranged)) continue;
     const d = dist(u, e);
     if (d > u.range + unitR(e)) continue;
     const score = u.ranged ? e.x + (e.boss ? -60 : 0) : d;   // đánh xa: con tiến sâu nhất trước
@@ -1312,6 +1326,7 @@ function updateEnemies(dt) {
       continue;
     }
     if (e.boss) bossSpecial(e, dt);
+    if (e.trait && traitTick(e, dt)) continue;
     let tgt = null;
     if (e.forced && !e.forced.dead && e.forcedT > 0) tgt = e.forced;
     else {
@@ -1570,6 +1585,60 @@ function tapTarget(p) {   // chạm sân: đội trưởng nhắm con quái gầ
 }
 
 // ------------------------------------------------------------------ RENDER
+
+const heroesAlive = () => B.heroes.filter(h => !h.dead);
+function nearestHero(e, maxD) { let b = null, bd = maxD || 1e9; for (const h of B.heroes) { if (h.dead) continue; const d = dist(e, h); if (d < bd) { bd = d; b = h; } } return b; }
+function traitTick(e, dt) {
+  const t = e.trait;
+  if (t === 'stealth') { if (e.revealT > 0) e.revealT -= dt; const h = nearestHero(e, 150); e.hidden = !h && !(e.revealT > 0); return false; }
+  if (t === 'fly') {   // bay thẳng vào cổng, không dừng đánh tướng
+    if (e.x > GATE_X) { e.walk = true; moveTo(e, GATE_X - 2, clamp(e.y, LANE_Y0, LANE_Y1), e.move * (e.slow > 0 ? 0.6 : 1) * dt); }
+    else { e.walk = false; if (e.cdA <= 0) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; B.gate.hp -= getAtk(e) * 0.8; B.gateHurt = 0.15; } }
+    return true;
+  }
+  if (t === 'bomb') {   // áp sát tướng/cổng thì nổ
+    const h = nearestHero(e, 46), atGate = e.x <= GATE_X + 6;
+    if (h || atGate) {
+      for (const o of B.heroes) if (!o.dead && dist(e, o) < 95) dealDmg(e, o, 3, 'atk');
+      if (atGate) { B.gate.hp -= getAtk(e) * 3; B.gateHurt = 0.3; }
+      fxBurst(e.x, e.y - 20, 'fire', 200); particles(e.x, e.y - 20, '#ff8a2e', 24, 260, 5); B.shake = Math.max(B.shake, 0.5); sfx('boom');
+      e.exploded = true; kill(e, null); return true;
+    }
+    const tg = nearestHero(e, 260); if (tg) { e.walk = true; moveTo(e, tg.x, tg.y, e.move * dt); return true; }
+    return false;
+  }
+  if (t === 'heal') {
+    e.healCd -= dt;
+    if (e.healCd <= 0) { e.healCd = 3.5; let n = 0;
+      for (const o of B.enemies) if (!o.dead && o !== e && dist(e, o) < 190 && o.hp < maxHp(o)) { o.hp = Math.min(maxHp(o), o.hp + maxHp(o) * 0.12); n++; floater(o.x, o.y - 60 * sizeOf(o), '+', '#5dff8f', 16); particles(o.x, o.y - 30, '#7dff9f', 4, 60, 3); }
+      if (n) B.fx.push({ k: 'ring', x: e.x, y: e.y, r: 190, color: '#5dff8f', t: 0, dur: 0.6 }); }
+    const h = nearestHero(e, 260); if (h) { e.walk = false; e.f = -1; if (e.cdA <= 0 && dist(e, h) < 240) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; fireProj(e, h, { kind: 'atk', type: e.proj || 'orb', speed: 280, r: 6 }); } return true; }   // đứng lại phía sau
+    return false;
+  }
+  if (t === 'burrow' && e.under) {   // dưới đất: lao tới tướng gần nhất, trồi lên làm choáng
+    const h = nearestHero(e, 2000);
+    if (!h) { moveTo(e, GATE_X - 2, e.y, e.move * dt); if (e.x <= GATE_X + 10) e.under = false; return true; }
+    moveTo(e, h.x + 40, h.y, e.move * dt); if (Math.random() < 0.5) particles(e.x, e.y, '#8a6a40', 1, 50, 4);
+    if (dist(e, h) < 60) { e.under = false; h.stun = Math.max(h.stun || 0, 0.7); dealDmg(e, h, 1.5, 'atk'); uxSheet && B.fx.push({ k: 'ring', x: e.x, y: e.y, r: 120, color: '#c8a070', t: 0, dur: 0.5 }); particles(e.x, e.y - 10, '#a08060', 20, 220, 5); B.shake = Math.max(B.shake, 0.4); floater(h.x, h.y - 70, 'Choáng!', '#ffd34d', 14); }
+    return true;
+  }
+  if (t === 'seal') {
+    e.sealCd -= dt;
+    if (e.sealCd <= 0) { const L = heroesAlive().filter(h => !h.clone && !(h.sealT > B.time)); if (L.length) { const h = pick(L); e.sealCd = 7; h.sealT = B.time + 4; e.atkAnim = 0;
+      B.fx.push({ k: 'ring', x: h.x, y: h.y, r: 70, color: '#b06aff', t: 0, dur: 0.5 }); floater(h.x, h.y - 84, 'Phong ấn!', '#d0a0ff', 15); particles(h.x, h.y - 40, '#b06aff', 12, 120, 4); } else e.sealCd = 2; }
+    return false;
+  }
+  return false;
+}
+function drawTraitBadge(u) {   // biểu tượng kiểu quái trên đầu + bùa phong ấn trên tướng
+  if (u.dead) return;
+  if (u.side === 'h') { if (u.sealT > B.time) { const y = u.y - 98 * sizeOf(u); ctx.save(); ctx.translate(u.x, y + Math.sin(B.time * 6) * 2); ctx.rotate(Math.sin(B.time * 3) * 0.15);
+      ctx.fillStyle = '#ffe58a'; ctx.strokeStyle = '#7a10a0'; ctx.lineWidth = 2; ctx.fillRect(-9, -14, 18, 28); ctx.strokeRect(-9, -14, 18, 28); ctx.fillStyle = '#a01010'; ctx.font = '900 13px serif'; ctx.textAlign = 'center'; ctx.fillText('封', 0, 5); ctx.restore(); } return; }
+  if (!u.trait || u.under || (u.hidden && !(u.revealT > 0))) return; const I = TRAIT_INFO[u.trait]; if (!I) return;
+  const y = u.y - (u.flyH || 0) - 92 * sizeOf(u);
+  ctx.save(); ctx.beginPath(); ctx.arc(u.x, y, 10, 0, TAU); ctx.fillStyle = 'rgba(20,8,4,0.8)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffd34d'; ctx.stroke();
+  ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(I.ico, u.x, y + 1); ctx.restore();
+}
 function drawUnit(u) {
   const s = 1.0;
   ctx.save();
@@ -1595,6 +1664,13 @@ function drawUnit(u) {
   }
   if (u.side === 'h' && u.dead && !hasSkel(u.id)) ctx.rotate(-1.35);   // rig xương có động tác ngã riêng
   if (u.side === 'h' && u.dead && hasSkel(u.id)) alpha = Math.max(0.35, 1 - (u.deathT || 0) * 0.8);
+  if (u.side === 'e' && u.trait && !u.dead) {
+    if (u.under) { ctx.save(); ctx.fillStyle = '#6a4a28'; ctx.beginPath(); ctx.ellipse(0, 0, 26, 9, 0, Math.PI, TAU); ctx.fill(); ctx.fillStyle = '#8a6a40'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(-14 + i * 9, -4 - Math.abs(Math.sin(u.t * 9 + i)) * 5, 3, 0, TAU); ctx.fill(); } ctx.restore(); ctx.restore(); return; }
+    if (u.flyH) { ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 2, 22, 7, 0, 0, TAU); ctx.fill(); ctx.restore(); ctx.translate(0, -u.flyH + Math.sin(u.t * 4) * 5); }
+    if (u.hidden && !(u.revealT > 0)) alpha *= 0.14 + 0.06 * Math.sin(u.t * 10);
+    if (u.trait === 'shield') { ctx.save(); ctx.translate(-22 * sizeOf(u), -30 * sizeOf(u)); ctx.globalAlpha = 0.8; ctx.fillStyle = '#c8d8f0'; ctx.strokeStyle = '#5a6a8a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, 9, 26, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.1 * Math.sin(u.t * 5); ctx.fillStyle = '#9fd0ff'; ctx.beginPath(); ctx.ellipse(-4, 0, 16, 40, 0, 0, TAU); ctx.fill(); ctx.restore(); }
+  }
   const img = SPR[u.id];
   if (u.side === 'e' && drawEnemyPose(u, alpha)) { /* quái vẽ bằng tư thế */ }
   else if (img) drawSprite(u, img, alpha);
@@ -2985,6 +3061,7 @@ function render() {
   for (const d of B.drops) drawDrop(d);
   drawGhosts();
   for (const u of all) drawUnit(u);
+  for (const u of all) drawTraitBadge(u);
   if (B.mech === 'fog') {   // Thuỷ tộc: nước đục giảm tầm nhìn (GDD chương 11)
     const g = ctx.createLinearGradient(W * 0.42, 0, W, 0); g.addColorStop(0, 'rgba(20,60,90,0)'); g.addColorStop(0.35, 'rgba(20,60,90,0.55)'); g.addColorStop(1, 'rgba(10,40,70,0.85)');
     ctx.save(); ctx.fillStyle = g; ctx.fillRect(W * 0.42, 0, W * 0.58, H); ctx.restore();
@@ -3227,6 +3304,8 @@ function showStages() {
     <p class="chap-story">${esc(ch.story)} <b>Boss: ${esc(ch.boss)}</b> · <i>${esc(ch.mech)}</i></p>
     ${(() => { const el = chapElem(curChap); if (!el) return ''; const good = Object.keys(BEATS).find(k => BEATS[k] === el), bad = BEATS[el];
       return `<p class="chap-el">Quái chủ yếu hệ <b style="color:${ELEMENTS[el].color}">${ELEMENTS[el].name}</b> → nên dùng tướng hệ <b style="color:${ELEMENTS[good].color}">${ELEMENTS[good].name}</b> (+30% sát thương), tránh hệ <b style="color:${ELEMENTS[bad].color}">${ELEMENTS[bad].name}</b> (−20%).</p>`; })()}
+    ${(() => { const tr = new Set(); for (const st of STAGES) if (st.chap === curChap) for (const w of st.waves) for (const [t] of w.list) if (ENEMIES[t] && ENEMIES[t].trait) tr.add(ENEMIES[t].trait);
+      return tr.size ? `<div class="chap-traits">${[...tr].map(k => `<span class="ct" title="${esc(TRAIT_INFO[k].desc)}"><i>${TRAIT_INFO[k].ico}</i><b>${TRAIT_INFO[k].name}</b><small>${esc(TRAIT_INFO[k].desc)}</small></span>`).join('')}</div>` : ''; })()}
     <div class="stage-list">${STAGES.map((st, i) => {
       if (st.chap !== curChap) return '';
       const locked = i > 0 && !S.cleared[STAGES[i - 1].id];
@@ -3494,7 +3573,7 @@ function updateHUD() {
     el.classList.toggle('cap', u === B.cap);
     el.querySelector('.tm-hp i').style.width = (waiting ? 100 : u.hp / maxHp(u) * 100) + '%';
     el.querySelector('.tm-mp i').style.width = u.mp + '%'; el.style.setProperty('--mp', waiting ? 0 : u.mp);
-    el.querySelector('.tm-state').textContent = u.dead ? 'Ngã' : waiting ? 'Chờ' : u.dk > 0 ? 'Điều khí' : '';
+    el.querySelector('.tm-state').textContent = u.dead ? 'Ngã' : waiting ? 'Chờ' : u.sealT > B.time ? '🔒 Phong ấn' : u.dk > 0 ? 'Điều khí' : '';
     el.classList.toggle('ready', !waiting && canCast(u, 'ult'));
     el.querySelector('.tm-ammo').textContent = waiting || u.dead || u.dk > 0 ? '' : (u.ammo == null ? ammoMax(u) : u.ammo);
     el.querySelector('.tm-trong').textContent = 'Tầng ' + trongOf(u);

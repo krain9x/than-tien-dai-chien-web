@@ -572,3 +572,6 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .r-R .pc-inner { background: var(--r); }
 
 .skill.awaken { border-style: dashed; opacity: .75; } .skill.awaken.on { opacity: 1; border-style: solid; border-color: #ffd34d; box-shadow: 0 0 12px rgba(255,200,60,.6); background: linear-gradient(90deg, #fff6d0, #ffe7a0); }
+
+.chap-traits { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; } .chap-traits .ct { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 12px; background: rgba(40,16,6,.78); border: 1px solid #e0b040; color: #ffe9b0; max-width: 360px; }
+.chap-traits i { font-style: normal; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: #2a0f06; border: 2px solid #ffd34d; font-size: 14px; } .chap-traits b { font-size: 13px; white-space: nowrap; } .chap-traits small { font-size: 11px; opacity: .85; line-height: 1.2; }
