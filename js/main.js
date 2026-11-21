@@ -314,6 +314,7 @@ function startBattle(si) {   // nạp rig + tư thế của đội trước khi 
   Promise.all([ensureHeroAssets(need), ensureEnemyAssets(en)]).then(() => { need.forEach(id => { _heroLoaded[id].done = true; }); en.forEach(id => { if (_enemyLoaded[id]) _enemyLoaded[id].done = true; }); ov.remove(); startBattleNow(si); });
 }
 function startBattleNow(si) {
+  bgmSet('battle');
   const st = typeof si === 'object' ? si : STAGES[si];
   const ids = S.lineup.filter(id => S.owned[id]);
   if (!ids.length) { toast('Cần ít nhất 1 tướng trong đội hình'); return; }
@@ -360,9 +361,9 @@ function nextWave() {
     delay += 0.24;
   });
   const last = B.wave === B.st.waves.length - 1;
-  if (wd.boss) B.banner = { text: 'BOSS XUẤT HIỆN', sub: '', t: 0, boss: true };
+  if (wd.boss) { B.banner = { text: 'BOSS XUẤT HIỆN', sub: '', t: 0, boss: true }; snd('gong'); setTimeout(() => snd('roar'), 400); bgmSet('boss'); }
   else if (wd.horde) { B.banner = { text: 'Vô vàn kẻ địch tập kích!', sub: '', t: 0, boss: true }; B.shake = Math.max(B.shake, 0.3); }
-  else if (wd.strong) B.banner = { text: 'Địch mạnh tấn công!', sub: '', t: 0, small: true };
+  else if (wd.strong) { B.banner = { text: 'Địch mạnh tấn công!', sub: '', t: 0, small: true }; snd('gong', 0.6, 1.1); }
   else if (B.wave === 0 || last) B.banner = { text: last ? 'Đợt cuối' : 'Bắt đầu!', sub: '', t: 0, small: true };
   if (M('waveMp')) for (const h of B.heroes) if (!h.dead) h.mp = Math.min(100, h.mp + M('waveMp'));
 }
@@ -530,7 +531,7 @@ function kill(t, src) {
     B.kills++; sfx('pop'); if (B.fxb.length < 40) fxBurst(t.x, t.y - 22, 'smoke', 120);
     if (M('soul') && Math.random() < 0.10 && B.soul < 40 + M('soulMax')) { B.soul++; floater(t.x, t.y - 60, 'Hồn Phách ' + B.soul, '#9ad0ff', 12); }
     B.xp += t.boss ? 30 : t.elite ? 5 : 1;
-    while (B.xp >= xpNeed()) { B.xp -= xpNeed(); B.lv++; floater(W / 2, 120, 'Lên cấp ' + B.lv + '!', '#ffe14d', 24); queuePick(openCongPhap); }
+    while (B.xp >= xpNeed()) { B.xp -= xpNeed(); B.lv++; floater(W / 2, 120, 'Lên cấp ' + B.lv + '!', '#ffe14d', 24); snd('heal', 0.7, 1.25); queuePick(openCongPhap); }
     particles(t.x, t.y - 20, t.look.skin, t.boss ? 40 : 12, t.boss ? 300 : 170);
     particles(t.x, t.y - 20, '#ffffff', 6, 120, 3);
     if (t.boss) { B.shake = 0.8; B.slowmo = 0.8; }
@@ -602,7 +603,7 @@ function deployNext() {
   placeHero(B.deploy.shift());
 }
 function openDeployPick() {
-  tutor('phu', 'Nhặt <b>Linh Phù</b> → chọn 1 tướng xuất trận. Đội tối đa 5 tướng.');
+  snd('pickup'); tutor('phu', 'Nhặt <b>Linh Phù</b> → chọn 1 tướng xuất trận. Đội tối đa 5 tướng.');
   B.paused = true;
   const opts = B.deploy.slice(0, 4);
   const wrap = document.createElement('div');
@@ -723,7 +724,7 @@ function openBachGiam() {
   box.querySelector('#bgClose').onclick = () => box.remove();
 }
 function openCongPhap() {
-  tutor('cp', 'Lên cấp hoặc nhặt Thiên Thư → <b>chọn 1 công pháp</b>. Chọn cơ bản trước, sau đó tiến bậc thành cao cấp. Tối đa 6 ô.');
+  snd('pickup', 0.8, 1.15); tutor('cp', 'Lên cấp hoặc nhặt Thiên Thư → <b>chọn 1 công pháp</b>. Chọn cơ bản trước, sau đó tiến bậc thành cao cấp. Tối đa 6 ô.');
   B.paused = true;
   let opts = rollCongPhap();
   const wrap = document.createElement('div');
@@ -908,8 +909,8 @@ function cast(u, w) {
     const P = bestCluster(70) || (tgt ? { x: tgt.x, y: tgt.y } : null);
     if (P) { B.zones = B.zones.filter(z => !(z.src === u && z.tag === 'pz')); B.zones.push({ x: P.x, y: P.y, r: 70, mult: 0.4, t: 3, dur: 3, src: u, tick: 0, color: '#ff8a3a', tag: 'pz' }); }
   }
-  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); if (scReady(u.id) && S.ultScene !== false) startScene(u, sk); }
-  else floater(u.x, u.y - 82, sk.name, '#fff3b0', 15);
+  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); if (sk.fx.some(f => f.t === 'heal')) setTimeout(() => snd('heal'), 500); if (UCFG[u.id] && ['wind', 'tornado', 'sweep', 'pierce', 'throw'].includes(UCFG[u.id].t)) setTimeout(() => snd('whoosh', 1, 0.7), 350); if (scReady(u.id) && S.ultScene !== false) startScene(u, sk); }
+  else { floater(u.x, u.y - 82, sk.name, '#fff3b0', 15); snd('magic'); }
   if (u.mp < 10) { u.dk = 2.5; floater(u.x, u.y - 64, 'Điều khí', '#7fd3ff', 14); }
   return true;
 }
@@ -1359,7 +1360,7 @@ function updateEnemies(dt) {
       if (e.cdA <= 0) {
         e.cdA = 1 / getAspd(e); e.atkAnim = 0;
         B.gate.hp -= getAtk(e) * 0.7 * (e.boss ? 3 : 1);
-        B.gateHurt = 0.15;
+        B.gateHurt = 0.15; snd('gate');
         particles(e.x - 20, e.y - 20, '#d9c6a0', 4, 90, 3);
       }
     }
@@ -1374,7 +1375,7 @@ function bossSpecial(e, dt) {
   if (PH) {   // boss nhiều giai đoạn (GDD: boss chương có nhiều giai đoạn)
     const nx = PH[e.phase - 1];
     if (nx && e.hp < maxHp(e) * nx.at) {
-      e.phase++; e.phaseT = performance.now();
+      e.phase++; e.phaseT = performance.now(); snd('roar', 1, 0.85);
       if (nx.enrage) e.buffs.push({ k: 'aspd', v: nx.enrage, t: 9999 });
       if (nx.heal) e.hp = Math.min(maxHp(e), e.hp + maxHp(e) * nx.heal);
       if (B.mech === 'multiphase') {   // Vạn Tiên Trận: mỗi lần đổi giai đoạn boss bất tử 2 giây và giáng sấm lên cả đội
@@ -1595,7 +1596,7 @@ function traitTick(e, dt) {
   if (t === 'stealth') { if (e.revealT > 0) e.revealT -= dt; const h = nearestHero(e, 150); e.hidden = !h && !(e.revealT > 0); return false; }
   if (t === 'fly') {   // bay thẳng vào cổng, không dừng đánh tướng
     if (e.x > GATE_X) { e.walk = true; moveTo(e, GATE_X - 2, clamp(e.y, LANE_Y0, LANE_Y1), e.move * (e.slow > 0 ? 0.6 : 1) * dt); }
-    else { e.walk = false; if (e.cdA <= 0) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; B.gate.hp -= getAtk(e) * 0.8; B.gateHurt = 0.15; } }
+    else { e.walk = false; if (e.cdA <= 0) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; B.gate.hp -= getAtk(e) * 0.8; B.gateHurt = 0.15; snd('gate'); } }
     return true;
   }
   if (t === 'bomb') {   // áp sát tướng/cổng thì nổ
@@ -1627,7 +1628,7 @@ function traitTick(e, dt) {
   if (t === 'seal') {
     e.sealCd -= dt;
     if (e.sealCd <= 0) { const L = heroesAlive().filter(h => !h.clone && !(h.sealT > B.time)); if (L.length) { const h = pick(L); e.sealCd = 7; h.sealT = B.time + 4; e.atkAnim = 0;
-      B.fx.push({ k: 'ring', x: h.x, y: h.y, r: 70, color: '#b06aff', t: 0, dur: 0.5 }); floater(h.x, h.y - 84, 'Phong ấn!', '#d0a0ff', 15); particles(h.x, h.y - 40, '#b06aff', 12, 120, 4); } else e.sealCd = 2; }
+      B.fx.push({ k: 'ring', x: h.x, y: h.y, r: 70, color: '#b06aff', t: 0, dur: 0.5 }); floater(h.x, h.y - 84, 'Phong ấn!', '#d0a0ff', 15); snd('chain'); particles(h.x, h.y - 40, '#b06aff', 12, 120, 4); } else e.sealCd = 2; }
     return false;
   }
   return false;
@@ -1884,10 +1885,33 @@ function drawGhosts() {
 // tia sáng điểm trúng (xoè nan) + đồng hồ số đòn
 // ------------------------------------------------------------------ ÂM THANH (tổng hợp bằng WebAudio, không dùng tệp ngoài)
 let AC = null; const _sfxT = {};
-function audioOn() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } } if (AC && AC.state === 'suspended') AC.resume(); }
+function audioOn() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } if (AC) sndLoad(); } if (AC && AC.state === 'suspended') AC.resume(); }
 document.addEventListener('pointerdown', audioOn);
+
+// ---- ÂM THANH MẪU (game/audio, CC0 OpenGameArt) — nạp sau lần chạm đầu; chưa nạp xong thì dùng tiếng tổng hợp
+const SND_VOL = { charge: 0.7, charge_big: 0.85, impact: 0.9, explode: 0.75, thunder: 0.8, whoosh: 0.55, slash: 0.3, hit: 0.3, fire: 1.5, magic: 0.35, heal: 0.8, gong: 0.55, roar: 0.6, pickup: 0.6, chain: 0.6, water: 1.6, gate: 0.3 };
+const SNDB = {}; let _sndLoading = false;
+function sndLoad() { if (!AC || _sndLoading) return; _sndLoading = true;
+  for (const n in SND_VOL) fetch('audio/' + n + '.mp3').then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => AC.decodeAudioData(b, ok, no))).then(buf => { SNDB[n] = buf; }).catch(() => {}); }
+function snd(n, vol, rate) {
+  if (!AC || (S && S.mute)) return false; const b = SNDB[n]; if (!b) return false;
+  const now = AC.currentTime, gap = { slash: 0.07, hit: 0.06, gate: 0.25, pickup: 0.1, magic: 0.12 }[n] || 0.03;
+  if (_sfxT['_' + n] && now - _sfxT['_' + n] < gap) return true; _sfxT['_' + n] = now;
+  const s = AC.createBufferSource(); s.buffer = b; s.playbackRate.value = rate || (0.94 + Math.random() * 0.12);
+  const g = AC.createGain(); g.gain.value = (SND_VOL[n] || 0.6) * (vol == null ? 1 : vol) * 0.8; s.connect(g); g.connect(AC.destination); s.start(); return true;
+}
+function elemSnd(id) {   // tiếng va chạm theo hệ / kiểu chiêu
+  const h = HEROES[id]; if (!h) return; const t = UCFG[id] && UCFG[id].t;
+  if (t === 'bolt' || id === 'loichantu' || id === 'duongtien') snd('thunder', 0.9);
+  else if (h.el === 'hoa') snd('fire', 1.2);
+  else if (h.el === 'thuy') snd('water', 1.1);
+  else if (t === 'bind') snd('chain');
+}
 function sfx(kind) {
   if (!AC || (S && S.mute)) return;
+  if (kind === 'ult' && snd('charge')) return;
+  if (kind === 'boom' && SNDB.impact) { snd('impact'); snd('explode', 0.7, 0.8); }
+  if (kind === 'crit') snd('slash', 1.3);
   const now = AC.currentTime, gap = { shoot: 0.06, hit: 0.05, hitBig: 0.08, pop: 0.05, crit: 0.06 }[kind] || 0;
   if (gap && _sfxT[kind] && now - _sfxT[kind] < gap) return; _sfxT[kind] = now;
   const out = AC.createGain(); out.connect(AC.destination);
@@ -2082,7 +2106,7 @@ function ucObj(n, x, y, w, rot, a, glowCol, glowK, flip) {   // vẽ vật thể
   if (glowCol) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= (glowK || 0.5); ctx.filter = 'blur(12px)'; ctx.fillStyle = glowCol; ctx.beginPath(); ctx.ellipse(0, 0, w * 0.6, h * 0.6, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
   ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); return h;
 }
-function ucHit(f, c, burst, r) { ucOnce(f, 'hit', () => { if (f.id) cineImpact(f.tx, f.ty, c, isSSR(f.id)); B.shake = Math.max(B.shake, 0.9); B.flash = 0.22; sfx('boom'); particles(f.tx, f.ty - 30, c || '#ffe58a', 40, 340, 5); if (r !== 0) B.decals.push({ x: f.tx, y: f.ty + 4, r: r || 160, t: 0, dur: 4 }); }); }
+function ucHit(f, c, burst, r) { ucOnce(f, 'hit', () => { if (f.id) { cineImpact(f.tx, f.ty, c, isSSR(f.id)); elemSnd(f.id); } B.shake = Math.max(B.shake, 0.9); B.flash = 0.22; sfx('boom'); particles(f.tx, f.ty - 30, c || '#ffe58a', 40, 340, 5); if (r !== 0) B.decals.push({ x: f.tx, y: f.ty + 4, r: r || 160, t: 0, dur: 4 }); }); }
 const tgtXY = f => [clamp(f.tx, 140, W - 120), clamp(f.ty, 280, H - 60)];
 const UTPL = {
   // vũ khí trong tay phóng to, dựng lên trời rồi quật xuống mục tiêu
@@ -2681,7 +2705,7 @@ const SCI = {}; function scImg(n) { let i = SCI[n]; if (!i) { i = SCI[n] = new I
 const SCENE_D = 1.4;
 const sceneUnlocked = id => isSSR(id) || (HEROES[id] && HEROES[id].rar === 'SR' && S.owned[id] && S.owned[id].star >= 5);   // SR: THỨC TỈNH (5★) mở cảnh cắt
 const scReady = id => sceneUnlocked(id) && ['_bg', '_hero', '_fx'].every(s => scImg(id + s));
-function startScene(u, sk) { const hd = document.querySelector('.hud'); if (hd) hd.classList.add('cine'); B.scene = { id: u.id, name: sk.name, hero: u.name, t0: performance.now() }; B.hitstop = Math.max(B.hitstop || 0, SCENE_D); B.cutin = null; }
+function startScene(u, sk) { snd('charge_big'); snd('whoosh', 1, 0.8); const hd = document.querySelector('.hud'); if (hd) hd.classList.add('cine'); B.scene = { id: u.id, name: sk.name, hero: u.name, t0: performance.now() }; B.hitstop = Math.max(B.hitstop || 0, SCENE_D); B.cutin = null; }
 function drawScene() {
   const S = B.scene; if (!S) return; const a = window.__sceneA != null ? window.__sceneA : (performance.now() - S.t0) / 1000; if (a > SCENE_D) { B.scene = null; const hd = document.querySelector('.hud'); if (hd) hd.classList.remove('cine'); return; }
   const bg = scImg(S.id + '_bg'), hero = scImg(S.id + '_hero'), fx = scImg(S.id + '_fx'); if (!bg || !hero || !fx) { B.scene = null; return; }
@@ -3264,6 +3288,7 @@ function elTag(e) { return `<span class="tag" style="--c:${ELEMENTS[e].color}">$
 
 function totalPower() { return Object.keys(S.owned).reduce((s, id) => s + power(id), 0); }
 function showHome() {
+  bgmSet('home');
   B = null;
   ensureHeroAssets(S.lineup.filter(id => S.owned[id]));   // nạp tư thế để tướng ở trang chủ có dáng đứng riêng
   const cap = S.lineup.find(id => S.owned[id]), nf = STAGES.findIndex(st => !S.cleared[st.id]), nx = STAGES[nf < 0 ? STAGES.length - 1 : nf];
@@ -3551,7 +3576,7 @@ function showHUD() {
   const pad = $('#pad');
   pad.addEventListener('pointerdown', e => { const l = logical(e); tapTarget({ x: GATE_X + (l.x - GATE_X) / VIEW_Z, y: H * VIEW_PY + (l.y - H * VIEW_PY) / VIEW_Z }); const h = $('#hintTap'); if (h) h.remove(); });
   $('#bPause').onclick = openPause;
-  $('#bMute').onclick = () => { S.mute = !S.mute; save(); $('#bMute').innerHTML = S.mute ? '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'; audioOn(); };
+  $('#bMute').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); $('#bMute').innerHTML = S.mute ? '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>' : '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'; audioOn(); };
   setTimeout(() => { const h = $('#hintTap'); if (h) h.classList.add('gone'); }, 6000);
   $('#bAuto').onclick = () => { B.auto = !B.auto; $('#bAuto').classList.toggle('on', B.auto); };
   $('#bSpeed').onclick = () => { B.speed = B.speed === 1 ? 2 : (B.speed === 2 && S.cleared[B.st.id] ? 3 : 1);   // x3 chỉ cho ải đã qua
@@ -3808,19 +3833,19 @@ function showGift() {
   w.querySelectorAll('[data-g]').forEach(b => b.onclick = () => { const i = +b.dataset.g; L.got.push(i); grant(LOGIN7[i]); save(); w.remove(); showGift(); });
 }
 // ---- Nhạc nền tổng hợp (ngũ cung, nhẹ, lặp) — tắt cùng nút Âm thanh
-let BGM = null;
-function bgmStart() {
-  if (!AC || BGM || (S && S.mute)) return;
-  const notes = [0, 2, 4, 7, 9, 12, 9, 7, 4, 2], base = 220, out = AC.createGain(); out.gain.value = 0.035; out.connect(AC.destination);
-  let step = 0; BGM = { out, timer: setInterval(() => {
-    if (!AC || (S && S.mute)) return;
-    const t = AC.currentTime, n = notes[step % notes.length] + (step % 20 >= 10 ? 5 : 0), f = base * Math.pow(2, n / 12);
-    const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f;
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(1, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9); o.connect(g); g.connect(out); o.start(t); o.stop(t + 1);
-    if (step % 4 === 0) { const b = AC.createOscillator(), bg = AC.createGain(); b.type = 'sine'; b.frequency.value = base / 2 * Math.pow(2, (n % 12) / 12); bg.gain.setValueAtTime(0.6, t); bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.6); b.connect(bg); bg.connect(out); b.start(t); b.stop(t + 1.7); }
-    step++;
-  }, 420) };
+let BGM = null, bgmCur = null, bgmWant = 'home', _bgmGest = false;
+const BGM_SRC = { home: 'audio/bgm_home.mp3', battle: 'audio/bgm_battle.mp3', boss: 'audio/bgm_boss.mp3' }, BGM_VOL = 0.32;
+function bgmFade(a, to, ms, done) { const from = a.volume, t0 = performance.now(); const tk = () => { const k = Math.min(1, (performance.now() - t0) / ms); try { a.volume = from + (to - from) * k; } catch (e) {} if (k < 1) requestAnimationFrame(tk); else if (done) done(); }; tk(); }
+function bgmApply() {
+  if (S && S.mute) { if (BGM) BGM.pause(); return; }
+  if (!_bgmGest) return;
+  if (bgmCur === bgmWant && BGM) { if (BGM.paused) BGM.play().catch(() => {}); return; }
+  const old = BGM; BGM = new Audio(BGM_SRC[bgmWant]); BGM.loop = true; BGM.volume = 0; bgmCur = bgmWant;
+  BGM.play().then(() => bgmFade(BGM, BGM_VOL, 1200)).catch(() => {});
+  if (old) bgmFade(old, 0, 800, () => old.pause());
 }
+function bgmSet(k) { bgmWant = k; bgmApply(); }
+function bgmStart() { _bgmGest = true; bgmApply(); }
 document.addEventListener('pointerdown', () => setTimeout(bgmStart, 50));
 
 
