@@ -733,7 +733,7 @@ const GACHA = { cost1: 150, cost10: 1350, ssr: 0.025, sr: 0.15, softFrom: 60, so
 // ---------------------------------------------------------------------
 // HỢP KÍCH: 2 tướng tung tuyệt kỹ cách nhau ≤ 3 giây → chiêu kết hợp (sát thương vùng lớn + hiệu ứng riêng)
 // ---------------------------------------------------------------------
-const COMBOS = [   // hợp kích (kiểu Dual Tech): mỗi tướng tối đa 1 cặp, mỗi cặp là một chiêu mới có cơ chế riêng
+const COMBOS_ALL = [   // hợp kích (kiểu Dual Tech): mỗi tướng tối đa 1 cặp, mỗi cặp là một chiêu mới có cơ chế riêng
   { a: 'ngokhong', b: 'duongtien', name: 'Thiên Nhãn Thần Hầu', mult: 4.5, all: 1, col: '#ffd34d', desc: 'Thiên nhãn đánh dấu mọi quái trên sân, phân thân Ngộ Không giáng xuống từng con.' },
   { a: 'batgioi', b: 'satang', name: 'Thiên Hà Đảo Lưu', mult: 3.5, all: 1, push: 220, shield: 0.15, col: '#7fc8ff', desc: 'Sóng Thiên Hà cuốn cả sân, đẩy lùi mọi quái thường; cả đội nhận khiên 15%.' },
   { a: 'ngumavuong', b: 'thietphien', name: 'Hoả Diệm Sơn', mult: 5.5, zone: 1, col: '#ff6a2a', desc: 'Trâu dậm núi lửa, quạt thổi thành lốc lửa cuốn quái, để lại biển lửa 4 giây.' },
@@ -747,6 +747,7 @@ const COMBOS = [   // hợp kích (kiểu Dual Tech): mỗi tướng tối đa 1
   { a: 'thailaoquan', b: 'kimgiac', name: 'Luyện Ma Hồ Lô', mult: 3.5, execute: 0.3, heal: 3, col: '#9fffd0', desc: 'Hút quái thường dưới 30% máu vào hồ lô, luyện thành đan hồi máu cả đội.' },
   { a: 'hangnga', b: 'thaibachkimtinh', name: 'Nguyệt Tinh Dao Trì', mult: 0, heal: 4, mp: 40, col: '#e0e8ff', desc: 'Trăng sao giáng phúc: hồi máu và +40 nội công cả đội.' },
 ];
+const COMBOS = [];   // TẠM TẮT hợp kích (theo yêu cầu) — bật lại: const COMBOS = COMBOS_ALL;
 // ĐỘI TRƯỞNG: mỗi tướng làm đội trưởng mang một hiệu ứng riêng (theo hệ, vài tướng có hiệu ứng đặc biệt)
 const CAP_ROLE = {
   the: { n: 'Kiên Thủ', d: 'Cả đội nhận ít hơn 15% sát thương', m: { kc: 0.15 } },
