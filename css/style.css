@@ -469,3 +469,4 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .xfer h3 { font-size: 24px; text-align: center; } .xfer p, .xfer small { margin: 0; font-size: 13px; } .xfer textarea { height: 70px; font-size: 11px; border: 2px solid #c9985a; border-radius: 8px; resize: none; }
 .g7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; } .g7d { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border: 2px solid #c9985a; border-radius: 10px; background: #f6e6c0; font-size: 12px; }
 .g7d.ok { background: linear-gradient(#fff3a0, #ffc21a); border-color: #8a5a10; animation: pulse 1s infinite; } .g7d.got { opacity: .55; } .g7d i { font-style: normal; font-size: 11px; font-weight: 800; }
+.hm-acc { flex: none; height: 30px; padding: 0 12px; border: 2px solid #e0b040; border-radius: 14px; background: linear-gradient(#ffe36a, #f2a218); color: #4a2a0c; font-weight: 800; font-size: 13px; }

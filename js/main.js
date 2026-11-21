@@ -36,7 +36,7 @@ function loadSave() {
   } catch (e) { /* bỏ qua */ }
   return defaultSave();
 }
-function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } }
+function save() { S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
 let S = loadSave();
 // Tặng 10 tướng mới vào kho hiện có (một lần cho mỗi bản save) để thử ngay, không cần quay gacha
 // (đã bỏ) tặng sẵn 10 tướng mới — tân thủ đi từ thấp lên cao
@@ -82,7 +82,7 @@ function drawEnemyPose(u, alpha) {
   ctx.filter = 'none'; ctx.restore(); return true;
 }
 const POSE_NAMES = ['windup', 'strike', 'skill', 'ult', 'idle1', 'idle2', 'hit'];
-const POSE_IDS = ['ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
+const POSE_IDS = ['ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
 const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tướng, chỉ nạp khi tướng ra trận (tiết kiệm ~30 MB lúc khởi động)
 function ensureHeroAssets(ids) {
   return Promise.all([...new Set(ids)].map(id => {
@@ -1518,7 +1518,7 @@ function poseFor(u) {
   return null;
 }
 function drawPose(u, name, t, h, alpha) {
-  const img = POSES[u.id][name], D = window.SKEL_DEFS && SKEL_DEFS[u.id]; if (!img || !D) return false;
+  const img = POSES[u.id][name], D = (window.SKEL_DEFS && SKEL_DEFS[u.id]) || (window.HPOSE && HPOSE[u.id]); if (!img || !D) return false;
   const k = h / D.H / 0.5, gx = D.gnd[0] * 0.5 * k, gy = D.gnd[1] * 0.5 * k;   // ảnh tư thế = hình gốc giảm nửa, đặt chân tại gốc xương root
   let sx = 1, sy = 1, rot = 0, ox = 0;
   if (name === 'windup') { sy = 1 - 0.04 * t; sx = 1 + 0.03 * t; ox = -6 * t; }
@@ -1534,7 +1534,7 @@ function drawPose(u, name, t, h, alpha) {
   return true;
 }
 function drawRigUnit(u, h, alpha) {
-  const pz = poseFor(u);
+  const pz = poseFor(u) || (window.HPOSE && HPOSE[u.id] && !hasSkel(u.id) ? ['idle1', 0] : null);   // tướng chỉ có tư thế (không rig): thắng/chết dùng dáng đứng
   if (pz) {
     ctx.save(); ctx.scale(u.f * (FACE[u.id] || 1), 1); let ok;
     if (pz[0] === 'idle') {   // xen kẽ idle1 ↔ idle2 bằng chuyển mờ
@@ -1572,7 +1572,7 @@ function drawRigUnit(u, h, alpha) {
 const hasLayered = id => typeof Layered !== 'undefined' && Layered.has(id);
 const hasMesh = id => typeof MeshRig !== 'undefined' && MeshRig.has(id);
 const hasSkel = id => typeof Skel !== 'undefined' && Skel.has(id) && !window.__noSkel;
-const hasRig = id => hasSkel(id) || hasMesh(id) || hasLayered(id) || (typeof Rig !== 'undefined' && Rig.has(id));
+const hasRig = id => !!(window.HPOSE && HPOSE[id]) || hasSkel(id) || hasMesh(id) || hasLayered(id) || (typeof Rig !== 'undefined' && Rig.has(id));
 // ưu tiên nhân vật tách lớp (Live2D) → rig bộ phận
 // &chibi trên đường dẫn: nhân vật nào có bản chibi (art/mesh/<id>_chibi.js) thì dùng bản đó để so sánh
 const meshId = id => (window.__chibi && typeof MeshRig !== 'undefined' && MeshRig.has(id + '_chibi')) ? id + '_chibi' : id;
@@ -2250,7 +2250,8 @@ function showHome() {
   ui.innerHTML = `<div class="screen home2">
     <div class="hm-top">
       <div class="hm-avatar">${cap ? `<img src="${por(cap, 60)}">` : ''}</div>
-      <div class="hm-who"><b>Chấp Bảng Sứ</b><small>Lực chiến ${fmt(totalPower())}</small></div>
+      <div class="hm-who"><b>${window.Cloud && Cloud.user ? esc(Cloud.user.displayName || 'Chấp Bảng Sứ') : 'Chấp Bảng Sứ'}</b><small>Lực chiến ${fmt(totalPower())}</small></div>
+      <button class="tool hm-acc" id="hAcc">${!(window.Cloud && Cloud.ok) ? 'Chưa nối mạng' : Cloud.user ? 'Đã lưu mạng ✓' : 'Đăng nhập Google'}</button>
       ${resBar()}
     </div>
     <div class="hm-logo"><span class="l1">THẦN TIÊN</span><span class="l2">ĐẠI CHIẾN</span></div>
@@ -2277,6 +2278,11 @@ function showHome() {
   $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle;
   $('#hGift').onclick = showGift; $('#hSave').onclick = showSaveTransfer;
+  $('#hAcc').onclick = async () => {
+    if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
+    if (Cloud.user) { if (confirm('Đăng xuất? Dữ liệu vẫn được giữ trên mạng và trên máy này.')) { await Cloud.signOut(); showHome(); } return; }
+    try { await Cloud.signIn(); } catch (e) { toast('Đăng nhập lỗi: ' + (e.code || e.message)); }
+  };
   $('#hReset').onclick = () => {
     if (confirm('Xoá toàn bộ tiến độ chơi thử?')) { S = defaultSave(); save(); showHome(); }
   };
@@ -2365,7 +2371,7 @@ function showLineup() {
 
 // ---------------- Heroes
 function showHeroes() {
-  const ids = Object.keys(HEROES).sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || (HEROES[a].rar < HEROES[b].rar ? 1 : -1));
+  const ids = Object.keys(HEROES).filter(id => SPR[id] || S.owned[id]).sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || (HEROES[a].rar < HEROES[b].rar ? 1 : -1));
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
     <div class="hero-grid">${ids.map(id => {
       const h = HEROES[id], o = S.owned[id];
@@ -2747,6 +2753,26 @@ function bgmStart() {
 }
 document.addEventListener('pointerdown', () => setTimeout(bgmStart, 50));
 
+
+// ---- Lưu trực tuyến (js/cloud.js): khi đăng nhập, so bản trên mạng với bản trên máy
+const isFresh = s => !Object.keys(s.cleared || {}).length && !(s.pulls > 0);
+if (window.Cloud && Cloud.ok) Cloud.onUser(async u => {
+  if (!u) { if (!B) showHome(); return; }
+  try {
+    const r = await Cloud.pull();
+    if (r && r.save) {
+      const remote = JSON.parse(r.save);
+      if (JSON.stringify(remote) !== JSON.stringify(S)) {
+        const useRemote = isFresh(S) || (remote.ts || 0) >= (S.ts || 0)
+          ? (isFresh(S) || confirm('Có dữ liệu trên mạng (' + new Date(remote.ts || 0).toLocaleString('vi-VN') + '). Dùng bản trên mạng?\nBấm Huỷ để giữ bản trên máy này và ghi đè lên mạng.'))
+          : !confirm('Bản trên máy này mới hơn bản trên mạng. Giữ bản trên máy và ghi đè lên mạng?\nBấm Huỷ để dùng bản trên mạng.');
+        if (useRemote) { S = Object.assign(defaultSave(), remote); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} toast('Đã tải dữ liệu từ mạng'); }
+        else await Cloud.pushNow(S);
+      }
+    } else await Cloud.pushNow(S);
+  } catch (e) { toast('Lỗi đồng bộ: ' + (e.code || e.message)); console.warn(e); }
+  if (!B) showHome();
+});
 // ------------------------------------------------------------------ BOOT
 // Đường dẫn nhanh: #battle=1 (vào ải 1, bật tự động), #gacha, #heroes, #lineup, #stages, #hero=nata
 function route() {
