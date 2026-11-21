@@ -106,7 +106,7 @@ const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tư�
 function ensureHeroAssets(ids) {
   return Promise.all([...new Set(ids)].map(id => {
     if (_heroLoaded[id]) return _heroLoaded[id];
-    try { if (isSSR(id)) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'], nata: ['firewheel'] }[id] || []).forEach(ucImg); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
+    try { if (isSSR(id)) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ datky: ['fx_ninetails'], quanam: ['fx_halo'], tieubachlong: ['fx_waterpillar'] }[id] || []).forEach(scImg); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'], nata: ['firewheel'] }[id] || []).forEach(ucImg); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
     const jobs = [];
     if (typeof Skel !== 'undefined' && (window.SKEL_IDS || []).includes(id)) jobs.push(new Promise(res => {
       const sc = document.createElement('script'); sc.src = 'art/skel/' + id + '.js';
@@ -2529,42 +2529,39 @@ function bagua(x, y, R, rot, col, a) {   // trận Bát Quái trên mặt đất
   for (let i = 0; i < 8; i++) { ctx.save(); ctx.rotate(i * Math.PI / 4); for (let j = 0; j < 3; j++) { const yy = -R * 0.9 + j * 9; ctx.beginPath(); if ((i >> j) & 1) { ctx.moveTo(-16, yy); ctx.lineTo(-4, yy); ctx.moveTo(4, yy); ctx.lineTo(16, yy); } else { ctx.moveTo(-16, yy); ctx.lineTo(16, yy); } ctx.stroke(); } ctx.restore(); }
   ctx.restore();
 }
-// lớp riêng cho tướng SSR (vẽ sau khuôn chiêu)
+// lớp riêng cho tướng SSR (vẽ sau khuôn chiêu) — dùng tranh hiệu ứng vẽ tay (art/scene), hoà sáng
+function scTex(n, x, y, w, rot, a, sy) { const im = scImg(n); if (!im || !(a > 0)) return; const h = w * im.height / im.width;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, a); ctx.translate(x, y); if (sy) ctx.scale(1, sy); if (rot) ctx.rotate(rot); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
 const SSRX = {
-  nata(f, p) {   // Tam Đầu Lục Tý: thêm 2 thương lửa toả hình quạt
+  ngokhong(f, p) { if (p > 0.53 && p < 0.95) { const q = (p - 0.53) / 0.42, [tx, ty] = tgtXY(f); scTex('ngokhong_fx', tx, ty - 10, 420 + 380 * ease3(q), 0, (1 - q) * 1.3, 0.6); scTex('ngokhong_fx', tx, ty - 60, 300 + 200 * q, q, (1 - q) * 0.8); } },
+  nata(f, p) {   // Tam Đầu Lục Tý: thêm 2 thương lửa toả quạt + xoáy lửa sau lưng lúc lấy đà
     const cfg = UCFG.nata; for (const [k, dy] of [['n1', -110], ['n2', 110]]) { f[k] = f[k] || { x: f.x, y: f.y, tx: f.tx, ty: f.ty + dy, id: f.id, done: { hit: 1 } }; UC_NODARK = true; try { UTPL.pierce(f[k], Math.max(0, p - 0.05), cfg); } finally { UC_NODARK = false; } }
-    if (p < 0.3) for (const dx of [-26, 0, 26]) ucObj('firewheel', f.x + dx, f.y - 90 - Math.abs(dx) * 0.6, 44, p * 30, fadeIO(p / 0.3, 0.3, 0.8), '#ff7a2e', 0.6);
+    if (p < 0.45) scTex('nata_fx', f.x, f.y - 30, 300 + 120 * p, p * 4, fadeIO(p / 0.45, 0.3, 0.7));
   },
-  ngumavuong(f, p) { if (p < 0.55) ucObj('bull_ram', f.x + 240, 170, 560, 0, 0.3 * fadeIO(p / 0.55, 0.3, 0.6), '#ff3a1a', 0.7); },   // hồn trâu khổng lồ gầm trên trời
-  quanam(f, p) {   // vầng hào quang nghìn tia sau đội
-    const al = alliesAlive(), cx = al.length ? al.reduce((s, h) => s + h.x, 0) / al.length : f.x, k = fadeIO(p, 0.25, 0.8);
-    ctx.save(); ctx.translate(cx, 150); ctx.rotate(p * 0.8); ctx.globalCompositeOperation = 'lighter'; for (let i = 0; i < 36; i++) { ctx.rotate(TAU / 36); const g = ctx.createLinearGradient(0, 0, 0, -300); g.addColorStop(0, 'rgba(255,240,180,0.7)'); g.addColorStop(1, 'rgba(255,240,180,0)'); ctx.globalAlpha = k * (i % 2 ? 0.5 : 0.9); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(0, -300); ctx.lineTo(6, 0); ctx.fill(); } ctx.restore();
+  ngumavuong(f, p) { if (p < 0.65) scTex('ngumavuong_fx', f.x + 280, 210, 620 + 120 * p, 0, fadeIO(p / 0.65, 0.3, 0.6)); },   // đầu trâu lửa khổng lồ trên trời
+  quanam(f, p) { const al = alliesAlive(), cx = al.length ? al.reduce((s, h) => s + h.x, 0) / al.length : f.x, k = fadeIO(p, 0.25, 0.8); scTex('fx_halo', cx, 170, 330 + 60 * k, p * 0.6, k * 0.95); },
+  datky(f, p) { const [tx, ty] = tgtXY(f), k = fadeIO(p, 0.25, 0.85); scTex('fx_ninetails', tx + 50, ty - 150, 300 + 300 * ease3(Math.min(1, p / 0.35)), Math.sin(p * 5) * 0.05, k); },
+  duongtien(f, p) {   // Thiên Nhãn mở trên trán, tia vàng khoá mục tiêu trước khi chó lao ra
+    if (p > 0.38) return; const k = fadeIO(p / 0.38, 0.3, 0.7), hx = f.x + 4, hy = f.y - 56;
+    scTex('duongtien_fx', hx, hy, 160, 0, k);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; for (const [lw, a, c] of [[26, 0.25, '#ffcf3f'], [10, 0.6, '#ffe58a'], [3, 1, '#ffffff']]) { ctx.globalAlpha = a * k; ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(f.tx, f.ty - 40); ctx.stroke(); } ctx.restore();
+    scTex('duongtien_fx', f.tx, f.ty - 40, 200, p * 3, k * 0.8);
   },
-  datky(f, p) {   // chín đuôi hồ toả quạt khắp sân
-    const [tx, ty] = tgtXY(f), k = fadeIO(p, 0.25, 0.85); ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
-    for (let i = 0; i < 9; i++) { const an = -Math.PI * 0.95 + i * Math.PI * 0.9 / 8 + Math.sin(p * 6 + i) * 0.08, L = 260 + 40 * Math.sin(p * 5 + i);
-      for (const [lw, a] of [[46, 0.18], [18, 0.5]]) { ctx.globalAlpha = a * k; ctx.strokeStyle = i % 2 ? '#ff9ae0' : '#ffd0f0'; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(tx + 60, ty - 120); ctx.quadraticCurveTo(tx + 60 + Math.cos(an + 0.5) * L * 0.6, ty - 120 + Math.sin(an + 0.5) * L * 0.6, tx + 60 + Math.cos(an) * L, ty - 120 + Math.sin(an) * L); ctx.stroke(); } }
-    ctx.restore();
-  },
-  duongtien(f, p) {   // Thiên Nhãn bắn tia khoá mục tiêu trước khi chó lao ra
-    if (p > 0.35) return; const k = fadeIO(p / 0.35, 0.3, 0.7), hx = f.x + 4, hy = f.y - 56;
-    ucObj('sky_eye', hx, hy, 60, 0, k, '#9fc8ff', 0.8);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; for (const [lw, a, c] of [[22, 0.3, '#9fc8ff'], [6, 0.9, '#ffffff']]) { ctx.globalAlpha = a * k; ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(f.tx, f.ty - 40); ctx.stroke(); } ctx.restore();
-    ucRings(f.tx, f.ty - 40, p * 3, '#9fc8ff', 2, 80, k);
-  },
-  vantieu(f, p) { const [tx, ty] = tgtXY(f); if (p > 0.3) bagua(tx, ty, 200, p * 2.5, '#ffd34d', 0.7 * fadeIO((p - 0.3) / 0.7, 0.2, 0.8)); },
-  thailaoquan(f, p) { const al = alliesAlive(); if (!al.length) return; const cx = al.reduce((s, h) => s + h.x, 0) / al.length, cy = al.reduce((s, h) => s + h.y, 0) / al.length + 10; bagua(cx, cy, 210, -p * 2.5, '#9fffd0', 0.7 * fadeIO(p, 0.2, 0.85)); },
-  loichantu(f, p) { if (p > 0.12 && p < 0.46) { const q = (p - 0.12) / 0.34, [tx, ty] = tgtXY(f); ucObj('loi_dive', -80 + (tx - 40 + 80) * ease3(q), 40 + (ty - 160 - 40) * q, 230, 0, q > 0.85 ? (1 - q) / 0.15 : 1, '#9fd0ff', 0.7); } },
-  thaiatchannhan(f, p) {   // chín hoả long xoắn bay lên quanh chuông
-    if (p < 0.55) return; const [tx, ty] = tgtXY(f), q = (p - 0.55) / 0.45, a = q > 0.8 ? (1 - q) / 0.2 : 1;
+  vantieu(f, p) { const [tx, ty] = tgtXY(f); if (p > 0.3) scTex('vantieu_fx', tx, ty, 560, p * 2.2, fadeIO((p - 0.3) / 0.7, 0.2, 0.8), 0.42); },
+  thailaoquan(f, p) { const al = alliesAlive(); if (!al.length) return; const cx = al.reduce((s, h) => s + h.x, 0) / al.length, cy = al.reduce((s, h) => s + h.y, 0) / al.length + 10; scTex('thailaoquan_fx', cx, cy, 560, -p * 2, fadeIO(p, 0.2, 0.85), 0.42); },
+  loichantu(f, p) { const [tx, ty] = tgtXY(f);
+    if (p > 0.12 && p < 0.46) { const q = (p - 0.12) / 0.34; ucObj('loi_dive', -80 + (tx - 40 + 80) * ease3(q), 40 + (ty - 160 - 40) * q, 230, 0, q > 0.85 ? (1 - q) / 0.15 : 1, '#9fd0ff', 0.7); }
+    if (p > 0.44 && p < 0.9) { const q = (p - 0.44) / 0.46; scTex('loichantu_fx', tx, ty - 170, 520 + 120 * q, 0, (1 - q) * 1.4); } },
+  thaiatchannhan(f, p) {   // chín hoả long xoắn bay lên quanh chuông + xoáy lửa dưới chân chuông
+    if (p < 0.5) return; const [tx, ty] = tgtXY(f), q = (p - 0.5) / 0.5, a = q > 0.8 ? (1 - q) / 0.2 : 1;
+    scTex('thaiatchannhan_fx', tx, ty - 10, 520, p * 3, a, 0.45);
     for (let i = 0; i < 9; i++) { const t = q * 1.4 - i * 0.07; if (t < 0 || t > 1) continue; const an = i * TAU / 9 + t * 5, r = 140 - t * 60, x = tx + Math.cos(an) * r, y = ty - 60 - t * 380 + Math.sin(an) * r * 0.3;
-      ucObj('firedragon_head', x, y, 78, -Math.PI / 2 + Math.cos(an) * 0.5, a * (1 - t * 0.4), '#ff7a2e', 0.6); particles(x, y + 20, '#ffb060', 1, 80, 4); }
+      ucObj('firedragon_head', x, y, 78, -Math.PI / 2 + Math.cos(an) * 0.5, a * (1 - t * 0.4), '#ff7a2e', 0.6); }
   },
-  tieubachlong(f, p) {   // cột nước phun lên dọc đường rồng bay
-    if (p < 0.45) return; const [tx, ty] = tgtXY(f), q = (p - 0.45) / 0.55; ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < 5; i++) { const t = q * 1.6 - i * 0.12; if (t < 0 || t > 1) continue; const x = tx - 200 + i * 100, h = 320 * Math.sin(t * Math.PI), g = ctx.createLinearGradient(0, ty - h, 0, ty); g.addColorStop(0, 'rgba(200,245,255,0.1)'); g.addColorStop(1, 'rgba(120,220,255,0.8)');
-      ctx.globalAlpha = 0.85; ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, ty - h / 2, 26 + 10 * Math.sin(p * 40 + i), h / 2, 0, 0, TAU); ctx.fill(); if (Math.random() < 0.5) particles(x, ty - h, '#dff8ff', 2, 160, 4); }
-    ctx.restore();
+  tieubachlong(f, p) {   // cột nước có rồng bạc phun lên dọc đường rồng bay
+    if (p < 0.42) return; const [tx, ty] = tgtXY(f), q = (p - 0.42) / 0.58, im = scImg('fx_waterpillar'); if (!im) return;
+    for (let i = 0; i < 4; i++) { const t = q * 1.5 - i * 0.14; if (t < 0 || t > 1) continue; const x = tx - 210 + i * 140, s = Math.sin(t * Math.PI), w = 150, h = w * im.height / im.width;
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, s * 1.4); ctx.translate(x, ty + 20); ctx.scale(1, 0.25 + 0.75 * s); ctx.drawImage(im, -w / 2, -h, w, h); ctx.restore(); }
   },
 };
 
