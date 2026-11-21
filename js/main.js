@@ -3359,57 +3359,86 @@ function roleTag(r) { return `<span class="tag" style="--c:${ROLES[r].color}">${
 function elTag(e) { return `<span class="tag" style="--c:${ELEMENTS[e].color}">${ELEMENTS[e].name}</span>`; }
 
 function totalPower() { return Object.keys(S.owned).reduce((s, id) => s + power(id), 0); }
+
+// ---- CÀI ĐẶT (bấm ảnh đại diện): tài khoản, âm thanh, đồ hoạ, dữ liệu
+function showSettings() {
+  const st = !window.Cloud || !Cloud.ok ? 'Chưa kết nối máy chủ lưu' : Cloud.user ? 'Đã đăng nhập: ' + esc(Cloud.user.displayName || '') + ' · tự lưu lên mạng' : 'Chưa đăng nhập: dữ liệu chỉ lưu trên máy này';
+  const w = document.createElement('div'); w.className = 'modal set-modal';
+  w.innerHTML = `<div class="buff-box"><div class="cp-title"><span>Cài Đặt</span></div><div class="buff-body">
+    <section><h4>Tài khoản</h4><div class="bf"><b>Lưu trực tuyến</b><span>${st}</span></div>
+      <div class="set-row"><button class="btn small gold" id="sAcc">${window.Cloud && Cloud.user ? 'Đăng xuất' : 'Đăng nhập Google'}</button><button class="btn small" id="sData">Mã chuyển dữ liệu</button></div></section>
+    <section><h4>Âm thanh và hình ảnh</h4>
+      <div class="set-row"><button class="btn small ${S.mute ? '' : 'gold'}" id="sSnd">Âm thanh: ${S.mute ? 'Tắt' : 'Bật'}</button>
+      <button class="btn small ${S.ultScene === false ? '' : 'gold'}" id="sScene">Cảnh tuyệt kỹ SSR: ${S.ultScene === false ? 'Tắt' : 'Bật'}</button>
+      <button class="btn small" id="sGfx">Đồ hoạ: ${S.gfx === 'low' ? 'Nhẹ' : S.gfx === 'high' ? 'Đẹp' : 'Tự động'}</button></div></section>
+    <section><h4>Chơi thử</h4><div class="set-row"><button class="btn small" id="sTut">Xem lại hướng dẫn</button><button class="btn small red" id="sReset">Xoá dữ liệu chơi thử</button></div><small id="sResetMsg"></small></section>
+  </div><div class="res-btns"><button class="btn gold" id="sClose">Đóng</button></div></div>`;
+  ui.appendChild(w);
+  const q = s => w.querySelector(s), close = () => { w.remove(); showHome(); };
+  q('#sClose').onclick = close; w.addEventListener('click', e => { if (e.target === w) close(); });
+  q('#sAcc').onclick = async () => { if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
+    try { if (Cloud.user) await Cloud.signOut(); else await Cloud.signIn(); } catch (e) { toast('Lỗi: ' + (e.code || e.message)); } w.remove(); showSettings(); };
+  q('#sData').onclick = () => { w.remove(); showSaveTransfer(); };
+  q('#sSnd').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); audioOn(); w.remove(); showSettings(); };
+  q('#sScene').onclick = () => { S.ultScene = S.ultScene === false ? true : false; save(); w.remove(); showSettings(); };
+  q('#sGfx').onclick = () => { S.gfx = S.gfx === 'low' ? 'high' : S.gfx === 'high' ? 'auto' : 'low'; save(); w.remove(); showSettings(); };
+  q('#sTut').onclick = () => { S.tut = {}; save(); toast('Hướng dẫn sẽ hiện lại ở trận tới'); };
+  let armed = false; q('#sReset').onclick = () => { if (!armed) { armed = true; q('#sResetMsg').textContent = 'Bấm lần nữa để xoá toàn bộ tiến độ.'; q('#sReset').textContent = 'Xác nhận xoá'; return; }
+    S = defaultSave(); save(); w.remove(); showHome(); };
+}
+// ---- THỬ LUYỆN: gom các chế độ phụ
+function showTrials() {
+  const t = S.tower || 0, N = nanState(), rd = 3 - raidToday().n;
+  const card = (id, ic, fb, bg, title, sub, note) => `<button class="tr-card" id="${id}" style="--bg:url('art/bg/${bg}.webp')"><span class="tr-ic">${IC2(ic, fb)}</span><b>${title}</b><small>${sub}</small>${note ? `<em>${note}</em>` : ''}</button>`;
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Thử Luyện')}<div class="tr-grid">
+    ${card('trTower', 'ic_tower', 'ic_battle', 'ch7', 'Tháp Thập Tuyệt', `Đã qua ${t}/100 tầng`, 'Chọn lợi/hại mỗi tầng')}
+    ${card('trNan', 'ic_nan', 'ic_book', 'ch12', 'Tám Mươi Mốt Nạn', `Kỷ lục ${N.best}/81`, N.run ? `Đang ở nạn ${N.run.n}` : 'Hành trình roguelike')}
+    ${card('trRaid', 'ic_raid', 'ic_chest', 'ch9', 'Boss Xâm Lược', `Còn ${rd}/3 lượt hôm nay`, 'Thưởng theo sát thương')}
+    ${card('trRank', 'ic_rank', 'ic_team', 'ch6', 'Bảng Xếp Hạng', 'Lực chiến · Tháp · 81 Nạn · Boss', '')}
+  </div></div>`;
+  $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank();
+}
+function IC2(n, fb) { return `<img src="art/ui/${n}.webp" onerror="this.onerror=null;this.src='art/ui/${fb}.webp'" alt="">`; }
 function showHome() {
   bgmSet('home');
   B = null;
   ensureHeroAssets(S.lineup.filter(id => S.owned[id]));   // nạp tư thế để tướng ở trang chủ có dáng đứng riêng
   const cap = S.lineup.find(id => S.owned[id]), nf = STAGES.findIndex(st => !S.cleared[st.id]), nx = STAGES[nf < 0 ? STAGES.length - 1 : nf];
   const dq0 = dq(), qDot = DAILY.some(q => (dq0.p[q.id] || 0) >= q.need && !dq0.c[q.id]), ir = idleReward();
-  ui.innerHTML = `<div class="screen home2">
+  const L7 = loginState(), giftLeft = LOGIN7.some((r, i2) => !L7.got.includes(i2)), giftDot = LOGIN7.some((r, i2) => i2 < L7.d && !L7.got.includes(i2));
+  const heroDot = Object.keys(S.owned).some(id => { const o = S.owned[id], h = HEROES[id]; return h && o.star < 5 && o.shard + S.univ >= STAR_COST[h.rar][o.star - 1]; });
+  const nanRun = S.nan && S.nan.run, rdLeft = 3 - raidToday().n;
+  const cloudSt = !window.Cloud || !Cloud.ok ? 'off' : Cloud.user ? 'ok' : 'warn';
+  ui.innerHTML = `<div class="screen home2 home3">
     <div class="hm-top">
-      <div class="hm-avatar">${cap ? `<img src="${por(cap, 60)}">` : ''}</div>
-      <div class="hm-who"><b>${window.Cloud && Cloud.user ? esc(Cloud.user.displayName || 'Chấp Bảng Sứ') : 'Chấp Bảng Sứ'}</b><small>Lực chiến ${fmt(totalPower())}</small></div>
-      <button class="tool hm-acc" id="hAcc">${!window.Cloud ? 'Đang kết nối…' : !Cloud.ok ? 'Chưa nối mạng' : Cloud.user ? 'Đã lưu mạng ✓' : Cloud.user === null ? 'Đang kiểm tra…' : 'Đăng nhập Google'}</button>
+      <button class="hm-prof" id="hProf" title="Hồ sơ và cài đặt"><span class="hm-avatar">${cap ? `<img src="${por(cap, 60)}">` : ''}<i class="hm-cloud ${cloudSt}"></i></span>
+        <span class="hm-who"><b>${window.Cloud && Cloud.user ? esc(Cloud.user.displayName || 'Chấp Bảng Sứ') : 'Chấp Bảng Sứ'}</b><small>⚔ ${fmt(totalPower())}</small></span></button>
       ${resBar()}
     </div>
     <div class="hm-logo"><span class="l1">THẦN TIÊN</span><span class="l2">ĐẠI CHIẾN</span></div>
     <div class="hm-left">
-      <button class="hm-ic" id="hQuest"><img src="art/ui/ic_quest.webp">${qDot ? '<i class="dot"></i>' : ''}<span>Nhiệm Vụ</span></button>
-      <button class="hm-ic" id="hGift"><img src="art/ui/ic_gift.webp">${(() => { const L = loginState(); return LOGIN7.some((r, i) => i < L.d && !L.got.includes(i)) ? '<i class="dot"></i>' : ''; })()}<span>Tân Thủ</span></button>
-      <button class="hm-ic" id="hSave"><img src="art/ui/ic_book.webp"><span>Dữ liệu</span></button>
-      <button class="hm-ic" id="hEv"><img src="art/ui/ic_gift.webp">${monthState().last !== dayKey() ? '<i class="dot"></i>' : ''}<span>Sự Kiện</span></button>
+      <button class="hm-ic" id="hQuest"><img src="art/ui/ic_quest.webp" onerror="this.onerror=null;this.src='art/ui/ic_quest.webp'" alt="">${qDot ? '<i class="dot"></i>' : ''}<span>Nhiệm Vụ</span></button>
+      <button class="hm-ic" id="hEv"><img src="art/ui/ic_event.webp" onerror="this.onerror=null;this.src='art/ui/ic_gift.webp'" alt="">${monthState().last !== dayKey() ? '<i class="dot"></i>' : ''}<span>Sự Kiện</span></button>
+      ${giftLeft ? `<button class="hm-ic" id="hGift"><img src="art/ui/ic_gift.webp" onerror="this.onerror=null;this.src='art/ui/ic_gift.webp'" alt="">${giftDot ? '<i class="dot"></i>' : ''}<span>Tân Thủ</span></button>` : ''}
+      <button class="hm-ic" id="hBt"><img src="art/ui/ic_tangkinh.webp" onerror="this.onerror=null;this.src='art/ui/ic_book.webp'" alt=""><span>Tàng Kinh</span></button>
     </div>
-    <button class="hm-idle" id="hIdle"><img src="art/ui/ic_chest.webp">${ir.m >= 1 ? '<i class="dot"></i>' : ''}<b>Treo máy</b><small>${icon('vang')}${fmt(ir.vang)}</small></button>
-    <button class="hm-battle" id="hFight"><img src="art/ui/ic_battle.webp"><b>Chiến Dịch</b><small>Ải ${nx.id} · ${esc(nx.name)}</small></button>
-    <nav class="hm-nav">
-      <button id="hHeroes"><img src="art/ui/ic_hero.webp"><span>Thần Tướng</span></button>
-      <button id="hLineup"><img src="art/ui/ic_team.webp"><span>Đội Hình</span></button>
-      <button id="hGacha"><img src="art/ui/ic_summon.webp"><span>Chiêu Mộ</span></button>
-      <button id="hBt"><img src="art/ui/ic_book.webp"><span>Tàng Kinh</span></button>
-      <button id="hTower"><img src="art/ui/ic_battle.webp"><span>Tháp</span></button>
-      <button id="hNan"><img src="art/ui/ic_book.webp"><span>81 Nạn</span></button>
-      <button id="hRaid"><img src="art/ui/ic_chest.webp"><span>Boss Ngày</span></button>
-      <button id="hRank"><img src="art/ui/ic_team.webp"><span>Xếp Hạng</span></button>
+    <div class="hm-right">
+      <button class="hm-ic" id="hRank"><img src="art/ui/ic_rank.webp" onerror="this.onerror=null;this.src='art/ui/ic_team.webp'" alt=""><span>Xếp Hạng</span></button>
+      <button class="hm-ic hm-idle2" id="hIdle"><img src="art/ui/ic_chest.webp" onerror="this.onerror=null;this.src='art/ui/ic_chest.webp'" alt="">${ir.m >= 1 ? '<i class="dot"></i>' : ''}<span>Treo máy</span><small>${icon('vang')}${fmt(ir.vang)}</small></button>
+    </div>
+    <nav class="hm-nav5">
+      <button id="hHeroes"><img src="art/ui/ic_hero.webp" onerror="this.onerror=null;this.src='art/ui/ic_hero.webp'" alt="">${heroDot ? '<i class="dot"></i>' : ''}<span>Thần Tướng</span></button>
+      <button id="hLineup"><img src="art/ui/ic_team.webp" onerror="this.onerror=null;this.src='art/ui/ic_team.webp'" alt=""><span>Đội Hình</span></button>
+      <button id="hFight" class="hm-main"><img src="art/ui/ic_battle.webp" onerror="this.onerror=null;this.src='art/ui/ic_battle.webp'" alt=""><span>Chiến Dịch</span><small>Ải ${nx.id}</small></button>
+      <button id="hGacha"><img src="art/ui/ic_summon.webp" onerror="this.onerror=null;this.src='art/ui/ic_summon.webp'" alt=""><span>Chiêu Mộ</span></button>
+      <button id="hTrial"><img src="art/ui/ic_trial.webp" onerror="this.onerror=null;this.src='art/ui/ic_battle.webp'" alt="">${rdLeft > 0 || nanRun ? '<i class="dot"></i>' : ''}<span>Thử Luyện</span></button>
     </nav>
-    <button class="link hm-reset" id="hReset">Xoá dữ liệu chơi thử</button>
     ${(!IS_APP && IS_IOS && !S.a2hs) ? '<div class="a2hs" id="a2hs">Để chơi full màn hình: bấm <b>Chia sẻ</b> ⬆ rồi <b>Thêm vào MH chính</b>. <u>Đóng</u></div>' : ''}
   </div>`;
   const ah = $('#a2hs'); if (ah) ah.onclick = () => { S.a2hs = 1; save(); ah.remove(); };
-  $('#hFight').onclick = showStages;
-  $('#hLineup').onclick = showLineup;
-  $('#hGacha').onclick = showGacha;
-  $('#hHeroes').onclick = showHeroes;
-  $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle;
-  $('#hGift').onclick = showGift; $('#hSave').onclick = showSaveTransfer; $('#hEv').onclick = showEvents;
-  $('#hTower').onclick = showTower; $('#hNan').onclick = showNan; $('#hRaid').onclick = showRaid; $('#hRank').onclick = () => showRank();
-  $('#hAcc').onclick = async () => {
-    if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
-    if (Cloud.user) { if (confirm('Đăng xuất? Dữ liệu vẫn được giữ trên mạng và trên máy này.')) { await Cloud.signOut(); showHome(); } return; }
-    try { await Cloud.signIn(); } catch (e) { toast('Đăng nhập lỗi: ' + (e.code || e.message)); }
-  };
-  $('#hReset').onclick = () => {
-    if (confirm('Xoá toàn bộ tiến độ chơi thử?')) { S = defaultSave(); save(); showHome(); }
-  };
+  $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
+  $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
+  if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hProf').onclick = showSettings;
 }
 function topBar(title) {
   return `<div class="topbar-menu"><button class="btn small back" id="bBack">‹ Về</button><h2>${title}</h2>${resBar()}</div>`;
@@ -3476,12 +3505,12 @@ function showLineup() {
           <button class="mini rm" data-rm="${i}" title="Bỏ khỏi đội">×</button>` : '<i>+</i>'}
       </div>`;
     }).join('')}</div>
-    <p class="hint">Đội trưởng ra trận đầu tiên và được +15% tốc đánh, +15% hồi nội công. Các tướng khác ra trận theo thứ tự khi nhặt Linh Phù.</p>
+    <p class="hint">Đội trưởng ra trận đầu tiên, được <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và kích hoạt <b>kỹ năng đội trưởng</b> cho cả đội. Các tướng khác ra trận theo thứ tự khi nhặt Linh Phù. · Lực chiến đội: <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b></p>
     <div class="lineup-body">
-      <div class="pick-grid">${owned.map(id => `
-        <button class="pick ${lu.includes(id) ? 'in' : ''}" data-pick="${id}">
-          <img src="${por(id, 80)}">${rarTag(HEROES[id].rar)}<b>${esc(HEROES[id].name)}</b>
-          <small>${ROLES[HEROES[id].role].name} · ${FACTIONS[HEROES[id].fac]}</small></button>`).join('')}</div>
+      <div class="pick-grid2">${owned.sort((a, b) => power(b) - power(a)).map(id => `
+        <button class="hc2 r-${HEROES[id].rar} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}"><span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
+          <span class="hc2-rar">${HEROES[id].rar}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
+          <b>${esc(HEROES[id].name)}</b><small>${ROLES[HEROES[id].role].name} · ⚔${fmt(power(id))}</small></button>`).join('')}</div>
       <div class="synergy">${synergyHTML(lu)}</div>
     </div>
   </div>`;
@@ -3501,17 +3530,24 @@ function showLineup() {
 }
 
 // ---------------- Heroes
+const HF = { rar: 'all', role: 'all', sort: 'power' };
+function canStarUp(id) { const o = S.owned[id], h = HEROES[id]; return !!(o && h && o.star < 5 && o.shard + S.univ >= STAR_COST[h.rar][o.star - 1]); }
 function showHeroes() {
-  const ids = Object.keys(HEROES).filter(id => SPR[id] || S.owned[id]).sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || (HEROES[a].rar < HEROES[b].rar ? 1 : -1));
+  const RK = { SSR: 3, SR: 2, R: 1 }, all = Object.keys(HEROES), own = all.filter(id => S.owned[id]);
+  let ids = all.filter(id => (HF.rar === 'all' || HEROES[id].rar === HF.rar) && (HF.role === 'all' || HEROES[id].role === HF.role));
+  const key = id => HF.sort === 'power' ? (S.owned[id] ? power(id) : -1) : HF.sort === 'lv' ? (S.owned[id] ? S.owned[id].lv * 10 + S.owned[id].star : -1) : RK[HEROES[id].rar] * 100 + (S.owned[id] ? 50 : 0);
+  ids.sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || key(b) - key(a));
+  const chip = (grp, v, label) => `<button class="chip ${HF[grp] === v ? 'on' : ''}" data-f="${grp}:${v}">${label}</button>`;
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
-    <div class="hero-grid">${ids.map(id => {
-      const h = HEROES[id], o = S.owned[id];
-      return `<button class="hcard ${o ? '' : 'locked'} r-${h.rar}" data-h="${id}">
-        <img src="${por(id, 110)}">${rarTag(h.rar)}
-        <div class="hc-info"><b>${esc(h.name)}</b><small>${ROLES[h.role].name} · ${ELEMENTS[h.el].name}</small>
-        ${o ? `<span class="lv">Lv${o.lv} ${starsHTML(o.star, 5)}</span>` : '<span class="lv">Chưa có</span>'}</div></button>`;
-    }).join('')}</div></div>`;
+    <div class="hf-bar"><div class="hf-chips">${chip('rar', 'all', 'Tất cả')}${chip('rar', 'SSR', 'SSR')}${chip('rar', 'SR', 'SR')}${chip('rar', 'R', 'R')}</div>
+      <div class="hf-chips">${chip('role', 'all', 'Mọi hệ')}${Object.keys(ROLES).map(r => chip('role', r, ROLES[r].name)).join('')}</div>
+      <div class="hf-chips">${chip('sort', 'power', 'Lực chiến')}${chip('sort', 'rar', 'Phẩm chất')}${chip('sort', 'lv', 'Cấp')}<span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div></div>
+    <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
+      return `<button class="hc2 r-${h.rar} ${o ? '' : 'locked'}" data-h="${id}"><span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
+        <span class="hc2-rar">${h.rar}</span><span class="hc2-el" style="background:${ELEMENTS[h.el].color}">${ELEMENTS[h.el].name}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
+        <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(5 - o.star)}</i></span>` : ROLES[h.role].name}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
   ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.h));
 }
 function showHeroDetail(id) {
@@ -3592,7 +3628,7 @@ function showGacha() {
     <div class="pity">
       <div>Đã quay <b>${S.pity}</b>/${GACHA.hard} lượt kể từ SSR gần nhất${S.pity >= GACHA.softFrom ? ' · <em>tỉ lệ đang tăng</em>' : ''}</div>
       <div class="bar"><i style="width:${S.pity / GACHA.hard * 100}%"></i></div>
-      <small>Từ lượt ${GACHA.softFrom} mỗi lượt +5% tỉ lệ SSR. Mỗi 10 lượt chắc chắn có SR trở lên. R đổi thành 2 mảnh vạn năng.</small>
+      <small>Từ lượt ${GACHA.softFrom} mỗi lượt +5% tỉ lệ SSR. Mỗi 10 lượt chắc chắn có SR trở lên. Ra tướng đã có thì đổi thành mảnh tướng.</small>
     </div>
     <div class="pool">${[...SSR_POOL, ...SR_POOL, ...R_POOL].map(id => `<div class="pool-i ${S.owned[id] ? 'own' : ''}"><img src="${por(id, 60)}">${rarTag(HEROES[id].rar)}</div>`).join('')}</div>
     <div class="gacha-btns">
@@ -4114,17 +4150,17 @@ function showNan() {
   if (run && run.pick) {   // chọn phúc duyên sau khi vượt nạn
     ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}<h3 style="margin:6px 4px">Vượt nạn ${run.n - 1}! Chọn 1 phúc duyên (giữ đến hết hành trình)</h3>
       <div class="tw-pairs">${run.pick.map(bi => `<button class="tw-pair" data-nb="${bi}"><span class="boon">＋ ${esc(NAN_BOON[bi].t)}</span><em>Nhận</em></button>`).join('')}</div></div>`;
-    $('#bBack').onclick = showHome; ui.querySelectorAll('[data-nb]').forEach(b => b.onclick = () => { run.boons.push(+b.dataset.nb); run.pick = null; save(); showNan(); }); return;
+    $('#bBack').onclick = showTrials; ui.querySelectorAll('[data-nb]').forEach(b => b.onclick = () => { run.boons.push(+b.dataset.nb); run.pick = null; save(); showNan(); }); return;
   }
   if (!run) {
     ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}
       <p class="chap-story">Thầy trò Đường Tăng phải vượt <b>81 kiếp nạn</b> mới tới Tây Thiên. Hành trình gồm 81 trận ngắn liên tiếp, mỗi 9 nạn có một boss. Mỗi nạn mang một <b style="color:#c0392b">điều bất lợi</b>. Vượt nạn thì chọn 1 <b style="color:#2a9a4a">phúc duyên</b>, cộng dồn suốt hành trình. <b>Thua một nạn là hành trình kết thúc</b>, phải đi lại từ đầu. Không tốn Tiên Khí.</p>
       <div class="hint">Kỷ lục: vượt <b>${N.best}</b>/81 nạn</div>
       <div style="text-align:center"><button class="btn gold big" id="nanGo">Bắt đầu hành trình</button></div></div>`;
-    $('#bBack').onclick = showHome; $('#nanGo').onclick = () => { N.run = { n: 1, boons: [], banes: Array.from({ length: 81 }, () => Math.floor(Math.random() * 1000)) }; save(); showNan(); }; return;
+    $('#bBack').onclick = showTrials; $('#nanGo').onclick = () => { N.run = { n: 1, boons: [], banes: Array.from({ length: 81 }, () => Math.floor(Math.random() * 1000)) }; save(); showNan(); }; return;
   }
   if (run.n > 81) { ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}<h3 style="text-align:center">Viên mãn! Đã vượt đủ 81 nạn, thỉnh được chân kinh.</h3><div style="text-align:center"><button class="btn gold" id="nanEnd">Kết thúc hành trình</button></div></div>`;
-    $('#bBack').onclick = showHome; $('#nanEnd').onclick = () => { N.run = null; save(); showNan(); }; return; }
+    $('#bBack').onclick = showTrials; $('#nanEnd').onclick = () => { N.run = null; save(); showNan(); }; return; }
   const st = nanStage(run.n, run);
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}
     <div class="nan-track">${Array.from({ length: 9 }, (_, k) => { const i = Math.floor((run.n - 1) / 9) * 9 + k + 1; return `<span class="${i < run.n ? 'done' : i === run.n ? 'cur' : ''} ${i % 9 === 0 ? 'boss' : ''}">${i}</span>`; }).join('')}</div>
@@ -4133,7 +4169,7 @@ function showNan() {
       <div class="tw-pair"><span class="boon">Phúc duyên đang có (${run.boons.length})</span><em>${run.boons.map(bi => esc(NAN_BOON[bi].t)).join(' · ') || 'Chưa có'}</em></div></div>
     <div class="hint">Thưởng: ${icon('ngoc')}${st.reward.ngoc} ${icon('vang')}${fmt(st.reward.vang)} · Kỷ lục ${N.best}/81</div>
     <div style="text-align:center;display:flex;gap:10px;justify-content:center"><button class="btn red" id="nanQuit">Bỏ hành trình</button><button class="btn gold big" id="nanFight">Vượt nạn</button></div></div>`;
-  $('#bBack').onclick = showHome; $('#nanFight').onclick = () => enterStage(nanStage(run.n, run));
+  $('#bBack').onclick = showTrials; $('#nanFight').onclick = () => enterStage(nanStage(run.n, run));
   $('#nanQuit').onclick = () => { N.run = null; save(); showNan(); };
 }
 function showTower() {
@@ -4143,7 +4179,7 @@ function showTower() {
     ${f > 100 ? '<h3 style="text-align:center">Đã chinh phục toàn bộ Tháp!</h3>' : `<h3 style="margin:6px 4px">Tầng ${f}${f % 10 === 0 ? ' · TRẬN TUYỆT (Boss)' : ''}</h3>
     <div class="tw-pairs">${P.map((p, i) => `<button class="tw-pair" data-tp="${i}"><span class="boon">＋ ${esc(p.boon.t)}</span><span class="bane">－ ${esc(p.bane.t)}</span><em>Chọn & vào trận</em></button>`).join('')}</div>`}
     <div class="hint">Thưởng tầng ${f}: ${icon('ngoc')}${40 + f * 4 + (f % 10 === 0 ? 150 : 0)} ${icon('vang')}${fmt(500 + f * 80)}</div></div>`;
-  $('#bBack').onclick = showHome;
+  $('#bBack').onclick = showTrials;
   ui.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => enterStage(towerStage(f, P[+b.dataset.tp])));
 }
 // ---- Boss xâm lược hằng ngày: 3 lượt/ngày, 90 giây, thưởng theo sát thương
@@ -4164,7 +4200,7 @@ function showRaid() {
     <p class="chap-story">Boss đổi mỗi ngày, máu cực lớn. Gây càng nhiều sát thương trong <b>90 giây</b> càng nhiều thưởng. Còn <b>${3 - r.n}</b>/3 lượt hôm nay. Kỷ lục tuần: <b>${fmt(best)}</b></p>
     <div class="meta-list">${RAID_TIER.map(t => `<div class="meta-row"><div><b>≥ ${fmt(t[0])} sát thương</b></div><span class="rew">${icon('ngoc')}${t[1]}</span></div>`).join('')}</div>
     <div style="text-align:center"><button class="btn gold big" id="rdGo" ${r.n >= 3 ? 'disabled' : ''}>Khiêu chiến</button></div></div>`;
-  $('#bBack').onclick = showHome; $('#rdGo').onclick = () => enterStage(raidStage());
+  $('#bBack').onclick = showTrials; $('#rdGo').onclick = () => enterStage(raidStage());
 }
 // ---- Bảng xếp hạng (Firestore, cần đăng nhập Google)
 function lbPush() {
@@ -4177,7 +4213,7 @@ async function showRank(tab) {
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Bảng Xếp Hạng')}
     <div class="chap-tabs">${[['power', 'Lực chiến'], ['tower', 'Tháp'], ['nan', '81 Nạn'], ['raid', 'Boss tuần']].map(([k, n]) => `<button class="btn small ${k === tab ? 'gold' : ''}" data-rk="${k}">${n}</button>`).join('')}</div>
     <div class="meta-list" id="rkL"><div class="hint">Đang tải…</div></div></div>`;
-  $('#bBack').onclick = showHome; ui.querySelectorAll('[data-rk]').forEach(b => b.onclick = () => showRank(b.dataset.rk));
+  $('#bBack').onclick = showTrials; ui.querySelectorAll('[data-rk]').forEach(b => b.onclick = () => showRank(b.dataset.rk));
   if (!(window.Cloud && Cloud.ok && Cloud.lbTop)) { $('#rkL').innerHTML = '<div class="hint">Chưa kết nối máy chủ.</div>'; return; }
   if (!Cloud.user) { $('#rkL').innerHTML = '<div class="hint">Đăng nhập Google ở trang chủ để xem và có tên trên bảng.</div>'; return; }
   lbPush();
@@ -4287,6 +4323,8 @@ function route() {
   else if (k === 'quests') showQuests();
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();
+  else if (k === 'trials') showTrials();
+  else if (k === 'settings') { showHome(); setTimeout(showSettings, 600); }
   else if (k === 'balance') { window.__dmgBy = {}; const eg = (location.hash.match(/eg=([\d.]+)/) || [])[1]; if (eg) window.__eg = +eg;   // (đo cân bằng) máy tự đánh: #balance=1-12 → kết quả trong <pre id="bal">
     const [c0, c1] = (v || '1-12').split('-').map(Number), out = [], RANK = { SSR: 3, SR: 2, R: 1 };
     for (let c = c0; c <= (c1 || c0); c++) {
