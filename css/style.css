@@ -579,3 +579,33 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .team .tm.dthanh .tm-trong { background: linear-gradient(90deg, #ffe58a, #ff9a2e); color: #4a1a00; box-shadow: 0 0 8px #ffcf3f; }
 .team .tm.dthanh img { box-shadow: 0 0 0 2px #ffd34d, 0 0 12px #ffcf3f; }
 .team .tm.wait .tm-trong, .team .tm.dead .tm-trong { display: none; }
+
+/* ===== Thẻ tướng v3: huy hiệu tròn gọn ===== */
+.team { bottom: 6px; gap: 12px; padding: 4px 14px 2px; background: radial-gradient(ellipse at 50% 100%, rgba(20,8,4,.6), rgba(20,8,4,0) 70%); border-radius: 40px 40px 0 0; }
+.team .tm { width: 70px; height: 80px; background: none; border: 0; border-radius: 0; box-shadow: none; overflow: visible; padding: 0; }
+.team .tm.r-SSR, .team .tm.r-SR, .team .tm.r-R, .team .tm.cap { background: none; box-shadow: none; }
+.team .tm .tm-ring { top: 0; width: 68px; height: 68px; margin-left: -34px; box-shadow: 0 3px 6px rgba(0,0,0,.55); }
+.team .tm img { position: absolute; z-index: 2; left: 50%; top: 5px; width: 58px; height: 58px; margin: 0 0 0 -29px; border-radius: 50%; }
+.team .tm.r-SSR img { box-shadow: 0 0 0 2px #ffd34d, 0 0 0 3px #6a3a0a; } .team .tm.r-SR img { box-shadow: 0 0 0 2px #c08aff, 0 0 0 3px #2a1040; } .team .tm.r-R img { box-shadow: 0 0 0 2px #7ab8ff, 0 0 0 3px #0e2238; }
+.team .tm .tm-hp { left: 12px; right: 12px; top: 71px; bottom: auto; height: 6px; border-radius: 3px; border: 1px solid #000; background: #1a0a06; }
+.team .tm .tm-key { z-index: 4; top: auto; bottom: 14px; left: 1px; width: 18px; height: 18px; border-radius: 50%; background: #2a1408; border: 1.5px solid #e0b040; color: #ffe9b0; font-size: 10px; line-height: 15px; text-align: center; text-shadow: none; }
+.team .tm .tm-trong { z-index: 4; top: 0; left: 2px; width: 20px; height: 20px; padding: 0; border-radius: 4px; transform: rotate(45deg); background: #3a1a08; border: 1.5px solid #e0b040; color: #ffd34d; font-size: 10px; line-height: 17px; text-align: center; }
+.team .tm .tm-trong { display: block; } .team .tm .tm-trong:empty { display: none; }
+.team .tm.dthanh .tm-trong { background: linear-gradient(#ffe58a, #ff9a2e); color: #4a1a00; border-color: #fff3c0; box-shadow: 0 0 8px #ffcf3f; }
+.team .tm .tm-trong::first-letter { } .team .tm .tm-trong { writing-mode: horizontal-tb; }
+.team .tm .tm-ammo { z-index: 4; top: auto; bottom: 14px; right: 1px; min-width: 18px; height: 18px; padding: 0 3px; border-radius: 9px; background: #10243a; border: 1.5px solid #7ab8ff; color: #dff0ff; font-size: 10px; line-height: 15px; text-align: center; }
+.team .tm .tm-ammo:empty { display: none; }
+.team .tm .tm-state { z-index: 5; top: 5px; left: 50%; right: auto; width: 58px; height: 58px; margin-left: -29px; border-radius: 50%; display: grid; place-items: center; font-size: 10.5px; line-height: 1.1; background: rgba(10,4,2,.55); padding: 0 4px; }
+.team .tm .tm-state:empty { display: none; }
+.team .tm .tm-ult { display: none; }
+.team .tm.ready .tm-ult { display: block; z-index: 6; top: -20px; bottom: auto; left: -10px; right: -10px; padding: 2px 6px; border-radius: 9px; font-size: 9.5px; background: linear-gradient(90deg, #c22a1e, #ff8a2e); color: #fff; border: 1px solid #ffd34d; box-shadow: 0 0 10px rgba(255,140,40,.8); text-align: center; }
+.team .tm .tm-fire { top: -16px; left: 0; right: 0; height: 44px; }
+.team .tm.cap::before { content: '👑'; position: absolute; z-index: 6; top: -6px; right: 2px; font-size: 15px; filter: drop-shadow(0 1px 1px #000); transform: rotate(18deg); }
+.team .tm.ready.cap::before { top: -26px; }
+.team .tm.wait img, .team .tm.dead img { filter: grayscale(1) brightness(.75); opacity: 1; }
+.team .tm.dead .tm-ring { background: #2a1010; }
+@media (max-width: 760px) { .team { gap: 8px; } .team .tm { width: 58px; height: 70px; } .team .tm img { width: 48px; height: 48px; margin-left: -24px; } .team .tm .tm-ring { width: 56px; height: 56px; margin-left: -28px; } .team .tm .tm-state { width: 48px; height: 48px; margin-left: -24px; } .team .tm .tm-hp { top: 60px; } }
+.team .tm .tm-trong { transform: none; border: 0; width: 22px; height: 22px; line-height: 22px; top: -1px; left: 1px; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); background: linear-gradient(#ffe58a, #c08a1a); color: #3a1404; font-weight: 900; }
+.team .tm.dthanh .tm-trong { background: linear-gradient(#fff6c8, #ff9a2e); }
+
+.cp-title .cp-ico { width: 46px; height: 46px; object-fit: contain; vertical-align: middle; margin-right: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); animation: hmPulse 1.6s ease-in-out infinite; }

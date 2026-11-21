@@ -608,7 +608,7 @@ function openDeployPick() {
   const opts = B.deploy.slice(0, 4);
   const wrap = document.createElement('div');
   wrap.className = 'modal cp-modal';
-  wrap.innerHTML = `<div class="cp-title"><span>Linh Phù</span><small>Chọn 1 hiệp khách xuất trận</small></div>
+  wrap.innerHTML = `<div class="cp-title"><img class="cp-ico" src="art/ui/drop_phu.webp" alt=""><span>Linh Phù</span><small>Chọn 1 Thần Tướng xuất trận</small></div>
     <div class="cp-list">${opts.map((u, i) => `
       <button class="cp-card dp-card" data-i="${i}">
         <img src="${por(u.id, 110)}"><b>${esc(u.name)}</b><small>${esc(HEROES[u.id].title)}</small>${roleTag(u.role)}
@@ -730,7 +730,7 @@ function openCongPhap() {
   const wrap = document.createElement('div');
   wrap.className = 'modal cp-modal';
   const draw = () => {
-    wrap.innerHTML = `<div class="cp-title"><span>Chọn Công Pháp</span><small>Chọn 1 để tu luyện · ${cpCount()}/${CP_MAX} ô công pháp</small></div>
+    wrap.innerHTML = `<div class="cp-title"><img class="cp-ico" src="art/ui/drop_thu.webp" alt=""><span>Chọn Công Pháp</span><small>Chọn 1 để tu luyện · ${cpCount()}/${CP_MAX} ô công pháp</small></div>
       <div class="cp-list">${opts.map(cardHTML).join('')}</div>
       <div class="cp-side"><button class="btn small" id="cpBG">Bách Giám</button>
         <button class="btn small cp-reroll">${B.rerolls > 0 ? `Đổi thẻ (còn ${B.rerolls})` : `Đổi thẻ ${icon('ngoc')}20`}</button></div>
@@ -2950,8 +2950,22 @@ function drawFx(f) {
   }
   ctx.restore();
 }
+const DROPI = {}; function dropImg(k) { let i = DROPI[k]; if (!i) { i = DROPI[k] = new Image(); i.src = 'art/ui/drop_' + k + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
+['phu', 'thu'].forEach(dropImg);
 function drawDrop(d) {
-  const y = d.y - 18 + Math.sin(d.t * 5) * 4;
+  const y = d.y - 18 + Math.sin(d.t * 5) * 4, im = dropImg(d.k);
+  if (im) {   // hình vẽ tay: hào quang xoay + vật phẩm lơ lửng
+    const col = d.k === 'phu' ? '255,214,90' : '120,230,190';
+    ctx.save(); ctx.translate(d.x, y); ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 40); g.addColorStop(0, `rgba(${col},0.75)`); g.addColorStop(1, `rgba(${col},0)`); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 40, 0, TAU); ctx.fill();
+    ctx.rotate(d.t * 1.5); ctx.strokeStyle = `rgba(${col},0.8)`; ctx.lineWidth = 2; for (let i = 0; i < 8; i++) { ctx.rotate(TAU / 8); ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(34, 0); ctx.stroke(); }
+    ctx.restore();
+    ctx.save(); ctx.translate(d.x, y); ctx.rotate(Math.sin(d.t * 3) * 0.12); const w = 48, h = w * im.height / im.width; ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
+    ctx.save(); ctx.globalAlpha = 0.25; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(d.x, d.y + 2, 16, 5, 0, 0, TAU); ctx.fill(); ctx.restore();
+    ctx.save(); ctx.font = 'bold 11px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(60,30,10,0.85)';
+    const lbl = d.k === 'phu' ? 'Linh Phù' : 'Thiên Thư'; ctx.strokeText(lbl, d.x, y + 34); ctx.fillStyle = d.k === 'phu' ? '#ffe58a' : '#b8ffe0'; ctx.fillText(lbl, d.x, y + 34); ctx.restore();
+    return;
+  }
   ctx.save(); ctx.translate(d.x, y);
   const g = ctx.createRadialGradient(0, 0, 2, 0, 0, 26);
   g.addColorStop(0, d.k === 'phu' ? 'rgba(255,230,120,0.9)' : 'rgba(170,220,255,0.9)'); g.addColorStop(1, 'rgba(255,255,255,0)');
@@ -3625,7 +3639,7 @@ function updateHUD() {
     el.querySelector('.tm-state').textContent = u.dead ? 'Ngã' : waiting ? 'Chờ' : u.sealT > B.time ? '🔒 Phong ấn' : u.dk > 0 ? 'Điều khí' : '';
     el.classList.toggle('ready', !waiting && canCast(u, 'ult'));
     el.querySelector('.tm-ammo').textContent = waiting || u.dead || u.dk > 0 ? '' : (u.ammo == null ? ammoMax(u) : u.ammo);
-    el.querySelector('.tm-trong').textContent = trongOf(u) >= 5 ? 'Đại thành' : 'Tầng ' + trongOf(u); el.classList.toggle('dthanh', trongOf(u) >= 5);
+    el.querySelector('.tm-trong').textContent = trongOf(u) >= 5 ? '★' : trongOf(u); el.classList.toggle('dthanh', trongOf(u) >= 5);
   });
   updateComboBtn();
 }
