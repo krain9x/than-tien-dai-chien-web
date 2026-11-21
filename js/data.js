@@ -729,3 +729,39 @@ const CP_RAR = { 1: { name: 'Cơ bản', cls: 'r1' }, 2: { name: 'Cao cấp', cl
 
 // Gacha (mục 8 của GDD)
 const GACHA = { cost1: 150, cost10: 1350, ssr: 0.025, sr: 0.15, softFrom: 60, softStep: 0.05, hard: 80 };
+
+// ---------------------------------------------------------------------
+// HỢP KÍCH: 2 tướng tung tuyệt kỹ cách nhau ≤ 3 giây → chiêu kết hợp (sát thương vùng lớn + hiệu ứng riêng)
+// ---------------------------------------------------------------------
+const COMBOS = [
+  { a: 'ngokhong', b: 'duongtien', name: 'Thần Hầu Đấu Pháp', mult: 6, col: '#ffd34d', fx: ['burst_gold', 'lightning'] },
+  { a: 'ngokhong', b: 'batgioi', name: 'Sư Huynh Đệ Hợp Lực', mult: 5, col: '#ffcf4a', fx: ['burst_gold', 'ring'] },
+  { a: 'ngokhong', b: 'ngumavuong', name: 'Huynh Đệ Kết Nghĩa', mult: 5.5, col: '#ff7a2e', fx: ['fire', 'burst_gold'] },
+  { a: 'nata', b: 'litinh', name: 'Phụ Tử Tề Tâm', mult: 5.5, col: '#ff5a3a', fx: ['fire', 'flare'] },
+  { a: 'nata', b: 'honghainhi', name: 'Song Hoả Luân', mult: 5.5, col: '#ff5a2a', fx: ['fire', 'burst_gold'] },
+  { a: 'quanam', b: 'duongtang', name: 'Phật Quang Phổ Chiếu', mult: 3, heal: 4, col: '#fff3a0', fx: ['petal', 'flare'] },
+  { a: 'quanam', b: 'hangnga', name: 'Nguyệt Liên Song Chiếu', mult: 3, heal: 4, col: '#e0e8ff', fx: ['petal', 'orb'] },
+  { a: 'vantieu', b: 'trieucongminh', name: 'Tam Tiêu Kim Châu', mult: 5.5, col: '#ffd34d', fx: ['orb', 'burst_gold'] },
+  { a: 'khuongtanha', b: 'duongtien', name: 'Phong Thần Tru Ma', mult: 5.5, col: '#9fd0ff', fx: ['lightning', 'burst_blue'] },
+  { a: 'thietphien', b: 'ngumavuong', name: 'Phu Thê Phong Hoả', mult: 5.5, col: '#7fe8a0', fx: ['fire', 'smoke'] },
+  { a: 'thailaoquan', b: 'ngokhong', name: 'Bát Quái Luyện Hầu', mult: 5, col: '#9fffd0', fx: ['ring', 'fire'] },
+  { a: 'datky', b: 'bachcot', name: 'Yêu Mị Hồn Ca', mult: 5, stun: 1.5, col: '#ff7ad9', fx: ['petal', 'smoke'] },
+  { a: 'satang', b: 'duongtang', name: 'Lưu Sa Hộ Pháp', mult: 4, shield: 0.15, col: '#d8b86a', fx: ['smoke', 'ring'] },
+];
+// ĐỘI TRƯỞNG: mỗi tướng làm đội trưởng mang một hiệu ứng riêng (theo hệ, vài tướng có hiệu ứng đặc biệt)
+const CAP_ROLE = {
+  the: { n: 'Kiên Thủ', d: 'Cả đội nhận ít hơn 15% sát thương', m: { kc: 0.15 } },
+  phap: { n: 'Pháp Lực', d: 'ST chiêu thức cả đội +20%', m: { skillPct: 0.20 } },
+  dan: { n: 'Hồi Xuân', d: 'Cả đội hồi 1% máu mỗi giây', regen: 0.01 },
+  sat: { n: 'Sát Khí', d: 'Bạo kích cả đội +12%', m: { crit: 0.12 } },
+  tran: { n: 'Kỳ Môn', d: 'Nội công cả đội hồi nhanh hơn 30%', m: { mpRegen: 0.30 } },
+};
+const CAP_SPECIAL = {
+  duongtang: { n: 'Kinh Phật Hộ Thân', d: 'Nội công cả đội hồi nhanh hơn 45%', m: { mpRegen: 0.45 } },
+  ngokhong: { n: 'Tề Thiên Đại Thánh', d: 'Công cả đội +18%', m: { atkPct: 0.18 } },
+  quanam: { n: 'Từ Bi Phổ Độ', d: 'Cả đội hồi 1,5% máu mỗi giây', regen: 0.015 },
+  litinh: { n: 'Thác Tháp Trấn Thủ', d: 'Cả đội nhận ít hơn 20% sát thương', m: { kc: 0.20 } },
+  khuongtanha: { n: 'Phong Thần Điều Binh', d: 'ST chiêu +15%, nội công hồi nhanh hơn 20%', m: { skillPct: 0.15, mpRegen: 0.20 } },
+  duongtien: { n: 'Thiên Nhãn Thấu Thị', d: 'Bạo kích cả đội +15%', m: { crit: 0.15 } },
+};
+const capSkill = id => CAP_SPECIAL[id] || CAP_ROLE[(HEROES[id] || {}).role] || CAP_ROLE.sat;

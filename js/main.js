@@ -76,6 +76,10 @@ function ensureEnemyAssets(ids) {
     return (_enemyLoaded[id] = Promise.all(['master', 'walk1', 'walk2', 'attack', 'hit'].map(n => new Promise(res => { const im = new Image(); im.onload = () => { EPOSES[id][n] = im; res(); }; im.onerror = res; im.src = 'art/enemies/' + id + '/' + n + '.webp'; }))));
   }));
 }
+function chapElem(c) {   // hệ ngũ hành chiếm đa số trong quái của chương
+  const cnt = {}; for (const st of STAGES) if (st.chap === c) for (const w of st.waves) for (const [t, n] of w.list) { const e = (ENEMIES[t] || {}).el; if (e) cnt[e] = (cnt[e] || 0) + n; }
+  return Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0] || null;
+}
 function stageEnemyIds(st) {
   const s = new Set();
   for (const w of st.waves) for (const [t] of w.list) { s.add(t); for (const p of ((ENEMIES[t] || {}).phases || [])) if (p.summon) s.add(p.summon[0]); }
@@ -327,6 +331,7 @@ function startBattleNow(si) {
     if (i < 2) { takeSlot(u); B.heroes.push(u); if (i === 0) B.cap = u; } else B.deploy.push(u);   // mở trận: đội trưởng + 1 tướng; còn lại ra bằng Linh Phù
   });
   showHUD();
+  { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; B.banner = { text: 'Đội trưởng: ' + cs.n, sub: cs.d, t: 0, small: true }; }
   if (st.hmods) addMods(st.hmods);
   if (st.gateK) { B.gate.hp *= st.gateK; B.gate.max *= st.gateK; }
   if (st.bookN) for (let i = 0; i < st.bookN; i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1200 + i * 300);
@@ -409,7 +414,8 @@ function dealDmg(src, tgt, mult, kind) {
   }
   const K = 500 + 50 * (tgt.level || 1);
   a *= K / (K + getDef(tgt) * (src.side === 'h' && M('vnSee') ? 1 - Math.min(5, src.vn || 0) * M('vnSee') : 1));   // Lạc Anh: Thấu Thị bỏ qua phòng thủ
-  if (BEATS[src.el] === tgt.el) a *= 1.15; else if (BEATS[tgt.el] === src.el) a *= 0.85;
+  if (BEATS[src.el] === tgt.el) { a *= 1.3; if (src.side === 'h' && kind !== 'dot' && Math.random() < 0.35) floater(tgt.x + 14, tgt.y - 62 * sizeOf(tgt), 'Khắc!', ELEMENTS[src.el].color, 13); }
+  else if (BEATS[tgt.el] === src.el) a *= 0.8;
   let crit = false;
   if (kind !== 'dot' && Math.random() < getCrit(src)) { a *= 1 + getCritDmg(src); crit = true; }
   a *= 1 - (tgt.bonus.dmgTaken || 0) - RM(tgt, 'dr') - (tgt.side === 'h' ? M('kc') + (M('vnDr') ? M('vnDr') * Math.min(5, tgt.vn || 0) : 0) + (M('tpDr') ? M('tpDr') * (tgt.tp || 0) : 0) : 0);
@@ -834,6 +840,26 @@ function canCast(u, w) {
   if (u.mp < cost) return false;
   return w === 'ult' ? u.cdU <= 0 : u.cdS <= 0;
 }
+function tryCombo(u) {   // hợp kích: tìm cặp vừa tung tuyệt kỹ trong 3 giây
+  B.lastUlt = B.lastUlt || {}; B.comboCd = B.comboCd || {};
+  for (const c of COMBOS) {
+    const o = c.a === u.id ? c.b : c.b === u.id ? c.a : null; if (!o) continue;
+    const t = B.lastUlt[o]; if (t == null || B.time - t > 3 || (B.comboCd[c.name] || 0) > B.time) continue;
+    B.comboCd[c.name] = B.time + 20; const P = clusterPoint ? clusterPoint() : null, x = P ? P.x : W * 0.65, y = P ? P.y : H * 0.55;
+    B.later.push({ t: 1.1, fn: () => {
+      if (!B || B.over) return;
+      B.banner = { text: 'HỢP KÍCH · ' + c.name, sub: HEROES[c.a].name + ' × ' + HEROES[c.b].name, t: 0, boss: true };
+      B.shake = 0.8; B.flash = 0.3; B.cam = { x, y: y - 40, t: 0, dur: 0.9 }; sfx('boom');
+      for (const f of c.fx) fxBurst(x, y - 50, f, 460); fxBurst(x, y - 30, 'ring', 520); B.decals.push({ x, y: y + 4, r: 170, t: 0, dur: 5 });
+      const src = B.heroes.find(h => h.id === u.id) || u;
+      for (const e of enemiesIn({ x, y }, 230)) { dealDmg(src, e, c.mult, 'ult'); if (c.stun) e.stun = Math.max(e.stun || 0, c.stun); }
+      if (c.heal) for (const a of alliesAlive()) healAmD(src, a, getAtk(src) * c.heal);
+      if (c.shield) for (const a of alliesAlive()) { a.shield = Math.max(a.shield, maxHp(a) * c.shield); a.shieldT = 6; }
+    } });
+  }
+  B.lastUlt[u.id] = B.time;
+}
+function clusterPoint() { const live = aliveEnemies(); if (!live.length) return null; let best = live[0], bn = 0; for (const e of live) { const n = enemiesIn(e, 140).length; if (n > bn) { bn = n; best = e; } } return { x: best.x, y: best.y }; }
 function cast(u, w) {
   if (!canCast(u, w)) return false;
   const sk = u.d[w];
@@ -864,7 +890,7 @@ function cast(u, w) {
     const P = bestCluster(70) || (tgt ? { x: tgt.x, y: tgt.y } : null);
     if (P) { B.zones = B.zones.filter(z => !(z.src === u && z.tag === 'pz')); B.zones.push({ x: P.x, y: P.y, r: 70, mult: 0.4, t: 3, dur: 3, src: u, tick: 0, color: '#ff8a3a', tag: 'pz' }); }
   }
-  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); }
+  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); tryCombo(u); }
   else floater(u.x, u.y - 82, sk.name, '#fff3b0', 15);
   if (u.mp < 10) { u.dk = 2.5; floater(u.x, u.y - 64, 'Điều khí', '#7fd3ff', 14); }
   return true;
@@ -1230,6 +1256,7 @@ function updateHeroes(dt) {
     if (u.clone) { u.life -= dt; if (u.life <= 0) { u.dead = true; u.gone = true; B.fx.push({ k: 'poof', x: u.x, y: u.y - 20, t: 0, dur: 0.5 }); continue; } }
     else {
       const regen = 8 * (1 + M('mpRegen') + (u.isCap ? 0.15 : 0) + teamAura('teamMp')) * (u.dk > 0 ? 2 : 1);
+      if (B.capRegen && u.hp < maxHp(u)) u.hp = Math.min(maxHp(u), u.hp + maxHp(u) * B.capRegen * dt);   // đội trưởng hệ Đan: hồi máu cả đội
       u.mp = Math.min(100, u.mp + regen * dt);
       if (u.dk > 0) { u.dk -= dt; if (u.dk <= 0) { u.ammo = ammoMax(u); u.qn = 3; } }
       u.cdS -= dt; u.cdU -= dt;
@@ -2410,6 +2437,8 @@ function showStages() {
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Chương ' + ch.id + ' · ' + ch.name)}
     <div class="chap-tabs">${CHAPTERS.map((c, i) => `<button class="btn small ${i === curChap ? 'gold' : ''}" data-ch="${i}" ${open(i) ? '' : 'disabled'}>${open(i) ? c.id : '🔒'} ${esc(c.name)} <small>${done(i)}/10</small></button>`).join('')}</div>
     <p class="chap-story">${esc(ch.story)} <b>Boss: ${esc(ch.boss)}</b> · <i>${esc(ch.mech)}</i></p>
+    ${(() => { const el = chapElem(curChap); if (!el) return ''; const good = Object.keys(BEATS).find(k => BEATS[k] === el), bad = BEATS[el];
+      return `<p class="chap-el">Quái chủ yếu hệ <b style="color:${ELEMENTS[el].color}">${ELEMENTS[el].name}</b> → nên dùng tướng hệ <b style="color:${ELEMENTS[good].color}">${ELEMENTS[good].name}</b> (+30% sát thương), tránh hệ <b style="color:${ELEMENTS[bad].color}">${ELEMENTS[bad].name}</b> (−20%).</p>`; })()}
     <div class="stage-list">${STAGES.map((st, i) => {
       if (st.chap !== curChap) return '';
       const locked = i > 0 && !S.cleared[STAGES[i - 1].id];
@@ -2440,7 +2469,9 @@ function synergyHTML(ids) {
     const on = info.bonds.includes(b);
     return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <small>${b.members.map(m => HEROES[m].name).join(' + ')}</small>${on ? `<em>${b.desc}</em>` : ''}</div>`;
   }).join('');
-  return `<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}<h4>Duyên phận</h4>${bonds}`;
+  const cs = ids[0] ? capSkill(ids[0]) : null;
+  const cb = COMBOS.filter(c => ids.includes(c.a) && ids.includes(c.b)).map(c => `<div class="syn on"><b>${esc(c.name)}</b> <small>${HEROES[c.a].name} + ${HEROES[c.b].name}</small><em>Hai người tung tuyệt kỹ cách nhau ≤3 giây → hợp kích</em></div>`).join('');
+  return `${cs ? `<h4>Kỹ năng đội trưởng</h4><div class="syn on"><b>${esc(cs.n)}</b> <em>${esc(cs.d)}</em></div>` : ''}<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}<h4>Duyên phận</h4>${bonds}<h4>Hợp kích</h4>${cb || '<small>Chưa có cặp hợp kích trong đội</small>'}`;
 }
 function showLineup() {
   const lu = S.lineup.filter(id => S.owned[id]);
@@ -3105,6 +3136,9 @@ function route() {
         }
         const pre = document.createElement('pre'); pre.id = 'frames'; pre.textContent = out.join(String.fromCharCode(10)); document.body.appendChild(pre);
       }
+      const cm = h.match(/(?:^|&)combo=(\w+),(\w+)/);   // (chụp thử) 2 tướng tung tuyệt kỹ liền nhau
+      if (cm) for (const id of [cm[1], cm[2]]) { const u = B.heroes.find(x => x.id === id && !x.dead) || B.deploy.find(x => x.id === id); if (u) { if (!B.heroes.includes(u)) { takeSlot(u); B.heroes.push(u); B.deploy = B.deploy.filter(x => x !== u); } u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; cast(u, 'ult'); for (let i = 0; i < 30; i++) update(1 / 60); } }
+      if (cm) for (let i = 0; i < 90; i++) update(1 / 60);
       const um = h.match(/(?:^|&)ult=(\w+):([\d.]+)/);
       if (um) {
         const u = B.heroes.find(x => x.id === um[1] && !x.dead);
