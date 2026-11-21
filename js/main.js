@@ -850,7 +850,8 @@ function tryCombo(u) {   // hợp kích: tìm cặp vừa tung tuyệt kỹ tron
       if (!B || B.over) return;
       B.banner = { text: 'HỢP KÍCH · ' + c.name, sub: HEROES[c.a].name + ' × ' + HEROES[c.b].name, t: 0, boss: true };
       B.shake = 0.8; B.flash = 0.3; B.cam = { x, y: y - 40, t: 0, dur: 0.9 }; sfx('boom');
-      for (const f of c.fx) fxBurst(x, y - 50, f, 460); fxBurst(x, y - 30, 'ring', 520); B.decals.push({ x, y: y + 4, r: 170, t: 0, dur: 5 });
+      if (uxImg('combo_b1')) B.fx.push({ k: 'combo', x, y, t: 0, dur: 1.8 }); else { for (const f of c.fx) fxBurst(x, y - 50, f, 460); fxBurst(x, y - 30, 'ring', 520); }
+      B.decals.push({ x, y: y + 4, r: 170, t: 0, dur: 5 });
       const src = B.heroes.find(h => h.id === u.id) || u;
       for (const e of enemiesIn({ x, y }, 230)) { dealDmg(src, e, c.mult, 'ult'); if (c.stun) e.stun = Math.max(e.stun || 0, c.stun); }
       if (c.heal) for (const a of alliesAlive()) healAmD(src, a, getAtk(src) * c.heal);
@@ -1857,6 +1858,42 @@ function drawProjFX(p) {
 }
 // hình chính của tuyệt kỹ (art/fx/ult_<id>.webp, Codex vẽ nền đen): bật lên, giữ, tan — hoà sáng chồng lên hiệu ứng canvas
 const ULTT = {}, ULT_SELF = { quanam: 1, ngumavuong: 1, batgioi: 1 };
+
+// ---- TUYỆT KỸ KIỂU MỚI: cut-in vẽ hẳn + 3 nhịp (gồng → đòn chính → dư chấn) + hiệu ứng nhiều khung (sprite 6 khung)
+const ULTX = {
+  ngokhong: { beats: ['ngokhong_b1', 'ngokhong_b2', 'ngokhong_b3'], sheets: ['sheet_boom_gold', 'sheet_crack'], col: '#ffcf3f', cut: 'cut_ngokhong' },
+  duongtien: { beats: ['duongtien_b1', 'duongtien_b2', 'duongtien_b3'], sheets: ['sheet_boom_blue', 'sheet_slash'], col: '#7fb3ff', cut: 'cut_duongtien' },
+};
+const ULTX_IMG = {};
+function uxImg(n) { let i = ULTX_IMG[n]; if (!i) { i = ULTX_IMG[n] = new Image(); i.src = 'art/ultx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
+for (const k in ULTX) { ULTX[k].beats.concat(ULTX[k].sheets, [ULTX[k].cut]).forEach(uxImg); }
+['combo_b1', 'combo_b2', 'cut_combo'].forEach(uxImg);
+function uxDraw(n, x, y, S, a, rot) { const im = uxImg(n); if (!im || a <= 0) return; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, a); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.drawImage(im, -S / 2, -S / 2, S, S); ctx.restore(); }
+function uxSheet(n, x, y, S, p) {   // p 0..1 → 6 khung
+  const im = uxImg(n); if (!im || p < 0 || p >= 1) return; const fw = im.width / 6, f = Math.min(5, Math.floor(p * 6));
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 1; ctx.drawImage(im, f * fw, 0, fw, im.height, x - S / 2, y - S * im.height / fw / 2, S, S * im.height / fw); ctx.restore();
+}
+// vẽ 3 nhịp của tuyệt kỹ (f = hiệu ứng 'sig' trong B.fx, p = 0..1)
+function drawUltX(f, X) {
+  const p = Math.min(1, f.t / f.dur), x = clamp(f.tx, 160, W - 160), y = clamp(f.ty, 220, H - 40);
+  ctx.save(); ctx.globalAlpha = 0.4 * Math.sin(Math.PI * Math.min(1, p * 1.2)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();   // trời tối
+  const b1 = seg01(p, 0, 0.38), b2 = seg01(p, 0.3, 0.7), b3 = seg01(p, 0.6, 1);
+  if (b1 > 0 && b1 < 1) uxDraw(X.beats[0], x, y - 120, 200 + 120 * b1, Math.min(1, b1 * 3) * (1 - Math.max(0, b1 - 0.8) * 5));          // nhịp 1: gồng
+  if (b2 > 0 && b2 < 1) { uxDraw(X.beats[1], x, y - 90, 300 + 80 * Math.sin(b2 * Math.PI), Math.sin(b2 * Math.PI) * 1.1); uxSheet(X.sheets[0], x, y - 60, 380, b2); }   // nhịp 2: đòn chính + nổ 6 khung
+  if (b3 > 0 && b3 < 1) { uxDraw(X.beats[2], x, y - 20, 340 + 60 * b3, (1 - b3) * 1.1); uxSheet(X.sheets[1], x, y - 30, 420, b3); }   // nhịp 3: dư chấn
+}
+function seg01(p, a, b) { return p < a ? 0 : p > b ? 1 : (p - a) / (b - a); }
+// hợp kích kiểu mới: cut-in đôi + va chạm + cột sáng
+function drawComboX(c) {
+  const p = c.t / c.dur, x = c.x, y = c.y;
+  ctx.save(); ctx.globalAlpha = 0.5 * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  const b1 = seg01(p, 0.25, 0.6), b2 = seg01(p, 0.5, 1);
+  if (b1 > 0 && b1 < 1) { uxDraw('combo_b1', x, y - 100, 320 + 140 * b1, Math.sin(b1 * Math.PI) * 1.2, (1 - b1) * 0.5); uxSheet('sheet_boom_blue', x, y - 80, 460, b1); }
+  if (b2 > 0 && b2 < 1) { uxDraw('combo_b2', x, y - 140, 420 + 80 * b2, (1 - b2) * 1.2); uxSheet('sheet_boom_gold', x, y - 60, 520, b2); uxSheet('sheet_crack', x, y, 520, b2); }
+  const ci = uxImg('cut_combo'), q = seg01(p, 0, 0.3);   // cut-in đôi trượt vào
+  if (ci && q < 1) { const a = q < 0.2 ? q / 0.2 : q > 0.75 ? (1 - q) / 0.25 : 1, w = 760, h = w * ci.height / ci.width;
+    ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(10,6,20,0.6)'; ctx.fillRect(0, H / 2 - h / 2, W, h); ctx.drawImage(ci, (W - w) / 2 + (1 - Math.min(1, q * 4)) * 200, H / 2 - h / 2, w, h); ctx.restore(); }
+}
 function drawUltTex(f) {
   let im = ULTT[f.id]; if (!im) { im = ULTT[f.id] = new Image(); im.src = 'art/fx/ult_' + f.id + '.webp'; }
   if (!im.complete || !im.naturalWidth) return;
@@ -1997,7 +2034,8 @@ function drawProj(p) {
   ctx.restore();
 }
 function drawFx(f) {
-  if (f.k === 'sig') { if (f.t >= 0) { VFX.draw(ctx, f); drawUltTex(f); } return; }
+  if (f.k === 'sig') { if (f.t >= 0) { if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
+  if (f.k === 'combo') { drawComboX(f); return; }
   const p = f.t / f.dur;
   ctx.save();
   switch (f.k) {
@@ -2119,9 +2157,11 @@ function drawCutin() {
   ctx.beginPath(); ctx.moveTo(0, y + 20); ctx.lineTo(W, y - 20); ctx.lineTo(W, y + 150); ctx.lineTo(0, y + 190); ctx.closePath(); ctx.fill();
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
   for (let i = 0; i < 8; i++) { const yy = y + 10 + i * 22; ctx.fillRect(((p * 900 + i * 130) % (W + 200)) - 200, yy, 160, 3); }
+  const X = ULTX[c.id], ci = X && uxImg(X.cut);
   const img = imgOf(fullImg(c.id, 200));
   const slide = Math.min(1, p / 0.18);
-  if (img.complete && img.width) {
+  if (ci) { const hh = 250, ww = hh * ci.width / ci.height; ctx.drawImage(ci, -ww * 0.6 + slide * ww * 0.6 - 20, y + 195 - hh, ww, hh); }
+  else if (img.complete && img.width) {
     const hh = SPR[c.id] ? 330 : 250, ww = hh * img.width / img.height;
     ctx.drawImage(img, -ww + 40 + slide * (ww + 10), y + 190 - hh, ww, hh);
   }

@@ -1,1 +1,1 @@
-window.HPOSE = {};
+window.HPOSE = {"loichantu": {"H": 1335.7, "gnd": [660, 1395]}, "thohanhton": {"H": 1301.7, "gnd": [512, 1387]}, "thaiatchannhan": {"H": 1182.4, "gnd": [500, 1333]}, "thancongbao": {"H": 1182.4, "gnd": [556, 1321]}, "longnu": {"H": 1303.7, "gnd": [567, 1398]}, "kimgiac": {"H": 1298.8, "gnd": [578, 1384]}, "tieubachlong": {"H": 1347.3, "gnd": [517, 1412]}, "thaibachkimtinh": {"H": 1205.7, "gnd": [525, 1322]}, "culinhthan": {"H": 1319.2, "gnd": [575, 1394]}, "hoangphongquai": {"H": 1290.1, "gnd": [479, 1364]}};

@@ -428,8 +428,8 @@ const ATK_STYLE = {
   bachcot:       { pat: 'fan',       proj: 'bone',     name: 'Cốt Trảo',         desc: 'Bắn 3 móng xương hình quạt, mỗi móng xuyên 2 quái.', n: 3, pierceN: 2 },
 };
 
-const SSR_POOL = ['ngokhong', 'nata', 'ngumavuong', 'quanam', 'datky', 'duongtien', 'vantieu', 'thailaoquan'];   // đợt 2 (loichantu, thaiatchannhan, tieubachlong) thêm khi có ảnh
-const SR_POOL = ['batgioi', 'duongtang', 'honghainhi', 'khuongtanha', 'trieucongminh', 'satang', 'thietphien', 'litinh', 'hangnga', 'bachcot'];   // đợt 2 thêm khi có ảnh
+const SSR_POOL = ['ngokhong', 'nata', 'ngumavuong', 'quanam', 'datky', 'duongtien', 'vantieu', 'thailaoquan', 'loichantu', 'thaiatchannhan', 'tieubachlong'];
+const SR_POOL = ['batgioi', 'duongtang', 'honghainhi', 'khuongtanha', 'trieucongminh', 'satang', 'thietphien', 'litinh', 'hangnga', 'bachcot', 'thohanhton', 'thancongbao', 'longnu', 'kimgiac', 'thaibachkimtinh', 'culinhthan', 'hoangphongquai'];
 
 // Duyên phận (lấy từ mục 6.2 của GDD; chỉ những duyên có đủ tướng trong bản thử)
 const BONDS = [
