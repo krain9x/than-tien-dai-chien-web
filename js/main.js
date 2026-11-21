@@ -5,6 +5,7 @@
 // =====================================================================
 const W = 960, H = 540, TAU = Math.PI * 2;   // màn NGANG (kiểu Võ Lâm Đại Minh Tinh)
 const GATE_X = 112;
+const EGROW = 0.20;   // quái mạnh thêm mỗi cấp ải (cân bằng bằng #balance)
 const VIEW_Z = 0.9, VIEW_PY = 0.6, VIEW_R = () => GATE_X + (W - GATE_X) / VIEW_Z;   // mép phải khung nhìn (toạ độ thế giới)   // khung trận thu nhỏ 10% (neo ở cổng thành, giữa làn)          // quái tới cột này thì đánh cổng thành (tường thành dọc bên trái)
 const LANE_Y0 = 150, LANE_Y1 = 440;   // dải đường quái đi (toạ độ chân)
 // 5 ô đứng cố định: 3 ô hàng sau (đánh xa / hồi máu) sát tường, 2 ô hàng trước (cận chiến / đỡ đòn)
@@ -254,7 +255,7 @@ const LUNGE = { boomerang: 14, pierce: 18, bounce: 8, split: 8, spin: 6, lob: 10
 const MELEE_PROJ = { ngokhong: 'staffwave', ngumavuong: 'boulder', batgioi: 'rakewave' };
 const PIERCE_PROJ = { staffwave: 1, rakewave: 1 };
 function makeEnemy(type, lvl, x, y) {
-  const d = ENEMIES[type], m = 1 + 0.32 * (lvl - 1), spd = B && B.mech === 'speed' ? 1.35 : 1;   // chương Đại náo Thiên Cung: quái nhanh hơn
+  const d = ENEMIES[type], m = 1 + (window.__eg != null ? window.__eg : EGROW) * (lvl - 1), spd = B && B.mech === 'speed' ? 1.35 : 1;   // chương Đại náo Thiên Cung: quái nhanh hơn
   const e = {
     side: 'e', id: type, d, look: d.look, name: d.name, el: d.el, level: lvl,
     base: { hp: d.hp * m * ((B && B.st.ehp) || 1) * (d.boss && B && B.st.raid ? 60 : 1), atk: d.atk * m * ((B && B.st.eatk) || 1), def: d.def * (1 + 0.1 * (lvl - 1)) },
@@ -412,9 +413,10 @@ function particles(x, y, color, n, spd, size) {
 function dealDmg(src, tgt, mult, kind) {
   if (!tgt || tgt.dead) return 0;
   if (tgt.side === 'e' && tgt.trait === 'stealth' && kind !== 'dot') tgt.revealT = 2.5;
-  if (tgt.side === 'e' && src.side === 'h' && kind !== 'dot') { for (const s of B.enemies) if (s !== tgt && !s.dead && s.trait === 'shield' && s.x < tgt.x && tgt.x - s.x < 120 && Math.abs(s.y - tgt.y) < 70) { mult *= 0.4; if (Math.random() < 0.15) floater(tgt.x, tgt.y - 60, 'Chặn', '#bcd4f0', 12); break; } }
+  if (tgt.side === 'e' && src.side === 'h' && kind !== 'dot') { for (const s of B.enemies) if (s !== tgt && !s.dead && s.trait === 'shield' && s.x < tgt.x && tgt.x - s.x < 120 && Math.abs(s.y - tgt.y) < 70) { mult *= 0.6; if (Math.random() < 0.15) floater(tgt.x, tgt.y - 60, 'Chặn', '#bcd4f0', 12); break; } }
   if (tgt.inv > 0) { if (kind !== 'dot') floater(tgt.x, tgt.y - 60, 'Né', '#bff3ff', 14); return 0; }
   let a = getAtk(src) * mult;
+  if (window.__dmgBy && tgt.side === 'h') window.__dmgBy[src.id] = (window.__dmgBy[src.id] || 0) + a;
   if (src.side === 'e' && B.alive >= 40) a *= B.alive >= 50 ? 1.8 : 1.5;   // quái đông trên sân thì mạnh hơn (VLĐMT): ≥40 +50%, ≥50 +80%
   if (src.side === 'h') {
     const sp = M('skillPct') + RM(src, 'skillPct') + ((src.d.passive && src.d.passive.skillPct) || 0);
@@ -1614,7 +1616,7 @@ const heroesAlive = () => B.heroes.filter(h => !h.dead);
 function nearestHero(e, maxD) { let b = null, bd = maxD || 1e9; for (const h of B.heroes) { if (h.dead) continue; const d = dist(e, h); if (d < bd) { bd = d; b = h; } } return b; }
 function traitTick(e, dt) {
   const t = e.trait;
-  if (t === 'stealth') { if (e.revealT > 0) e.revealT -= dt; const h = nearestHero(e, 150); e.hidden = !h && !(e.revealT > 0); return false; }
+  if (t === 'stealth') { if (e.revealT > 0) e.revealT -= dt; const h = nearestHero(e, 260); e.hidden = !h && !(e.revealT > 0); return false; }
   if (t === 'fly') {   // bay thẳng vào cổng, không dừng đánh tướng
     if (e.x > GATE_X) { e.walk = true; moveTo(e, GATE_X - 2, clamp(e.y, LANE_Y0, LANE_Y1), e.move * (e.slow > 0 ? 0.6 : 1) * dt); }
     else { e.walk = false; if (e.cdA <= 0) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; B.gate.hp -= getAtk(e) * 0.8; B.gateHurt = 0.15; snd('gate'); } }
@@ -4255,6 +4257,25 @@ function route() {
   else if (k === 'quests') showQuests();
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();
+  else if (k === 'balance') { window.__dmgBy = {}; const eg = (location.hash.match(/eg=([\d.]+)/) || [])[1]; if (eg) window.__eg = +eg;   // (đo cân bằng) máy tự đánh: #balance=1-12 → kết quả trong <pre id="bal">
+    const [c0, c1] = (v || '1-12').split('-').map(Number), out = [], RANK = { SSR: 3, SR: 2, R: 1 };
+    for (let c = c0; c <= (c1 || c0); c++) {
+      const lv = Math.min(MAX_LV, Math.round(3 + (c - 1) * 2.5)), star = 1 + Math.floor((c - 1) / 4);
+      const pool = ['culinhthan', 'hoangphongquai', 'longnu', ...Object.keys(CH_HERO).filter(k2 => +k2 < c).map(k2 => CH_HERO[k2])];
+      S.owned = {}; for (const id of pool) { S.owned[id] = newRec(); S.owned[id].lv = lv; S.owned[id].star = star; }
+      const roles = {}; S.lineup = pool.slice().sort((a2, b2) => RANK[HEROES[b2].rar] - RANK[HEROES[a2].rar] || pool.indexOf(b2) - pool.indexOf(a2)).filter(id => { const r = HEROES[id].role; if ((roles[r] || 0) >= 2) return false; roles[r] = (roles[r] || 0) + 1; return true; }).slice(0, 5);
+      const tq = (location.hash.match(/team=([a-z,]+)/) || [])[1]; if (tq) { S.lineup = tq.split(','); for (const id of S.lineup) { S.owned[id] = newRec(); S.owned[id].lv = lv; S.owned[id].star = star; } }
+      for (const kk of [1, 5, 10]) {
+        const si = (c - 1) * 10 + kk - 1; ui.querySelectorAll('.modal,.cp-modal').forEach(x => x.remove());
+        startBattleNow(si); B.auto = true; let t = 0;
+        while (!B.over && t < 420) { update(1 / 30); t += 1 / 30;
+          if (B.paused) { const mm = ui.querySelector('.cp-modal'); const bb = mm && mm.querySelector('.cp-card'); if (bb) bb.click(); else { if (ui.querySelector('.revive-modal,.modal')) { ui.querySelectorAll('.modal').forEach(x => x.remove()); endBattle(false, 'wipe'); } B.paused = false; } } }
+        out.push({ st: STAGES[si].id, lv, star, team: S.lineup.join(','), win: !!B.win, time: Math.round(B.time), gate: Math.round(B.gate.hp / B.gate.max * 100), wave: B.wave + 1 + '/' + B.st.waves.length, alive: B.heroes.filter(h => !h.dead && !h.clone).length, by: Object.entries(window.__dmgBy).sort((a3, b3) => b3[1] - a3[1]).slice(0, 4).map(x => x[0] + ':' + Math.round(x[1])).join(' ') }); window.__dmgBy = {};
+        B = null;
+      }
+    }
+    const pre = document.createElement('pre'); pre.id = 'bal'; pre.textContent = JSON.stringify(out); document.body.appendChild(pre);
+  }
   else if (k === 'nantest') { const N = nanState(); N.run = { n: 9, boons: [0, 7], banes: Array.from({ length: 81 }, (_, i) => i) }; enterStage(nanStage(9, N.run)); }
   else if (k === 'story') { showHome(); setTimeout(() => showStory(+v || 1, () => showHome()), 800); }
   else if (k === 'raid') showRaid();

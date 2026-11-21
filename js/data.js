@@ -510,7 +510,7 @@ const ENEMIES = {
     look: { style: 'goblin', skin: '#c9a27a', hair: '#2a1a10', outfit: '#6a4a3a', outfit2: '#3a2a1a', belt: '#3a2a1a', weapon: 'blade', evil: true, size: 0.85 } },
   linhthu: { name: 'Linh Thú', hp: 300, atk: 33, def: 16, aspd: 1.1, range: 34, move: 110, el: 'hoa',
     look: { style: 'goblin', skin: '#c9a27a', hair: '#2a1a10', outfit: '#6a4a3a', outfit2: '#3a2a1a', belt: '#3a2a1a', weapon: 'blade', evil: true, size: 0.85 } },
-  oanhon: { name: 'Oán Hồn', hp: 300, atk: 33, def: 16, aspd: 1.1, range: 34, move: 110, el: 'thuy',
+  oanhon: { name: 'Oán Hồn', hp: 280, atk: 26, def: 16, aspd: 1.0, range: 34, move: 95, el: 'thuy',
     look: { style: 'goblin', skin: '#c9a27a', hair: '#2a1a10', outfit: '#6a4a3a', outfit2: '#3a2a1a', belt: '#3a2a1a', weapon: 'blade', evil: true, size: 0.85 } },
   honthan: { name: 'Hồn Tướng', hp: 260, atk: 28, def: 22, aspd: 0.9, range: 36, move: 70, el: 'tho',
     look: { style: 'goblin', skin: '#c9a27a', hair: '#2a1a10', outfit: '#6a4a3a', outfit2: '#3a2a1a', belt: '#3a2a1a', weapon: 'blade', evil: true, size: 0.85 } },
@@ -773,7 +773,7 @@ const TRAIT_INFO = {
   stealth: { ico: '👁', name: 'Tàng hình', desc: 'Ẩn thân, chỉ lộ khi tới gần tướng hoặc trúng chiêu diện rộng.' },
   bomb: { ico: '💥', name: 'Tự nổ', desc: 'Chạy rất nhanh, áp sát thì nổ gây sát thương lớn quanh mình.' },
   heal: { ico: '✚', name: 'Chữa trị', desc: 'Đứng sau hồi máu cho quái xung quanh. Nên diệt trước.' },
-  shield: { ico: '🛡', name: 'Khiên', desc: 'Giơ khiên che chắn: quái đứng sau nó chỉ nhận 40% sát thương.' },
+  shield: { ico: '🛡', name: 'Khiên', desc: 'Giơ khiên che chắn: quái đứng sau nó chỉ nhận 60% sát thương.' },
   burrow: { ico: '⛏', name: 'Chui đất', desc: 'Lặn dưới đất (không đánh được), trồi lên sát tướng làm choáng.' },
   split: { ico: '✦', name: 'Chia đôi', desc: 'Khi chết tách thành 2 con nhỏ.' },
   seal: { ico: '🔒', name: 'Phong ấn', desc: 'Dán bùa phong ấn một tướng: không dùng được chiêu trong 4 giây.' },
@@ -796,3 +796,6 @@ const TANG2 = {
   hoangphongquai: [{ d: 'Đòn thường bắn 2 luồng cát', m: { proj: 1 } }, { d: 'Hoàng Sa Xoa +40% sát thương', m: { skill: 0.4 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tam Muội Hoàng Phong +60% sát thương', m: { ult: 0.6 } }],
 };
 for (const k in TANG2) if (HEROES[k]) HEROES[k].tang = TANG2[k];
+// ĐỘ KHÓ RIÊNG theo chương (đo bằng #balance — máy tự đánh với đội người chơi có ở thời điểm đó)
+const CH_DIFF = { 3: { boss: 0.9 }, 4: { boss: 0.9 }, 6: { all: 0.85 }, 7: { all: 0.85 }, 8: { all: 0.85, boss: 0.68 }, 12: { boss: 0.62 } };
+for (const st of STAGES) { const d = CH_DIFF[CHAPTERS[st.chap].id]; if (!d) continue; const k = (st.kind === 'boss' && d.boss) || d.all || 0; if (k) { st.ehp = k; st.eatk = k; } }
