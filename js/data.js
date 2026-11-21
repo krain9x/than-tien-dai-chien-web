@@ -733,20 +733,19 @@ const GACHA = { cost1: 150, cost10: 1350, ssr: 0.025, sr: 0.15, softFrom: 60, so
 // ---------------------------------------------------------------------
 // HỢP KÍCH: 2 tướng tung tuyệt kỹ cách nhau ≤ 3 giây → chiêu kết hợp (sát thương vùng lớn + hiệu ứng riêng)
 // ---------------------------------------------------------------------
-const COMBOS = [
-  { a: 'ngokhong', b: 'duongtien', name: 'Thần Hầu Đấu Pháp', mult: 6, col: '#ffd34d', fx: ['burst_gold', 'lightning'] },
-  { a: 'ngokhong', b: 'batgioi', name: 'Sư Huynh Đệ Hợp Lực', mult: 5, col: '#ffcf4a', fx: ['burst_gold', 'ring'] },
-  { a: 'ngokhong', b: 'ngumavuong', name: 'Huynh Đệ Kết Nghĩa', mult: 5.5, col: '#ff7a2e', fx: ['fire', 'burst_gold'] },
-  { a: 'nata', b: 'litinh', name: 'Phụ Tử Tề Tâm', mult: 5.5, col: '#ff5a3a', fx: ['fire', 'flare'] },
-  { a: 'nata', b: 'honghainhi', name: 'Song Hoả Luân', mult: 5.5, col: '#ff5a2a', fx: ['fire', 'burst_gold'] },
-  { a: 'quanam', b: 'duongtang', name: 'Phật Quang Phổ Chiếu', mult: 3, heal: 4, col: '#fff3a0', fx: ['petal', 'flare'] },
-  { a: 'quanam', b: 'hangnga', name: 'Nguyệt Liên Song Chiếu', mult: 3, heal: 4, col: '#e0e8ff', fx: ['petal', 'orb'] },
-  { a: 'vantieu', b: 'trieucongminh', name: 'Tam Tiêu Kim Châu', mult: 5.5, col: '#ffd34d', fx: ['orb', 'burst_gold'] },
-  { a: 'khuongtanha', b: 'duongtien', name: 'Phong Thần Tru Ma', mult: 5.5, col: '#9fd0ff', fx: ['lightning', 'burst_blue'] },
-  { a: 'thietphien', b: 'ngumavuong', name: 'Phu Thê Phong Hoả', mult: 5.5, col: '#7fe8a0', fx: ['fire', 'smoke'] },
-  { a: 'thailaoquan', b: 'ngokhong', name: 'Bát Quái Luyện Hầu', mult: 5, col: '#9fffd0', fx: ['ring', 'fire'] },
-  { a: 'datky', b: 'bachcot', name: 'Yêu Mị Hồn Ca', mult: 5, stun: 1.5, col: '#ff7ad9', fx: ['petal', 'smoke'] },
-  { a: 'satang', b: 'duongtang', name: 'Lưu Sa Hộ Pháp', mult: 4, shield: 0.15, col: '#d8b86a', fx: ['smoke', 'ring'] },
+const COMBOS = [   // hợp kích (kiểu Dual Tech): mỗi tướng tối đa 1 cặp, mỗi cặp là một chiêu mới có cơ chế riêng
+  { a: 'ngokhong', b: 'duongtien', name: 'Thiên Nhãn Thần Hầu', mult: 4.5, all: 1, col: '#ffd34d', desc: 'Thiên nhãn đánh dấu mọi quái trên sân, phân thân Ngộ Không giáng xuống từng con.' },
+  { a: 'batgioi', b: 'satang', name: 'Thiên Hà Đảo Lưu', mult: 3.5, all: 1, push: 220, shield: 0.15, col: '#7fc8ff', desc: 'Sóng Thiên Hà cuốn cả sân, đẩy lùi mọi quái thường; cả đội nhận khiên 15%.' },
+  { a: 'ngumavuong', b: 'thietphien', name: 'Hoả Diệm Sơn', mult: 5.5, zone: 1, col: '#ff6a2a', desc: 'Trâu dậm núi lửa, quạt thổi thành lốc lửa cuốn quái, để lại biển lửa 4 giây.' },
+  { a: 'nata', b: 'thaiatchannhan', name: 'Cửu Long Hoả Luân', mult: 6, stun: 2.5, col: '#ff7a2e', desc: 'Hoả Tráo nhốt quái (choáng 2,5 giây), chín hoả long thiêu đốt.' },
+  { a: 'litinh', b: 'culinhthan', name: 'Thiên Binh Trấn Ma', mult: 5.5, stun: 1.5, shield: 0.12, col: '#ffd34d', desc: 'Tháp trấn giữ quái, bóng Cự Linh Thần khổng lồ bổ rìu; cả đội nhận khiên.' },
+  { a: 'quanam', b: 'longnu', name: 'Từ Hàng Phổ Độ', mult: 0, heal: 6, revive: 0.5, col: '#bfffd8', desc: 'Hồi sinh mọi đồng đội đã ngã (50% máu) và hồi máu lớn cả đội.' },
+  { a: 'duongtang', b: 'tieubachlong', name: 'Bạch Mã Tây Hành', mult: 4, all: 1, buff: 0.3, col: '#fff3a0', desc: 'Cưỡi Bạch Long Mã xông qua sân đánh mọi quái; cả đội +30% công 8 giây.' },
+  { a: 'vantieu', b: 'trieucongminh', name: 'Kim Đấu Định Hải', mult: 6.5, r: 280, col: '#ffd34d', desc: 'Kim Đấu hút quái về một chỗ, Định Hải Châu dội xuống nổ lớn.' },
+  { a: 'khuongtanha', b: 'loichantu', name: 'Phong Thần Lôi Phạt', mult: 4.2, all: 1, stun: 1.5, col: '#9fd0ff', desc: 'Bảng Phong Thần điểm danh mọi quái, sét giáng từng con (choáng 1,5 giây).' },
+  { a: 'datky', b: 'bachcot', name: 'Yêu Mị Hồn Ca', mult: 3, confuse: 1, stun: 3, col: '#ff7ad9', desc: 'Quái mê muội đứng yên 3 giây và đánh lẫn nhau.' },
+  { a: 'thailaoquan', b: 'kimgiac', name: 'Luyện Ma Hồ Lô', mult: 3.5, execute: 0.3, heal: 3, col: '#9fffd0', desc: 'Hút quái thường dưới 30% máu vào hồ lô, luyện thành đan hồi máu cả đội.' },
+  { a: 'hangnga', b: 'thaibachkimtinh', name: 'Nguyệt Tinh Dao Trì', mult: 0, heal: 4, mp: 40, col: '#e0e8ff', desc: 'Trăng sao giáng phúc: hồi máu và +40 nội công cả đội.' },
 ];
 // ĐỘI TRƯỞNG: mỗi tướng làm đội trưởng mang một hiệu ứng riêng (theo hệ, vài tướng có hiệu ứng đặc biệt)
 const CAP_ROLE = {
