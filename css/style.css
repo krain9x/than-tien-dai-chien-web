@@ -566,3 +566,7 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 @media (max-width: 760px) { .h2-stage { min-width: 130px; } .hud-top.hud2 .h2-mini { display: none; } .team .tm { width: 64px; height: 80px; } .team .tm img { width: 48px; height: 48px; } .tm-ring { width: 54px; height: 54px; margin-left: -27px; } }
 
 .hud > * { transition: opacity .15s; } .hud.cine > * { opacity: 0; pointer-events: none; }   /* ẩn HUD khi phát cảnh cắt SSR */
+
+.hcard.r-R { background: linear-gradient(#e6f2ff, #a8d0ff); }
+.detail.r-R .det-art { background: radial-gradient(circle at 50% 60%, #fff, #cfe6ff 50%, #5a9cff); }
+.r-R .pc-inner { background: var(--r); }

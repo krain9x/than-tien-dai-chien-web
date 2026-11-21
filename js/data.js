@@ -32,7 +32,7 @@ const FACTION_TIERS = [[5, 0.25], [4, 0.15], [3, 0.08]];
 
 const STAR_MUL = [1, 1.15, 1.3225, 1.587, 1.984];
 const STAR_COST = { SSR: [10, 20, 30, 50], SR: [5, 10, 20, 40] };
-const DUP_SHARDS = { SSR: 10, SR: 5 };
+const DUP_SHARDS = { SSR: 10, SR: 5, R: 2 };
 const MAX_LV = 30;
 
 // ---------------------------------------------------------------------
@@ -95,7 +95,7 @@ const HEROES = {
   },
   datky: {
     name: 'Đát Kỷ', title: 'Cửu Vĩ Hồ Ly', src: 'Phong Thần Diễn Nghĩa',
-    role: 'phap', el: 'hoa', fac: 'yeu', rar: 'SSR',
+    role: 'phap', el: 'hoa', fac: 'yeu', rar: 'SR',
     hp: 1300, atk: 170, def: 50, aspd: 0.85, range: 200, move: 150, ranged: true, proj: 'foxfire',
     look: { style: 'fox', skin: '#ffe6dc', hair: '#c86bff', outfit: '#ff7ac4', outfit2: '#ffd1ec',
             belt: '#ffd34d', weapon: 'orb', wcolor: '#ff5fd2', tails: 3, robe: true },
@@ -162,7 +162,7 @@ const HEROES = {
   },
   khuongtanha: {
     name: 'Khương Tử Nha', title: 'Thái Công Vọng', src: 'Phong Thần Diễn Nghĩa',
-    role: 'tran', el: 'thuy', fac: 'xien', rar: 'SR',
+    role: 'tran', el: 'thuy', fac: 'xien', rar: 'SSR',
     hp: 1550, atk: 100, def: 72, aspd: 0.8, range: 190, move: 150, ranged: true, proj: 'light',
     look: { style: 'bald', skin: '#ffe6cf', hair: '#e8e8e8', outfit: '#6f8fb0', outfit2: '#e8eef5', belt: '#4aa88a', pants: '#cfd8ea', weapon: 'staff', wcolor: '#e6b422', robe: true },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Đả Thần Tiên +40% sát thương', m: { skill: 0.40 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -174,7 +174,7 @@ const HEROES = {
   },
   vantieu: {
     name: 'Vân Tiêu', title: 'Tam Tiêu Nương Nương', src: 'Phong Thần Diễn Nghĩa',
-    role: 'phap', el: 'moc', fac: 'triet', rar: 'SSR',
+    role: 'phap', el: 'moc', fac: 'triet', rar: 'SR',
     hp: 1300, atk: 170, def: 50, aspd: 0.85, range: 190, move: 150, ranged: true, proj: 'light',
     look: { style: 'veil', skin: '#fff1e6', hair: '#2b2230', outfit: '#3fb6a8', outfit2: '#ffffff', belt: '#ffd34d', weapon: 'orb', wcolor: '#ffd34d', robe: true },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Kim Đấu Thần Quang rộng hơn, +40% sát thương', m: { skill: 0.40, size: 0.3 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -246,7 +246,7 @@ const HEROES = {
   },
   hangnga: {
     name: 'Hằng Nga', title: 'Quảng Hàn Tiên Tử', src: 'Truyền thuyết / Tây Du',
-    role: 'dan', el: 'thuy', fac: 'nguyet', rar: 'SR',
+    role: 'dan', el: 'thuy', fac: 'nguyet', rar: 'R',
     hp: 1650, atk: 115, def: 65, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'light',
     look: { style: 'veil', skin: '#fff1e6', hair: '#1c1c28', outfit: '#f3f0ff', outfit2: '#ffc4de', belt: '#c8c8e8', weapon: 'orb', wcolor: '#e8f0ff', robe: true },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Nguyệt Quang +40% hiệu quả', m: { skill: 0.40 } }, { d: 'Máu tối đa +30%', m: { hp: 0.30 } }, { d: 'Tuyệt kỹ +60% hiệu quả', m: { ult: 0.60 } }],
@@ -270,7 +270,7 @@ const HEROES = {
   },
   loichantu: {
     name: 'Lôi Chấn Tử', title: 'Phong Lôi Song Dực', src: 'Phong Thần Diễn Nghĩa',
-    role: 'sat', el: 'kim', fac: 'xien', rar: 'SSR',
+    role: 'sat', el: 'kim', fac: 'xien', rar: 'SR',
     hp: 1400, atk: 168, def: 55, aspd: 1.1, range: 190, move: 150, ranged: true, proj: 'bolt',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Lôi Côn +40% sát thương', m: { skill: 0.40 } }, { d: 'Đòn thường bắn thêm 1 luồng', m: { proj: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -282,7 +282,7 @@ const HEROES = {
   },
   thohanhton: {
     name: 'Thổ Hành Tôn', title: 'Địa Hành Tiên', src: 'Phong Thần Diễn Nghĩa',
-    role: 'tran', el: 'tho', fac: 'xien', rar: 'SR',
+    role: 'tran', el: 'tho', fac: 'xien', rar: 'R',
     hp: 1500, atk: 105, def: 70, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'pearl',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Khổn Tiên Thằng +40% sát thương', m: { skill: 0.40 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -294,7 +294,7 @@ const HEROES = {
   },
   thaiatchannhan: {
     name: 'Thái Ất Chân Nhân', title: 'Càn Nguyên Sơn Chủ', src: 'Phong Thần Diễn Nghĩa',
-    role: 'phap', el: 'hoa', fac: 'xien', rar: 'SSR',
+    role: 'phap', el: 'hoa', fac: 'xien', rar: 'SR',
     hp: 1300, atk: 172, def: 50, aspd: 0.85, range: 190, move: 150, ranged: true, proj: 'fire',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Thần Hoả Châu rộng hơn, +40% sát thương', m: { skill: 0.40, size: 0.3 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -306,7 +306,7 @@ const HEROES = {
   },
   thancongbao: {
     name: 'Thân Công Báo', title: 'Phân Thuỷ Tướng Quân', src: 'Phong Thần Diễn Nghĩa',
-    role: 'tran', el: 'thuy', fac: 'triet', rar: 'SR',
+    role: 'tran', el: 'thuy', fac: 'triet', rar: 'R',
     hp: 1450, atk: 108, def: 66, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'bolt',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Báo Trảo +40% sát thương', m: { skill: 0.40 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -318,7 +318,7 @@ const HEROES = {
   },
   longnu: {
     name: 'Long Nữ', title: 'Thiện Tài Long Nữ', src: 'Tây Du Ký',
-    role: 'dan', el: 'thuy', fac: 'phat', rar: 'SR',
+    role: 'dan', el: 'thuy', fac: 'phat', rar: 'R',
     hp: 1600, atk: 112, def: 62, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'drop',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Long Châu Thuỷ +40% hiệu quả', m: { skill: 0.40 } }, { d: 'Máu tối đa +30%', m: { hp: 0.30 } }, { d: 'Tuyệt kỹ +60% hiệu quả', m: { ult: 0.60 } }],
@@ -342,7 +342,7 @@ const HEROES = {
   },
   tieubachlong: {
     name: 'Tiểu Bạch Long', title: 'Bát Bộ Thiên Long', src: 'Tây Du Ký',
-    role: 'the', el: 'thuy', fac: 'phat', rar: 'SSR',
+    role: 'the', el: 'thuy', fac: 'phat', rar: 'SR',
     hp: 2900, atk: 105, def: 112, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'spear',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Long Thương +40% sát thương', m: { skill: 0.40 } }, { d: 'Máu tối đa +30%', m: { hp: 0.30 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -354,7 +354,7 @@ const HEROES = {
   },
   thaibachkimtinh: {
     name: 'Thái Bạch Kim Tinh', title: 'Trường Canh Tinh Quân', src: 'Tây Du Ký',
-    role: 'dan', el: 'kim', fac: 'thien', rar: 'SR',
+    role: 'dan', el: 'kim', fac: 'thien', rar: 'R',
     hp: 1650, atk: 114, def: 64, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'pearl',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Tinh Quang +40% hiệu quả', m: { skill: 0.40 } }, { d: 'Máu tối đa +30%', m: { hp: 0.30 } }, { d: 'Tuyệt kỹ +60% hiệu quả', m: { ult: 0.60 } }],
@@ -366,7 +366,7 @@ const HEROES = {
   },
   culinhthan: {
     name: 'Cự Linh Thần', title: 'Thiên Môn Tiên Phong', src: 'Tây Du Ký',
-    role: 'the', el: 'tho', fac: 'thien', rar: 'SR',
+    role: 'the', el: 'tho', fac: 'thien', rar: 'R',
     hp: 3000, atk: 98, def: 116, aspd: 0.85, range: 190, move: 150, ranged: true, proj: 'boulder',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Khai Sơn Phủ +40% sát thương', m: { skill: 0.40 } }, { d: 'Máu tối đa +30%', m: { hp: 0.30 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -378,7 +378,7 @@ const HEROES = {
   },
   hoangphongquai: {
     name: 'Hoàng Phong Quái', title: 'Hoàng Phong Đại Vương', src: 'Tây Du Ký',
-    role: 'sat', el: 'tho', fac: 'yeu', rar: 'SR',
+    role: 'sat', el: 'tho', fac: 'yeu', rar: 'R',
     hp: 1450, atk: 150, def: 60, aspd: 1.05, range: 190, move: 150, ranged: true, proj: 'spear',
     look: { style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Hoàng Sa Xoa +40% sát thương', m: { skill: 0.40 } }, { d: 'Đòn thường bắn thêm 1 luồng', m: { proj: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
@@ -428,8 +428,9 @@ const ATK_STYLE = {
   bachcot:       { pat: 'fan',       proj: 'bone',     name: 'Cốt Trảo',         desc: 'Bắn 3 móng xương hình quạt, mỗi móng xuyên 2 quái.', n: 3, pierceN: 2 },
 };
 
-const SSR_POOL = ['ngokhong', 'nata', 'ngumavuong', 'quanam', 'datky', 'duongtien', 'vantieu', 'thailaoquan', 'loichantu', 'thaiatchannhan', 'tieubachlong'];
-const SR_POOL = ['batgioi', 'duongtang', 'honghainhi', 'khuongtanha', 'trieucongminh', 'satang', 'thietphien', 'litinh', 'hangnga', 'bachcot', 'thohanhton', 'thancongbao', 'longnu', 'kimgiac', 'thaibachkimtinh', 'culinhthan', 'hoangphongquai'];
+const SSR_POOL = ['ngokhong', 'duongtien', 'nata', 'quanam', 'thailaoquan', 'ngumavuong', 'khuongtanha'];   // phẩm chất theo địa vị + pháp lực trong truyện
+const SR_POOL = ['batgioi', 'satang', 'duongtang', 'honghainhi', 'thietphien', 'bachcot', 'datky', 'litinh', 'loichantu', 'thaiatchannhan', 'tieubachlong', 'vantieu', 'trieucongminh', 'kimgiac'];
+const R_POOL = ['thohanhton', 'culinhthan', 'hoangphongquai', 'thancongbao', 'longnu', 'hangnga', 'thaibachkimtinh'];
 
 // Duyên phận (lấy từ mục 6.2 của GDD; chỉ những duyên có đủ tướng trong bản thử)
 const BONDS = [

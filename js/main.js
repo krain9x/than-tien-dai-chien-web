@@ -2486,7 +2486,7 @@ const CX = {
 
 // ===================== ĐIỆN ẢNH CHO TUYỆT KỸ =====================
 const ULT_THEME = { ngokhong: ['#ffb02e', '#4a1400'], nata: ['#ff5a2a', '#3a0800'], ngumavuong: ['#ff3a1a', '#2a0505'], quanam: ['#bfffe8', '#06262a'], datky: ['#ff6ad0', '#2a0828'],
-  duongtien: ['#9fc8ff', '#06102a'], vantieu: ['#ffd34d', '#2a1a00'], thailaoquan: ['#9fffd0', '#04201a'], loichantu: ['#7fb3ff', '#040a2a'], thaiatchannhan: ['#ff7a2e', '#2a0a00'], tieubachlong: ['#7fe0ff', '#021a2a'] };
+  duongtien: ['#9fc8ff', '#06102a'], vantieu: ['#ffd34d', '#2a1a00'], thailaoquan: ['#9fffd0', '#04201a'], loichantu: ['#7fb3ff', '#040a2a'], thaiatchannhan: ['#ff7a2e', '#2a0a00'], tieubachlong: ['#7fe0ff', '#021a2a'], khuongtanha: ['#ffe58a', '#1a1404'] };
 const cineTheme = id => ULT_THEME[id] || [(UCFG[id] && UCFG[id].col) || '#ffe58a', '#0a0612'];
 const isSSR = id => (window.SSR_POOL || SSR_POOL).includes(id);
 function drawCineSky(f, p) {   // trời đổi màu theo hệ (lớp thế giới, trước vật thể)
@@ -2547,6 +2547,7 @@ const SSRX = {
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; for (const [lw, a, c] of [[26, 0.25, '#ffcf3f'], [10, 0.6, '#ffe58a'], [3, 1, '#ffffff']]) { ctx.globalAlpha = a * k; ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(f.tx, f.ty - 40); ctx.stroke(); } ctx.restore();
     scTex('duongtien_fx', f.tx, f.ty - 40, 200, p * 3, k * 0.8);
   },
+  khuongtanha(f, p) { const [tx] = tgtXY(f); if (p > 0.15) scTex('khuongtanha_fx', tx, 150, 520 + 100 * p, 0, fadeIO((p - 0.15) / 0.85, 0.2, 0.8) * 0.9); },   // bảng Phong Thần toả kim quang trên trời
   vantieu(f, p) { const [tx, ty] = tgtXY(f); if (p > 0.3) scTex('vantieu_fx', tx, ty, 560, p * 2.2, fadeIO((p - 0.3) / 0.7, 0.2, 0.8), 0.42); },
   thailaoquan(f, p) { const al = alliesAlive(); if (!al.length) return; const cx = al.reduce((s, h) => s + h.x, 0) / al.length, cy = al.reduce((s, h) => s + h.y, 0) / al.length + 10; scTex('thailaoquan_fx', cx, cy, 560, -p * 2, fadeIO(p, 0.2, 0.85), 0.42); },
   loichantu(f, p) { const [tx, ty] = tgtXY(f);
@@ -3357,9 +3358,8 @@ function pullOne() {
   else rar = 'R';
   if (rar === 'SSR') { S.pity = 0; S.pity10 = 0; }
   if (rar === 'SR') S.pity10 = 0;
-  if (rar === 'R') { S.univ += 2; return { rar, id: null }; }
   const bn = BANNERS[S.gb || 0], feat = rar === 'SSR' && bn.feat.length && Math.random() < 0.5;
-  const id = feat ? pick(bn.feat) : pick(rar === 'SSR' ? SSR_POOL : SR_POOL);
+  const id = feat ? pick(bn.feat) : pick(rar === 'SSR' ? SSR_POOL : rar === 'SR' ? SR_POOL : R_POOL);
   if (S.owned[id]) { S.owned[id].shard += DUP_SHARDS[rar]; return { rar, id, dup: DUP_SHARDS[rar] }; }
   S.owned[id] = newRec();
   if (S.lineup.length < 5) S.lineup.push(id);
@@ -3376,7 +3376,7 @@ function showGacha() {
       <div class="bar"><i style="width:${S.pity / GACHA.hard * 100}%"></i></div>
       <small>Từ lượt ${GACHA.softFrom} mỗi lượt +5% tỉ lệ SSR. Mỗi 10 lượt chắc chắn có SR trở lên. R đổi thành 2 mảnh vạn năng.</small>
     </div>
-    <div class="pool">${[...SSR_POOL, ...SR_POOL].map(id => `<div class="pool-i ${S.owned[id] ? 'own' : ''}"><img src="${por(id, 60)}">${rarTag(HEROES[id].rar)}</div>`).join('')}</div>
+    <div class="pool">${[...SSR_POOL, ...SR_POOL, ...R_POOL].map(id => `<div class="pool-i ${S.owned[id] ? 'own' : ''}"><img src="${por(id, 60)}">${rarTag(HEROES[id].rar)}</div>`).join('')}</div>
     <div class="gacha-btns">
       <button class="btn" id="g1">Quay 1<small>${icon('ngoc')}${GACHA.cost1}</small></button>
       <button class="btn gold" id="g10">Quay 10<small>${icon('ngoc')}${fmt(GACHA.cost10)}</small></button>
@@ -3639,7 +3639,7 @@ function showTangKinh() {
 // ---- Banner Chiêu Mộ
 const BANNERS = [
   { name: 'Thiên Thư Khai Quang', feat: [], desc: 'Toàn bộ tướng, SSR 2,5% · SR 15%' },
-  { name: 'Tân Binh Hạ Giới', feat: ['duongtien', 'vantieu', 'thailaoquan'], desc: 'Tăng 50% tỉ lệ khi ra SSR: Dương Tiễn · Vân Tiêu · Thái Thượng Lão Quân' },
+  { name: 'Tân Binh Hạ Giới', feat: ['duongtien', 'khuongtanha', 'thailaoquan'], desc: 'Tăng 50% tỉ lệ khi ra SSR: Dương Tiễn · Khương Tử Nha · Thái Thượng Lão Quân' },
 ];
 (function weeklyBanner() {   // banner tuần: xoay vòng 1 SSR nổi bật mỗi tuần
   const pool = SSR_POOL.filter(id => HEROES[id]), w = parseInt(String(new Date().getTime() / 6048e5), 10), f = pool[w % pool.length];
