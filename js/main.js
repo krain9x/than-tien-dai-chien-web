@@ -68,7 +68,19 @@ const SPR = {};
 // Tư thế chính vẽ tay (Codex) theo nhịp đòn: POSES[id][tên] = ảnh. Toạ độ ảnh = toạ độ hình gốc (đặt chân tại `ground`).
 const POSES = {};
 const EPOSES = {};   // quái vẽ bằng tư thế: walk1, walk2, attack, hit (+ master)
-for (const id of Object.keys(window.EPOSE || {})) { EPOSES[id] = {}; for (const n of ['master', 'walk1', 'walk2', 'attack', 'hit']) { const i = new Image(); i.onload = () => { EPOSES[id][n] = i; }; i.src = 'art/enemies/' + id + '/' + n + '.webp'; } }
+const _enemyLoaded = {};
+function ensureEnemyAssets(ids) {
+  return Promise.all([...new Set(ids)].filter(id => (window.EPOSE || {})[id]).map(id => {
+    if (_enemyLoaded[id]) return _enemyLoaded[id];
+    EPOSES[id] = {};
+    return (_enemyLoaded[id] = Promise.all(['master', 'walk1', 'walk2', 'attack', 'hit'].map(n => new Promise(res => { const im = new Image(); im.onload = () => { EPOSES[id][n] = im; res(); }; im.onerror = res; im.src = 'art/enemies/' + id + '/' + n + '.webp'; }))));
+  }));
+}
+function stageEnemyIds(st) {
+  const s = new Set();
+  for (const w of st.waves) for (const [t] of w.list) { s.add(t); for (const p of ((ENEMIES[t] || {}).phases || [])) if (p.summon) s.add(p.summon[0]); }
+  return [...s];
+}
 function drawEnemyPose(u, alpha) {
   const P = EPOSES[u.id], D = (window.EPOSE || {})[u.id]; if (!P || !D) return false;
   let n = 'master';
@@ -285,10 +297,11 @@ function applyBonuses(u, info) {
 
 function startBattle(si) {   // nạp rig + tư thế của đội trước khi vào trận
   const need = S.lineup.filter(id => S.owned[id]);
-  if (need.every(id => _heroLoaded[id] && _heroLoaded[id].done)) { startBattleNow(si); return; }
+  const en = stageEnemyIds(STAGES[si]);
+  if (need.every(id => _heroLoaded[id] && _heroLoaded[id].done) && en.every(id => !(window.EPOSE || {})[id] || (_enemyLoaded[id] && _enemyLoaded[id].done))) { startBattleNow(si); return; }
   let ov = document.getElementById('loadov');
   if (!ov) { ov = document.createElement('div'); ov.id = 'loadov'; ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,24,12,.72);color:#ffe9b0;font:800 22px Baloo 2,sans-serif;z-index:99'; ov.textContent = 'Đang tải tướng…'; document.body.appendChild(ov); }
-  ensureHeroAssets(need).then(() => { need.forEach(id => { _heroLoaded[id].done = true; }); ov.remove(); startBattleNow(si); });
+  Promise.all([ensureHeroAssets(need), ensureEnemyAssets(en)]).then(() => { need.forEach(id => { _heroLoaded[id].done = true; }); en.forEach(id => { if (_enemyLoaded[id]) _enemyLoaded[id].done = true; }); ov.remove(); startBattleNow(si); });
 }
 function startBattleNow(si) {
   const st = STAGES[si];
@@ -2251,7 +2264,7 @@ function showHome() {
     <div class="hm-top">
       <div class="hm-avatar">${cap ? `<img src="${por(cap, 60)}">` : ''}</div>
       <div class="hm-who"><b>${window.Cloud && Cloud.user ? esc(Cloud.user.displayName || 'Chấp Bảng Sứ') : 'Chấp Bảng Sứ'}</b><small>Lực chiến ${fmt(totalPower())}</small></div>
-      <button class="tool hm-acc" id="hAcc">${!(window.Cloud && Cloud.ok) ? 'Chưa nối mạng' : Cloud.user ? 'Đã lưu mạng ✓' : 'Đăng nhập Google'}</button>
+      <button class="tool hm-acc" id="hAcc">${!window.Cloud ? 'Đang kết nối…' : !Cloud.ok ? 'Chưa nối mạng' : Cloud.user ? 'Đã lưu mạng ✓' : Cloud.user === null ? 'Đang kiểm tra…' : 'Đăng nhập Google'}</button>
       ${resBar()}
     </div>
     <div class="hm-logo"><span class="l1">THẦN TIÊN</span><span class="l2">ĐẠI CHIẾN</span></div>
@@ -2756,7 +2769,7 @@ document.addEventListener('pointerdown', () => setTimeout(bgmStart, 50));
 
 // ---- Lưu trực tuyến (js/cloud.js): khi đăng nhập, so bản trên mạng với bản trên máy
 const isFresh = s => !Object.keys(s.cleared || {}).length && !(s.pulls > 0);
-if (window.Cloud && Cloud.ok) Cloud.onUser(async u => {
+function initCloud() { if (window.Cloud && Cloud.ok) Cloud.onUser(async u => {
   if (!u) { if (!B) showHome(); return; }
   try {
     const r = await Cloud.pull();
@@ -2772,7 +2785,13 @@ if (window.Cloud && Cloud.ok) Cloud.onUser(async u => {
     } else await Cloud.pushNow(S);
   } catch (e) { toast('Lỗi đồng bộ: ' + (e.code || e.message)); console.warn(e); }
   if (!B) showHome();
-});
+}); if (!B) showHome(); }
+function loadCloud() {   // tải Firebase sau khi game đã hiện (không chặn lúc mở game)
+  const L = ['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js', 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+    'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js', 'js/cloud.js'];
+  const next = () => { const u = L.shift(); if (!u) { initCloud(); return; } const s = document.createElement('script'); s.src = u; s.onload = next; s.onerror = () => { window.Cloud = window.Cloud || { ok: false }; if (!B) showHome(); }; document.head.appendChild(s); };
+  next();
+}
 // ------------------------------------------------------------------ BOOT
 // Đường dẫn nhanh: #battle=1 (vào ải 1, bật tự động), #gacha, #heroes, #lineup, #stages, #hero=nata
 function route() {
@@ -2783,7 +2802,7 @@ function route() {
   if (k === 'battle') {
     const tm = h.match(/(?:^|&)team=([\w,]+)/); // &team=nata,quanam (chụp thử): đội hình tạm
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
-    ensureHeroAssets(S.lineup).then(() => {
+    Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(STAGES[clamp((+v || 1) - 1, 0, STAGES.length - 1)]))]).then(() => {
     startBattleNow(clamp((+v || 1) - 1, 0, STAGES.length - 1));
     if (B) {
       B.auto = true; const b = $('#bAuto'); if (b) b.classList.add('on');
@@ -2834,6 +2853,7 @@ function route() {
 }
 loadArt().then(() => {
   route();
+  setTimeout(loadCloud, 300);
   requestAnimationFrame(t => { lastT = t; frame(t); });
 });
 
