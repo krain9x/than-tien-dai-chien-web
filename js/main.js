@@ -4,7 +4,8 @@
 // Thần Tiên Đại Chiến — bản prototype giai đoạn 1 (GDD mục 12.1)
 // =====================================================================
 const W = 960, H = 540, TAU = Math.PI * 2;   // màn NGANG (kiểu Võ Lâm Đại Minh Tinh)
-const GATE_X = 112;          // quái tới cột này thì đánh cổng thành (tường thành dọc bên trái)
+const GATE_X = 112;
+const VIEW_Z = 0.9, VIEW_PY = 0.6, VIEW_R = () => GATE_X + (W - GATE_X) / VIEW_Z;   // mép phải khung nhìn (toạ độ thế giới)   // khung trận thu nhỏ 10% (neo ở cổng thành, giữa làn)          // quái tới cột này thì đánh cổng thành (tường thành dọc bên trái)
 const LANE_Y0 = 150, LANE_Y1 = 440;   // dải đường quái đi (toạ độ chân)
 // 5 ô đứng cố định: 3 ô hàng sau (đánh xa / hồi máu) sát tường, 2 ô hàng trước (cận chiến / đỡ đòn)
 const SLOTS_BACK = [[160, 310], [176, 192], [176, 428]];
@@ -366,9 +367,9 @@ function nextWave() {
   if (M('waveMp')) for (const h of B.heroes) if (!h.dead) h.mp = Math.min(100, h.mp + M('waveMp'));
 }
 function spawnEnemy(q) {
-  let x = W + rand(20, 60), y = rand(LANE_Y0, LANE_Y1);
+  let x = VIEW_R() + rand(20, 60), y = rand(LANE_Y0, LANE_Y1);
   if (q.side && Math.random() < 0.4 && !ENEMIES[q.type].boss) { x = rand(W * 0.55, W - 40); y = Math.random() < 0.5 ? LANE_Y0 - 30 : LANE_Y1 + 30; }
-  if (ENEMIES[q.type].boss) { x = W + 60; y = H * 0.56; }
+  if (ENEMIES[q.type].boss) { x = VIEW_R() + 60; y = H * 0.56; }
   const e = makeEnemy(q.type, B.st.lvl, x, y);
   e.drop = q.drop || null;
   if (e.boss && B.st.bossName && q.type === 'hoyeu') e.name = B.st.bossName;
@@ -771,7 +772,7 @@ function applyPick(o) {
 // ------------------------------------------------------------------ SKILLS
 function bestCluster(r) {   // điểm có nhiều quái nhất trong bán kính r (ưu tiên quái tiến sâu)
   let best = null, bs = -1;
-  const live = B.enemies.filter(e => !e.dead && e.x < W - 10);
+  const live = B.enemies.filter(e => !e.dead && e.x < VIEW_R() - 10);
   for (const e of live) {
     let n = 0; for (const o of live) if (dist(e, o) <= r) n++;
     const sc = n * 100 - e.x * 0.05 + (e.boss ? 150 : 0);
@@ -1075,7 +1076,7 @@ function updateProjs(dt) {
     }
     p.x += p.vx * dt; p.y += p.vy * dt;
     if (p.side === 'h') { (p.hist = p.hist || []).push([p.x, p.y]); if (p.hist.length > 9) p.hist.shift(); }
-    const edge = p.pat === 'boomerang' ? (p.x < -80 || p.x > W + 120) && p.ret : (p.x < -60 || p.x > W + 60);
+    const edge = p.pat === 'boomerang' ? (p.x < -80 || p.x > W + 120) && p.ret : (p.x < -60 || p.x > VIEW_R() + 60);
     if (p.life <= 0 || edge || p.y < -80 || p.y > H) { p.done = true; continue; }
     const targets = p.side === 'h' ? B.enemies : B.heroes;
     for (const t of targets) {
@@ -1172,7 +1173,7 @@ function findTarget(u) {
   if (u === B.cap && B.capTgt && !B.capTgt.dead && (u.ranged || dist(u, B.capTgt) <= u.range + unitR(B.capTgt))) return B.capTgt;
   let best = null, bd = 1e9;
   for (const e of B.enemies) {
-    if (e.dead || e.x > W + 5) continue;
+    if (e.dead || e.x > VIEW_R() + 5) continue;
     const d = dist(u, e);
     if (d > u.range + unitR(e)) continue;
     const score = u.ranged ? e.x + (e.boss ? -60 : 0) : d;   // đánh xa: con tiến sâu nhất trước
@@ -1416,8 +1417,6 @@ function updateFx(dt) {
   for (const b of B.fxb) b.t += dt; B.fxb = B.fxb.filter(b => b.t < b.dur);
   for (const d of B.decals) d.t += dt; B.decals = B.decals.filter(d => d.t < d.dur);
   if (B.cam && (B.cam.t += dt) > B.cam.dur) B.cam = null;
-  { const ultOn = B.fx.some(f => (f.k === 'cx' && f.t > -0.2) || (f.k === 'sig' && f.uc && f.t > -0.3)), zt = ultOn ? 0.88 : 1;   // lùi camera khi đang tung tuyệt kỹ
-    B.zoom = (B.zoom || 1) + (zt - (B.zoom || 1)) * Math.min(1, dt * (ultOn ? 5 : 2.5)); }
   for (const g of B.ghosts) g.t += dt; B.ghosts = B.ghosts.filter(g => g.t < 0.22);
   for (const s of B.sparks) s.t += dt; B.sparks = B.sparks.filter(s => s.t < s.dur);
   if (B.hits.t > 0) B.hits.t -= dt;
@@ -1880,7 +1879,7 @@ function uxSheet(n, x, y, S, p) {   // p 0..1 → 6 khung
 // vẽ 3 nhịp của tuyệt kỹ (f = hiệu ứng 'sig' trong B.fx, p = 0..1)
 function drawUltX(f, X) {
   const p = Math.min(1, f.t / f.dur), x = clamp(f.tx, 160, W - 160), y = clamp(f.ty, 220, H - 40);
-  ctx.save(); ctx.globalAlpha = 0.58 * Math.sin(Math.PI * Math.min(1, p * 1.2)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();   // trời tối
+  ctx.save(); ctx.globalAlpha = 0.58 * Math.sin(Math.PI * Math.min(1, p * 1.2)); ctx.fillStyle = '#05020c'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore();   // trời tối
   const b1 = seg01(p, 0, 0.38), b2 = seg01(p, 0.3, 0.7), b3 = seg01(p, 0.6, 1);
   if (b1 > 0 && b1 < 1) uxDraw(X.beats[0], x, y - 120, 200 + 120 * b1, Math.min(1, b1 * 3) * (1 - Math.max(0, b1 - 0.8) * 5));          // nhịp 1: gồng
   if (b2 > 0 && b2 < 1) { uxDraw(X.beats[1], x, y - 90, 300 + 80 * Math.sin(b2 * Math.PI), Math.sin(b2 * Math.PI) * 0.85); uxSheet(X.sheets[0], x, y - 60, 380, b2); }   // nhịp 2: đòn chính + nổ 6 khung
@@ -1890,7 +1889,7 @@ function seg01(p, a, b) { return p < a ? 0 : p > b ? 1 : (p - a) / (b - a); }
 // hợp kích kiểu mới: cut-in đôi + va chạm + cột sáng
 function drawComboX(c) {
   const p = c.t / c.dur, x = c.x, y = c.y;
-  ctx.save(); ctx.globalAlpha = 0.5 * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  ctx.save(); ctx.globalAlpha = 0.5 * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore();
   const b1 = seg01(p, 0.25, 0.6), b2 = seg01(p, 0.5, 1);
   if (b1 > 0 && b1 < 1) { uxDraw('combo_b1', x, y - 100, 320 + 140 * b1, Math.sin(b1 * Math.PI) * 1.2, (1 - b1) * 0.5); uxSheet('sheet_boom_blue', x, y - 80, 460, b1); }
   if (b2 > 0 && b2 < 1) { uxDraw('combo_b2', x, y - 140, 420 + 80 * b2, (1 - b2) * 1.2); uxSheet('sheet_boom_gold', x, y - 60, 520, b2); uxSheet('sheet_crack', x, y, 520, b2); }
@@ -1904,7 +1903,7 @@ const UCI = {}; function ucImg(n) { let i = UCI[n]; if (!i) { i = UCI[n] = new I
 ['staff', 'dragon_head', 'dragon_long', 'hound_run1', 'hound_run2', 'hound_leap', 'hound_bite', 'ngk_jump', 'cloud'].forEach(ucImg);
 const ease3 = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3), easeIn = x => Math.pow(Math.max(0, Math.min(1, x)), 2.2);
 let UC_NODARK = false;
-function ucDark(p, k) { if (UC_NODARK) return; ctx.save(); ctx.globalAlpha = (k || 0.5) * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+function ucDark(p, k) { if (UC_NODARK) return; ctx.save(); ctx.globalAlpha = (k || 0.5) * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore(); }
 function ucOnce(f, key, fn) { f.done = f.done || {}; if (!f.done[key]) { f.done[key] = 1; fn(); } }
 function ucStaff(px, py, ang, L, a, glow) {   // vẽ cây gậy: gốc tại (px,py), hướng ang (0 = thẳng lên), dài L
   const im = ucImg('staff'); if (!im) return; const w = L * im.width / im.height * 1.15;
@@ -2189,7 +2188,7 @@ function drawCX(f) {
   const X = CX[f.key];
   if (f.t < 0) {   // cut-in đôi: hai tướng trượt vào từ hai phía, tên hợp kích ở giữa
     const q = 1 + f.t / 0.95, a = q < 0.15 ? q / 0.15 : q > 0.85 ? (1 - q) / 0.15 : 1, s = ease3(Math.min(1, q * 3));
-    ctx.save(); ctx.globalAlpha = a * 0.7; ctx.fillStyle = '#0a0614'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = a;
+    ctx.save(); ctx.globalAlpha = a * 0.7; ctx.fillStyle = '#0a0614'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.globalAlpha = a;
     const band = H * 0.56, y0 = H / 2 - band / 2;
     ctx.fillStyle = 'rgba(255,200,80,0.18)'; ctx.fillRect(0, y0, W, band);
     for (const [id, side] of [[f.c.a, -1], [f.c.b, 1]]) { const im = cxPor(id); if (!im) continue; const h = band * 1.05, w = h * im.width / im.height, cx = W / 2 + side * (W * 0.24 + (1 - s) * W * 0.5);
@@ -2198,7 +2197,7 @@ function drawCX(f) {
     ctx.restore(); return;
   }
   const p = Math.min(1, f.t / f.dur);
-  ctx.save(); ctx.globalAlpha = 0.5 * Math.sin(Math.PI * p); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  ctx.save(); ctx.globalAlpha = 0.5 * Math.sin(Math.PI * p); ctx.fillStyle = '#05020c'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore();
   UC_NODARK = true; try { X.draw(f, p); } finally { UC_NODARK = false; }
 }
 // một lớp biên đạo: chạy khuôn/hàm trong khoảng [a,b] của hợp kích, gốc ở tướng `who` (hoặc điểm tuỳ chọn)
@@ -2306,7 +2305,7 @@ function drawUltTex(f) {
   const p = Math.min(1, f.t / f.dur), pop = p < 0.22 ? 0.55 + 0.6 * Math.sin(p / 0.22 * Math.PI / 2) : 1.15 - 0.1 * Math.min(1, (p - 0.22) / 0.5);
   const a = p < 0.12 ? p / 0.12 : p > 0.72 ? Math.max(0, 1 - (p - 0.72) / 0.28) : 1;
   const S = 280 * pop, x = clamp(ULT_SELF[f.id] ? f.x : f.tx, S * 0.45, W - S * 0.45), y = clamp((ULT_SELF[f.id] ? f.y : f.ty) - 95, S * 0.42 + 40, H - 60);
-  ctx.save(); ctx.globalAlpha = a * 0.3; ctx.fillStyle = '#0a0414'; ctx.fillRect(0, 0, W, H);   // trời tối lại khi tuyệt kỹ
+  ctx.save(); ctx.globalAlpha = a * 0.3; ctx.fillStyle = '#0a0414'; ctx.fillRect(-W, -H, W * 3, H * 3);   // trời tối lại khi tuyệt kỹ
   const g = ctx.createRadialGradient(x, y, S * 0.1, x, y, S * 0.62); g.addColorStop(0, 'rgba(12,4,24,0.75)'); g.addColorStop(1, 'rgba(12,4,24,0)');   // nền tối sau hình để không bị cháy trắng trên nền cát sáng
   ctx.globalAlpha = a; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, S * 0.62, 0, TAU); ctx.fill();
   ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * 0.85; ctx.drawImage(im, x - S / 2, y - S / 2, S, S); ctx.restore();
@@ -2556,7 +2555,7 @@ function drawCutin() {
   const c = B.cutin, p = c.t;
   const a = p < 0.12 ? p / 0.12 : p > 0.6 ? Math.max(0, (0.8 - p) / 0.2) : 1;
   ctx.save(); ctx.globalAlpha = a;
-  ctx.fillStyle = 'rgba(20,10,30,0.45)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(20,10,30,0.45)'; ctx.fillRect(-W, -H, W * 3, H * 3);
   const y = 170;
   const g = ctx.createLinearGradient(0, y, W, y);
   g.addColorStop(0, '#ffcf3f'); g.addColorStop(0.5, '#ff7a2e'); g.addColorStop(1, '#c2185b');
@@ -2606,10 +2605,9 @@ function render() {
   if (!B) { renderHome(); return; }
   ctx.save();
   if (B.shake > 0) ctx.translate(rand(-1, 1) * B.shake * 10, rand(-1, 1) * B.shake * 10);
-  if (B.zoom && B.zoom < 0.999) { ctx.save(); ctx.filter = 'blur(6px) brightness(0.7)'; ctx.drawImage(B.bg, -W * 0.08, -H * 0.08, W * 1.16, H * 1.16); ctx.restore();   // nền viền khi lùi camera
-    const cx = W / 2, cy = H * 0.62; ctx.translate(cx, cy); ctx.scale(B.zoom, B.zoom); ctx.translate(-cx, -cy); }
   if (B.cam) { const k = Math.sin(Math.PI * B.cam.t / B.cam.dur), z = 1 + 0.05 * k; ctx.translate(B.cam.x, B.cam.y); ctx.scale(z, z); ctx.translate(-B.cam.x, -B.cam.y); }   // camera dí sát điểm nổ tuyệt kỹ
   ctx.drawImage(B.bg, 0, 0, W, H);
+  ctx.translate(GATE_X, H * VIEW_PY); ctx.scale(VIEW_Z, VIEW_Z); ctx.translate(-GATE_X, -H * VIEW_PY);
   for (const d of B.decals) {   // vết cháy/nứt đọng trên đất
     const a = Math.min(1, (d.dur - d.t) / 1.2) * 0.5, g = ctx.createRadialGradient(d.x, d.y, 4, d.x, d.y, d.r);
     g.addColorStop(0, 'rgba(40,18,6,0.9)'); g.addColorStop(0.6, 'rgba(70,32,10,0.45)'); g.addColorStop(1, 'rgba(70,32,10,0)');
@@ -2688,11 +2686,11 @@ function render() {
     ctx.fillStyle = '#ffd0d0'; ctx.fillText(boss.name + (boss.phase >= 2 ? ' (Cuồng nộ)' : ''), W / 2, y - 6); ctx.restore();
     hpBar(x, y, w, 12, boss.hp / maxHp(boss), boss.phase === 2 ? '#ff2a5a' : '#ff5a2a', 0);
   }
-  if (B.flash > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, B.flash / 0.22) * 0.38; ctx.fillStyle = '#fff8e0'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+  if (B.flash > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, B.flash / 0.22) * 0.38; ctx.fillStyle = '#fff8e0'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore(); }
   drawTargetMark();
   if (B.cutin) {   // tuyệt kỹ: tối màn + vệt tốc độ hoà sáng
     const k = Math.min(1, B.cutin.t * 4) * Math.max(0, 1 - Math.max(0, B.cutin.t - 0.6) / 0.2);
-    ctx.save(); ctx.globalAlpha = 0.45 * k; ctx.fillStyle = '#0a0410'; ctx.fillRect(0, 0, W, H);
+    ctx.save(); ctx.globalAlpha = 0.45 * k; ctx.fillStyle = '#0a0410'; ctx.fillRect(-W, -H, W * 3, H * 3);
     ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * k;
     for (let i = 0; i < 26; i++) { const y = (i * 53 + B.cutin.t * 900 * (i % 3 + 1)) % H, x = ((i * 137) % W + B.cutin.t * 2600) % (W + 400) - 200;
       ctx.strokeStyle = i % 4 ? '#fff3c0' : '#ffb02e'; ctx.lineWidth = 1 + (i % 3); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 140 - (i % 5) * 30, y); ctx.stroke(); }
@@ -2707,7 +2705,7 @@ let SHOW = null;
 function renderShowcase() {
   if (!homeBg) homeBg = Art.background(W, H, 'forest', 7);
   ctx.drawImage(homeBg, 0, 0, W, H);
-  ctx.fillStyle = 'rgba(255,248,225,0.55)'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,248,225,0.55)'; ctx.fillRect(-W, -H, W * 3, H * 3);
   const a = ANIM[SHOW];
   if (hasRig(SHOW)) { // trang xem thử cho rig: 4 trạng thái
     const ph = (window.__showPhys = window.__showPhys || [0, 1, 2, 3].map(() => Rig.newPhys()));
@@ -3107,7 +3105,7 @@ function showHUD() {
     <div class="team" id="teamBar"></div>
   </div>`;
   const pad = $('#pad');
-  pad.addEventListener('pointerdown', e => { tapTarget(logical(e)); const h = $('#hintTap'); if (h) h.remove(); });
+  pad.addEventListener('pointerdown', e => { const l = logical(e); tapTarget({ x: GATE_X + (l.x - GATE_X) / VIEW_Z, y: H * VIEW_PY + (l.y - H * VIEW_PY) / VIEW_Z }); const h = $('#hintTap'); if (h) h.remove(); });
   $('#bPause').onclick = openPause;
   $('#bMute').onclick = () => { S.mute = !S.mute; save(); $('#bMute').textContent = S.mute ? 'Tắt tiếng' : 'Âm thanh'; audioOn(); };
   $('#bAuto').onclick = () => { B.auto = !B.auto; $('#bAuto').classList.toggle('on', B.auto); };
