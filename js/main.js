@@ -1257,7 +1257,7 @@ function updateHeroes(dt) {
     if (u.clone) { u.life -= dt; if (u.life <= 0) { u.dead = true; u.gone = true; B.fx.push({ k: 'poof', x: u.x, y: u.y - 20, t: 0, dur: 0.5 }); continue; } }
     else {
       const regen = 8 * (1 + M('mpRegen') + (u.isCap ? 0.15 : 0) + teamAura('teamMp')) * (u.dk > 0 ? 2 : 1);
-      if (B.capRegen && u.hp < maxHp(u)) u.hp = Math.min(maxHp(u), u.hp + maxHp(u) * B.capRegen * dt);   // đội trưởng hệ Đan: hồi máu cả đội
+      if (B.capRegen && u.hp < maxHp(u)) u.hp = Math.min(maxHp(u), u.hp + maxHp(u) * B.capRegen * dt);   // đội trưởng hệ Linh Y: hồi máu cả đội
       u.mp = Math.min(100, u.mp + regen * dt);
       if (u.dk > 0) { u.dk -= dt; if (u.dk <= 0) { u.ammo = ammoMax(u); u.qn = 3; } }
       u.cdS -= dt; u.cdU -= dt;

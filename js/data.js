@@ -15,11 +15,11 @@ const ELEMENTS = {
 const BEATS = { kim: 'moc', moc: 'tho', tho: 'thuy', thuy: 'hoa', hoa: 'kim' };
 
 const ROLES = {
-  the:  { name: 'Thể',  color: '#e0a526', desc: 'Đỡ đòn' },
-  phap: { name: 'Pháp', color: '#4f7cff', desc: 'Sát thương diện rộng' },
-  dan:  { name: 'Đan',  color: '#2fbf71', desc: 'Hồi máu' },
-  sat:  { name: 'Sát',  color: '#ff3d5a', desc: 'Sát thương đơn mục tiêu' },
-  tran: { name: 'Trận', color: '#a35cff', desc: 'Hỗ trợ, khống chế' },
+  the:  { name: 'Hộ Pháp',  color: '#e0a526', desc: 'Đỡ đòn' },
+  phap: { name: 'Thuật Sĩ', color: '#4f7cff', desc: 'Sát thương diện rộng' },
+  dan:  { name: 'Linh Y',  color: '#2fbf71', desc: 'Hồi máu' },
+  sat:  { name: 'Chiến Tướng',  color: '#ff3d5a', desc: 'Sát thương đơn mục tiêu' },
+  tran: { name: 'Kỳ Môn', color: '#a35cff', desc: 'Hỗ trợ, khống chế' },
 };
 
 const FACTIONS = {
@@ -663,48 +663,48 @@ const LUUPHAI = {
 // field: chiêu tự đánh (Thần Thông). evo: bản tiến bậc (bậc 3).
 const CONGPHAP = [
   // ======== CƠ BẢN ========
-  { id: 'the0', sys: 'the', tier: 1, name: 'Thể Thuật Cơ Bản', desc: 'ST Thần Tướng hệ Thể +10% [VLĐMT]', mod: { 'the.atkPct': 0.10 } },
-  { id: 'phap0', sys: 'phap', tier: 1, name: 'Pháp Thuật Cơ Bản', desc: 'ST Thần Tướng hệ Pháp +10% [VLĐMT]', mod: { 'phap.atkPct': 0.10 } },
-  { id: 'dan0', sys: 'dan', tier: 1, name: 'Đan Đạo Cơ Bản', desc: 'ST Thần Tướng hệ Đan +10% [VLĐMT]', mod: { 'dan.atkPct': 0.10 } },
-  { id: 'sat0', sys: 'sat', tier: 1, name: 'Kiếm Quyết Cơ Bản', desc: 'ST Thần Tướng hệ Sát +10% [VLĐMT]', mod: { 'sat.atkPct': 0.10 } },
-  { id: 'tran0', sys: 'tran', tier: 1, name: 'Trận Pháp Cơ Bản', desc: 'ST Thần Tướng hệ Trận +10% [VLĐMT]', mod: { 'tran.atkPct': 0.10 } },
+  { id: 'the0', sys: 'the', tier: 1, name: 'Hộ Pháp Cơ Bản', desc: 'ST Thần Tướng hệ Hộ Pháp +10% [VLĐMT]', mod: { 'the.atkPct': 0.10 } },
+  { id: 'phap0', sys: 'phap', tier: 1, name: 'Thuật Sĩ Cơ Bản', desc: 'ST Thần Tướng hệ Thuật Sĩ +10% [VLĐMT]', mod: { 'phap.atkPct': 0.10 } },
+  { id: 'dan0', sys: 'dan', tier: 1, name: 'Linh Y Cơ Bản', desc: 'ST Thần Tướng hệ Linh Y +10% [VLĐMT]', mod: { 'dan.atkPct': 0.10 } },
+  { id: 'sat0', sys: 'sat', tier: 1, name: 'Chiến Tướng Cơ Bản', desc: 'ST Thần Tướng hệ Chiến Tướng +10% [VLĐMT]', mod: { 'sat.atkPct': 0.10 } },
+  { id: 'tran0', sys: 'tran', tier: 1, name: 'Kỳ Môn Cơ Bản', desc: 'ST Thần Tướng hệ Kỳ Môn +10% [VLĐMT]', mod: { 'tran.atkPct': 0.10 } },
   // ======== THỂ (đỡ đòn, hàng trước) ========
-  { id: 'the_core', sys: 'the', tier: 2, lp: 'cotloi', name: 'Bàn Cổ Quyết', desc: 'ST Thần Tướng Hệ Thể +40%. Bản Mệnh Hệ Thể: mỗi bồi dưỡng 1 cấp, ST Thần Tướng Thể +20% (tối đa 5) [VLĐMT]', mod: { 'the.atkPct': 0.40, 'the.core': 1 },
-    evo: { name: 'Hỗn Độn Bàn Cổ Thân', desc: 'ST cuối cùng hệ Thể +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'the.final': 0.03, 'the.coreEvo': 1 } } },
+  { id: 'the_core', sys: 'the', tier: 2, lp: 'cotloi', name: 'Bàn Cổ Quyết', desc: 'ST Thần Tướng Hệ Hộ Pháp +40%. Bản Mệnh Hệ Hộ Pháp: mỗi bồi dưỡng 1 cấp, ST Hộ Pháp +20% (tối đa 5) [VLĐMT]', mod: { 'the.atkPct': 0.40, 'the.core': 1 },
+    evo: { name: 'Hỗn Độn Bàn Cổ Thân', desc: 'ST cuối cùng hệ Hộ Pháp +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'the.final': 0.03, 'the.coreEvo': 1 } } },
   { id: 'the_ht1', sys: 'the', tier: 2, lp: 'hoitam', name: 'Phiên Thiên Ấn', desc: 'ST toàn thể +20%. Đánh có 15% kích hoạt Một Đòn Thần Kích, ST 150% [VLĐMT]', mod: { atkPct: 0.20, htChance: 0.15 },
     evo: { name: 'Phiên Thiên Đại Ấn', desc: 'Thần Kích: HP còn lại của mục tiêu càng nhiều, ST càng cao, tối đa +35% [VLĐMT]', mod: { htHp: 0.35 } } },
   { id: 'the_ht2', sys: 'the', tier: 2, lp: 'hoitam', req: 'the_ht1', name: 'Khai Sơn Phủ', desc: 'ST toàn thể +20%. Một Đòn Thần Kích ST +100% [VLĐMT]', mod: { atkPct: 0.20, htDmg: 1.0 },
     evo: { name: 'Lực Phách Hoa Sơn', desc: 'Xác suất Thần Kích +3,5% [VLĐMT]', mod: { htChance: 0.035 } } },
   { id: 'the_ts', sys: 'the', tier: 2, lp: 'thaison', name: 'Kim Cương Bất Hoại', desc: 'ST toàn thể +20%. Kim Thân hộ thể: ST phải chịu giảm 10% [VLĐMT]', mod: { atkPct: 0.20, kc: 0.10 },
     evo: { name: 'Bát Bảo Kim Thân', desc: 'Khi chịu 1 đòn lớn hơn 10% HP tối đa, ST đó giảm 7,5% (cài gần đúng: giảm đều 4% ST phải chịu) [VLĐMT]', mod: { kc: 0.04 } } },
-  { id: 'the_ct', sys: 'the', tier: 2, lp: 'chieuthuc', name: 'Thiên Lôi Hống', field: 'thachpha', desc: 'ST Thần Tướng Hệ Thể +40%. Thần thông mới Chấn Thiên Hống: mỗi 5 giây tiếng gầm đẩy lùi quái tiến sâu nhất 160%; mỗi tầng Thần Tướng Thể +30% [VLĐMT]', mod: { 'the.atkPct': 0.40 },
+  { id: 'the_ct', sys: 'the', tier: 2, lp: 'chieuthuc', name: 'Thiên Lôi Hống', field: 'thachpha', desc: 'ST Thần Tướng Hệ Hộ Pháp +40%. Thần thông mới Chấn Thiên Hống: mỗi 5 giây tiếng gầm đẩy lùi quái tiến sâu nhất 160%; mỗi tầng Hộ Pháp +30% [VLĐMT]', mod: { 'the.atkPct': 0.40 },
     evo: { name: 'Cửu Thiên Lôi Hống', desc: 'ST Chấn Thiên Hống +50% [VLĐMT]', mod: { 'fev.thachpha': 0.50 } } },
   // ======== PHÁP (sát thương diện rộng) ========
-  { id: 'phap_core', sys: 'phap', tier: 2, lp: 'cotloi', name: 'Ngũ Lôi Chính Pháp', desc: 'ST Thần Tướng Hệ Pháp +40%. Bản Mệnh Hệ Pháp: mỗi bồi dưỡng 1 cấp, ST hệ Pháp +20% (tối đa 5) [VLĐMT]', mod: { 'phap.atkPct': 0.40, 'phap.core': 1 },
-    evo: { name: 'Cửu Thiên Ứng Nguyên', desc: 'ST cuối cùng hệ Pháp +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'phap.final': 0.03, 'phap.coreEvo': 1 } } },
+  { id: 'phap_core', sys: 'phap', tier: 2, lp: 'cotloi', name: 'Ngũ Lôi Chính Pháp', desc: 'ST Thần Tướng Hệ Thuật Sĩ +40%. Bản Mệnh Hệ Thuật Sĩ: mỗi bồi dưỡng 1 cấp, ST hệ Thuật Sĩ +20% (tối đa 5) [VLĐMT]', mod: { 'phap.atkPct': 0.40, 'phap.core': 1 },
+    evo: { name: 'Cửu Thiên Ứng Nguyên', desc: 'ST cuối cùng hệ Thuật Sĩ +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'phap.final': 0.03, 'phap.coreEvo': 1 } } },
   { id: 'phap_tp1', sys: 'phap', tier: 2, lp: 'tatphong', name: 'Ngự Phong Thuật', desc: 'ST toàn thể +20%. Đánh có 50% nhận 1 tầng Phong Thế, mỗi tầng ST +5%, tối đa 10 tầng; mất khi điều khí [VLĐMT]', mod: { atkPct: 0.20, tp: 1 },
     evo: { name: 'Đằng Vân Giá Vũ', desc: 'Số lần tấn công toàn thể +3 [VLĐMT]', mod: { ammo: 3 } } },
   { id: 'phap_tp2', sys: 'phap', tier: 2, lp: 'tatphong', req: 'phap_tp1', name: 'Thần Hành Thuật', desc: 'ST toàn thể +20%. Mỗi tầng Phong Thế, tốc đánh +8% [VLĐMT]', mod: { atkPct: 0.20, tpAspd: 0.08 },
     evo: { name: 'Thuấn Di Độn Pháp', desc: 'Khi đánh có 15% không tốn số lần tấn công; mỗi tầng Phong Thế, ST phải chịu giảm 0,5% [VLĐMT]', mod: { freeShot: 0.15, tpDr: 0.005 } } },
-  { id: 'phap_ct', sys: 'phap', tier: 2, lp: 'chieuthuc', name: 'Thuỷ Long Ngâm', field: 'hoavu', desc: 'ST Thần Tướng Hệ Pháp +40%. Thần thông mới Thuỷ Long Ngâm: mỗi 5 giây xoáy nước dưới chỗ quái đông 150%; mỗi tầng Thần Tướng Pháp +30% [VLĐMT]', mod: { 'phap.atkPct': 0.40 },
+  { id: 'phap_ct', sys: 'phap', tier: 2, lp: 'chieuthuc', name: 'Thuỷ Long Ngâm', field: 'hoavu', desc: 'ST Thần Tướng Hệ Thuật Sĩ +40%. Thần thông mới Thuỷ Long Ngâm: mỗi 5 giây xoáy nước dưới chỗ quái đông 150%; mỗi tầng Thuật Sĩ +30% [VLĐMT]', mod: { 'phap.atkPct': 0.40 },
     evo: { name: 'Hám Hải Long Trảo', desc: 'ST Thuỷ Long Ngâm +50% [VLĐMT]', mod: { 'fev.hoavu': 0.50 } } },
   { id: 'phap_qn', sys: 'phap', tier: 2, lp: 'quynhat', name: 'Vạn Hồn Quy Nguyên', desc: 'ST toàn thể +20%. Thu Hồn: giết địch có 10% thu 1 tầng Hồn Phách, mỗi tầng ST toàn thể +1%, tối đa 40 tầng [VLĐMT]', mod: { atkPct: 0.20, soul: 1 },
     evo: { name: 'Hỗn Nguyên Thu Hồn', desc: 'Số tầng Hồn Phách tối đa +20, nhận ngay 20 tầng [VLĐMT]', mod: { soulMax: 20, soulNow: 20 } } },
   // ======== ĐAN (hồi máu) ========
-  { id: 'dan_core', sys: 'dan', tier: 2, lp: 'cotloi', name: 'Dương Chi Cam Lộ', desc: 'ST Thần Tướng Hệ Đan +40%. Bản Mệnh Hệ Đan: mỗi bồi dưỡng 1 cấp, ST và hồi máu hệ Đan +20% (tối đa 5) [VLĐMT]', mod: { 'dan.atkPct': 0.40, 'dan.core': 1 },
-    evo: { name: 'Tịnh Bình Cam Lộ', desc: 'ST cuối cùng hệ Đan +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'dan.final': 0.03, 'dan.coreEvo': 1 } } },
+  { id: 'dan_core', sys: 'dan', tier: 2, lp: 'cotloi', name: 'Dương Chi Cam Lộ', desc: 'ST Thần Tướng Hệ Linh Y +40%. Bản Mệnh Hệ Linh Y: mỗi bồi dưỡng 1 cấp, ST và hồi máu hệ Linh Y +20% (tối đa 5) [VLĐMT]', mod: { 'dan.atkPct': 0.40, 'dan.core': 1 },
+    evo: { name: 'Tịnh Bình Cam Lộ', desc: 'ST cuối cùng hệ Linh Y +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'dan.final': 0.03, 'dan.coreEvo': 1 } } },
   { id: 'dan_ad1', sys: 'dan', tier: 2, lp: 'amduong', name: 'Thái Cực Sinh Hoá', desc: 'ST toàn thể +20%. Mỗi 5 giây đổi trạng thái — Âm: Tấn Công +20%, mỗi giây mất 4% HP hiện tại; Dương: mỗi giây hồi 2,5% HP tối đa [VLĐMT]', mod: { atkPct: 0.20, ad1: 1 },
     evo: { name: 'Lưỡng Nghi Tuần Hoàn', desc: 'Hiệu quả Lưỡng Nghi tăng cường: trạng thái Âm Tấn Công +5% nữa [VLĐMT]', mod: { ad1Evo: 0.05 } } },
   { id: 'dan_ad2', sys: 'dan', tier: 2, lp: 'amduong', req: 'dan_ad1', name: 'Hồi Xuân Thuật', desc: 'ST toàn thể +20%. Mỗi khi tích luỹ mất 8% HP tối đa, vào Lưỡng Nghi Giao Hoà: Tấn Công +40% trong 3 giây [VLĐMT]', mod: { atkPct: 0.20, ad2: 1 },
     evo: { name: 'Cải Tử Hoàn Sinh', desc: 'Lưỡng Nghi Giao Hoà kéo dài thêm (cài: 5 giây) [VLĐMT]', mod: { ad2Evo: 1 } } },
   { id: 'dan_tt', sys: 'dan', tier: 2, lp: 'tuthan', name: 'Tu Chân Quyết', desc: 'ST toàn thể +20%. Đắc Đạo: tướng có công lực từ tầng 5 trở lên, ST +40% [VLĐMT]', mod: { atkPct: 0.20, tuthan: 0.40 },
     evo: { name: 'Đắc Đạo Chân Kinh', desc: 'tướng công lực từ tầng 6 trở lên: ST +20%, thời gian điều khí −5% [VLĐMT]', mod: { tuthan: 0.20, tuthanEvo: 1 } } },
-  { id: 'dan_ct', sys: 'dan', tier: 2, lp: 'chieuthuc', name: 'Hoa Vũ Nghênh Xuân', field: 'lachoa', desc: 'ST Thần Tướng Hệ Đan +40%. Thần thông mới Hoa Vũ Nghênh Xuân: mỗi 6 giây hoa rơi hồi 4% HP cả đội + 100% ST chỗ quái đông; mỗi tầng Thần Tướng Đan +30% [VLĐMT]', mod: { 'dan.atkPct': 0.40 },
+  { id: 'dan_ct', sys: 'dan', tier: 2, lp: 'chieuthuc', name: 'Hoa Vũ Nghênh Xuân', field: 'lachoa', desc: 'ST Thần Tướng Hệ Linh Y +40%. Thần thông mới Hoa Vũ Nghênh Xuân: mỗi 6 giây hoa rơi hồi 4% HP cả đội + 100% ST chỗ quái đông; mỗi tầng Linh Y +30% [VLĐMT]', mod: { 'dan.atkPct': 0.40 },
     evo: { name: 'Bách Hoa Tề Phóng', desc: 'ST Hoa Vũ Nghênh Xuân +50% [VLĐMT]', mod: { 'fev.lachoa': 0.50 } } },
   // ======== SÁT (sát thương đơn) ========
-  { id: 'sat_core', sys: 'sat', tier: 2, lp: 'cotloi', name: 'Tru Tiên Kiếm Quyết', desc: 'ST Thần Tướng Hệ Sát +40%. Bản Mệnh Hệ Sát: mỗi bồi dưỡng 1 cấp, ST hệ Sát +20% (tối đa 5) [VLĐMT]', mod: { 'sat.atkPct': 0.40, 'sat.core': 1 },
-    evo: { name: 'Tru Tiên Kiếm Trận', desc: 'ST cuối cùng hệ Sát +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'sat.final': 0.03, 'sat.coreEvo': 1 } } },
-  { id: 'sat_ct', sys: 'sat', tier: 2, lp: 'chieuthuc', name: 'Ngự Kiếm Phi Hành', field: 'phikiem', desc: 'ST Thần Tướng Hệ Sát +40%. Thần thông mới Phi Kiếm Lăng Không: mỗi 4 giây 5 phi kiếm xuyên hàng, mỗi kiếm 80%; mỗi tầng Thần Tướng Sát +30% [VLĐMT]', mod: { 'sat.atkPct': 0.40 },
+  { id: 'sat_core', sys: 'sat', tier: 2, lp: 'cotloi', name: 'Tru Tiên Kiếm Quyết', desc: 'ST Thần Tướng Hệ Chiến Tướng +40%. Bản Mệnh Hệ Chiến Tướng: mỗi bồi dưỡng 1 cấp, ST hệ Chiến Tướng +20% (tối đa 5) [VLĐMT]', mod: { 'sat.atkPct': 0.40, 'sat.core': 1 },
+    evo: { name: 'Tru Tiên Kiếm Trận', desc: 'ST cuối cùng hệ Chiến Tướng +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'sat.final': 0.03, 'sat.coreEvo': 1 } } },
+  { id: 'sat_ct', sys: 'sat', tier: 2, lp: 'chieuthuc', name: 'Ngự Kiếm Phi Hành', field: 'phikiem', desc: 'ST Thần Tướng Hệ Chiến Tướng +40%. Thần thông mới Phi Kiếm Lăng Không: mỗi 4 giây 5 phi kiếm xuyên hàng, mỗi kiếm 80%; mỗi tầng Chiến Tướng +30% [VLĐMT]', mod: { 'sat.atkPct': 0.40 },
     evo: { name: 'Vạn Kiếm Đăng Thiên', desc: 'ST Phi Kiếm Lăng Không +50% [VLĐMT]', mod: { 'fev.phikiem': 0.50 } } },
   { id: 'sat_vk', sys: 'sat', tier: 2, lp: 'vienkhuyet', name: 'Nguyệt Doanh Kiếm', desc: 'ST toàn thể +20%. Nguyệt Hữu Âm Tình: đòn đánh ngẫu nhiên — Tàn Nguyệt: ST −20%; Mãn Nguyệt: ST +60% [VLĐMT]', mod: { atkPct: 0.20, vk: 1 },
     evo: { name: 'Hằng Nga Bôn Nguyệt', desc: 'Khi kích hoạt Mãn Nguyệt, ST dao động lại trong khoảng 80%–140% [VLĐMT]', mod: { vkEvo: 1 } } },
@@ -713,18 +713,18 @@ const CONGPHAP = [
   { id: 'sat_vn2', sys: 'sat', tier: 2, lp: 'vonga', req: 'sat_vn1', name: 'Thiên Địa Nhất Kiếm', desc: 'ST toàn thể +20%. Kiếm Ý tăng cường: mỗi tầng tốc đánh −15%, ST +48% [VLĐMT]', mod: { atkPct: 0.20, vn: 0.18, vnSlow: 0.05 },
     evo: { name: 'Kiếm Tâm Thông Minh', desc: 'Mỗi tầng Kiếm Ý nhận 1 tầng Thấu Thị: bỏ qua 4% phòng thủ của mục tiêu, tối đa 5 tầng [VLĐMT]', mod: { vnSee: 0.04 } } },
   // ======== TRẬN (khống chế, hỗ trợ) ========
-  { id: 'tran_core', sys: 'tran', tier: 2, lp: 'cotloi', name: 'Kỳ Môn Độn Giáp', desc: 'ST Thần Tướng Hệ Trận +40%. Bản Mệnh Hệ Trận: mỗi bồi dưỡng 1 cấp, ST hệ Trận +20% (tối đa 5) [VLĐMT]', mod: { 'tran.atkPct': 0.40, 'tran.core': 1 },
-    evo: { name: 'Cửu Cung Bát Quái', desc: 'ST cuối cùng hệ Trận +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'tran.final': 0.03, 'tran.coreEvo': 1 } } },
+  { id: 'tran_core', sys: 'tran', tier: 2, lp: 'cotloi', name: 'Kỳ Môn Độn Giáp', desc: 'ST Thần Tướng Hệ Kỳ Môn +40%. Bản Mệnh Hệ Kỳ Môn: mỗi bồi dưỡng 1 cấp, ST hệ Kỳ Môn +20% (tối đa 5) [VLĐMT]', mod: { 'tran.atkPct': 0.40, 'tran.core': 1 },
+    evo: { name: 'Cửu Cung Bát Quái', desc: 'ST cuối cùng hệ Kỳ Môn +3%; mỗi bồi dưỡng 1 cấp, thời gian điều khí −3,5%, tối đa −17,5% [VLĐMT]', mod: { 'tran.final': 0.03, 'tran.coreEvo': 1 } } },
   { id: 'tran_xt1', sys: 'tran', tier: 2, lp: 'xetoac', name: 'Phược Yêu Tỏa', desc: 'ST toàn thể +20%. Khi gây ST, ST +10%, 25% gắn 1 tầng Phệ Huyết (60% ST/giây, tối đa 5 tầng) [VLĐMT]', mod: { atkPct: 0.20, dmgPct: 0.10, tear: 0.25 },
     evo: { name: 'Khốn Tiên Thằng', desc: 'Lực công toàn thể +5%, ST Phệ Huyết +25% [VLĐMT]', mod: { atkPct: 0.05, tearDmg: 0.25 } } },
   { id: 'tran_xt2', sys: 'tran', tier: 2, lp: 'xetoac', req: 'tran_xt1', name: 'Phá Giáp Chú', desc: 'ST toàn thể +20%. Đánh kẻ địch có Phệ Huyết: mỗi tầng ST +8% [VLĐMT]', mod: { atkPct: 0.20, tear2: 0.08 },
     evo: { name: 'Hàng Long Phá Giáp Chú', desc: 'Lực công toàn thể +5%; khi gây ST Phệ Huyết, phòng thủ mục tiêu −4%, tối đa −20% [VLĐMT]', mod: { atkPct: 0.05, tearDef: 1 } } },
   { id: 'tran_bn', sys: 'tran', tier: 2, lp: 'baino', name: 'Triền Hồn Ti', desc: 'ST toàn thể +20%. Triền Đấu Bất Hưu: đánh liên tục cùng 1 kẻ địch, mỗi lần ST +1%, tối đa +50% [VLĐMT]', mod: { atkPct: 0.20, bn: 1 },
     evo: { name: 'Thiên La Địa Võng', desc: 'Triền Đấu: mỗi lần ST +2%, giới hạn tăng thêm 25%, tối đa +75% [VLĐMT]', mod: { bnEvo: 1 } } },
-  { id: 'tran_ct', sys: 'tran', tier: 2, lp: 'chieuthuc', name: 'Tử Kim Châm Vũ', field: 'batquai', desc: 'ST Thần Tướng Hệ Trận +40%. Thần thông mới Tử Kim Châm Vũ: mỗi 6 giây mưa kim châm chỗ quái đông 120% + choáng 0,8 giây; mỗi tầng Thần Tướng Trận +30% [VLĐMT]', mod: { 'tran.atkPct': 0.40 },
+  { id: 'tran_ct', sys: 'tran', tier: 2, lp: 'chieuthuc', name: 'Tử Kim Châm Vũ', field: 'batquai', desc: 'ST Thần Tướng Hệ Kỳ Môn +40%. Thần thông mới Tử Kim Châm Vũ: mỗi 6 giây mưa kim châm chỗ quái đông 120% + choáng 0,8 giây; mỗi tầng Kỳ Môn +30% [VLĐMT]', mod: { 'tran.atkPct': 0.40 },
     evo: { name: 'Vạn Châm Xuyên Tâm', desc: 'ST Tử Kim Châm Vũ +50% [VLĐMT]', mod: { 'fev.batquai': 0.50 } } },
 ];
-const SYS_NAME = { the: 'Thể', phap: 'Pháp', dan: 'Đan', sat: 'Sát', tran: 'Trận' };
+const SYS_NAME = { the: 'Hộ Pháp', phap: 'Thuật Sĩ', dan: 'Linh Y', sat: 'Chiến Tướng', tran: 'Kỳ Môn' };
 const CP_RAR = { 1: { name: 'Cơ bản', cls: 'r1' }, 2: { name: 'Cao cấp', cls: 'r2' }, 3: { name: 'Tiến bậc', cls: 'r3' } };
 
 // Gacha (mục 8 của GDD)
