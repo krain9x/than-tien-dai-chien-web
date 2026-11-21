@@ -1273,7 +1273,7 @@ function updateHeroes(dt) {
     const tgt = findTarget(u);
     if (tgt) { tryAttack(u, tgt); if (u.atkAnim >= 0) u.f = tgt.x >= u.x ? 1 : -1; } else u.f = 1;
     // chiêu nhỏ luôn tự dùng; tuyệt kỹ: tự dùng khi bật Tự động (hoặc đồng đội không phải đội trưởng)
-    if (!u.clone) autoSkills(u, tgt, B.auto || u !== B.cap);
+    if (!u.clone) autoSkills(u, tgt, !!B.auto);   // chưa bật Tự động: tuyệt kỹ chỉ ra khi người chơi bấm
   }
   B.heroes = B.heroes.filter(h => !h.gone);
 }
@@ -1416,6 +1416,8 @@ function updateFx(dt) {
   for (const b of B.fxb) b.t += dt; B.fxb = B.fxb.filter(b => b.t < b.dur);
   for (const d of B.decals) d.t += dt; B.decals = B.decals.filter(d => d.t < d.dur);
   if (B.cam && (B.cam.t += dt) > B.cam.dur) B.cam = null;
+  { const ultOn = B.fx.some(f => (f.k === 'cx' && f.t > -0.2) || (f.k === 'sig' && f.uc && f.t > -0.3)), zt = ultOn ? 0.88 : 1;   // lùi camera khi đang tung tuyệt kỹ
+    B.zoom = (B.zoom || 1) + (zt - (B.zoom || 1)) * Math.min(1, dt * (ultOn ? 5 : 2.5)); }
   for (const g of B.ghosts) g.t += dt; B.ghosts = B.ghosts.filter(g => g.t < 0.22);
   for (const s of B.sparks) s.t += dt; B.sparks = B.sparks.filter(s => s.t < s.dur);
   if (B.hits.t > 0) B.hits.t -= dt;
@@ -2604,7 +2606,9 @@ function render() {
   if (!B) { renderHome(); return; }
   ctx.save();
   if (B.shake > 0) ctx.translate(rand(-1, 1) * B.shake * 10, rand(-1, 1) * B.shake * 10);
-  if (B.cam) { const k = Math.sin(Math.PI * B.cam.t / B.cam.dur), z = 1 + 0.09 * k; ctx.translate(B.cam.x, B.cam.y); ctx.scale(z, z); ctx.translate(-B.cam.x, -B.cam.y); }   // camera dí sát điểm nổ tuyệt kỹ
+  if (B.zoom && B.zoom < 0.999) { ctx.save(); ctx.filter = 'blur(6px) brightness(0.7)'; ctx.drawImage(B.bg, -W * 0.08, -H * 0.08, W * 1.16, H * 1.16); ctx.restore();   // nền viền khi lùi camera
+    const cx = W / 2, cy = H * 0.62; ctx.translate(cx, cy); ctx.scale(B.zoom, B.zoom); ctx.translate(-cx, -cy); }
+  if (B.cam) { const k = Math.sin(Math.PI * B.cam.t / B.cam.dur), z = 1 + 0.05 * k; ctx.translate(B.cam.x, B.cam.y); ctx.scale(z, z); ctx.translate(-B.cam.x, -B.cam.y); }   // camera dí sát điểm nổ tuyệt kỹ
   ctx.drawImage(B.bg, 0, 0, W, H);
   for (const d of B.decals) {   // vết cháy/nứt đọng trên đất
     const a = Math.min(1, (d.dur - d.t) / 1.2) * 0.5, g = ctx.createRadialGradient(d.x, d.y, 4, d.x, d.y, d.r);
