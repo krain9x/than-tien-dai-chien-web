@@ -3261,6 +3261,10 @@ function route() {
     $('#bBack').onclick = () => { SHOW = null; location.hash = ''; showHome(); };
   }
   else if (k === 'gacha') showGacha();
+  else if (k === 'full') {   // (thử nghiệm) nhận toàn bộ Thần Tướng
+    let n = 0; for (const id of Object.keys(HEROES)) if (!S.owned[id]) { S.owned[id] = newRec(); n++; }
+    save(); location.hash = ''; showHome(); toast('Đã nhận ' + n + ' Thần Tướng để thử');
+  }
   else if (k === 'quests') showQuests();
   else if (k === 'tower') showTower();
   else if (k === 'raid') showRaid();
