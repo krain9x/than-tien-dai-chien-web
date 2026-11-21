@@ -3036,7 +3036,7 @@ document.addEventListener('pointerdown', () => setTimeout(bgmStart, 50));
 
 
 // ---- Lưu trực tuyến (js/cloud.js): khi đăng nhập, so bản trên mạng với bản trên máy
-const isFresh = s => !Object.keys(s.cleared || {}).length && !(s.pulls > 0);
+const isFresh = s => !Object.keys(s.cleared || {}).length && !(s.pulls > 0) && Object.keys(s.owned || {}).length <= 3;
 function initCloud() { if (window.Cloud && Cloud.ok) Cloud.onUser(async u => {
   if (!u) { if (!B && ui.querySelector('.home2')) showHome(); return; }
   try {
@@ -3047,7 +3047,8 @@ function initCloud() { if (window.Cloud && Cloud.ok) Cloud.onUser(async u => {
         const useRemote = isFresh(S) || (remote.ts || 0) >= (S.ts || 0)
           ? (isFresh(S) || confirm('Có dữ liệu trên mạng (' + new Date(remote.ts || 0).toLocaleString('vi-VN') + '). Dùng bản trên mạng?\nBấm Huỷ để giữ bản trên máy này và ghi đè lên mạng.'))
           : !confirm('Bản trên máy này mới hơn bản trên mạng. Giữ bản trên máy và ghi đè lên mạng?\nBấm Huỷ để dùng bản trên mạng.');
-        if (useRemote) { S = Object.assign(defaultSave(), remote); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} toast('Đã tải dữ liệu từ mạng'); }
+        if (useRemote) { const keep = S.owned; S = Object.assign(defaultSave(), remote); for (const id in keep) if (!S.owned[id]) S.owned[id] = keep[id];   // giữ tướng có trên máy mà bản mạng chưa có
+          try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) {} toast('Đã tải dữ liệu từ mạng'); }
         else await Cloud.pushNow(S);
       }
     } else await Cloud.pushNow(S);
