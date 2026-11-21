@@ -875,8 +875,8 @@ function cast(u, w) {
     const self = sk.fx.every(f => f.at === 'self' || f.t === 'heal' || f.t === 'shield' || f.t === 'taunt' || f.t === 'buff' || f.t === 'clone');
     const f0 = sk.fx.find(f => f.at === 'cluster' || f.at === 'front' || f.at === 'target');
     const P = self || (!tgt && !f0) ? { x: u.x, y: u.y } : f0 ? skillPoint(u, f0, tgt) : { x: tgt.x, y: tgt.y };
-    const lead = 0.45, hit = lead + VFX.dur * 0.26;
-    B.fx.push({ k: 'sig', id: u.id, x: u.x, y: u.y, tx: P.x, ty: P.y, f: u.f, t: -lead, dur: VFX.dur });
+    const UC = ULTC[u.id], D = UC ? UC.dur : VFX.dur, lead = 0.45, hit = lead + D * (UC ? UC.hit : 0.26);
+    B.fx.push({ k: 'sig', id: u.id, x: u.x, y: u.y - 34 * sizeOf(u), tx: P.x, ty: P.y, f: u.f, t: -lead, dur: D });
     B.later.push({ t: hit, fn: () => {
       if (u.dead) return;
       const t2 = tgt && !tgt.dead ? tgt : findTarget(u) || nearestEnemy(u, 400);
@@ -1894,6 +1894,73 @@ function drawComboX(c) {
   if (ci && q < 1) { const a = q < 0.2 ? q / 0.2 : q > 0.75 ? (1 - q) / 0.25 : 1, w = 760, h = w * ci.height / ci.width;
     ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = 'rgba(10,6,20,0.6)'; ctx.fillRect(0, H / 2 - h / 2, W, h); ctx.drawImage(ci, (W - w) / 2 + (1 - Math.min(1, q * 4)) * 200, H / 2 - h / 2, w, h); ctx.restore(); }
 }
+
+// ---- TUYỆT KỸ BIÊN ĐẠO: vật thể thật chuyển động (art/ultc), kèm nổ nhiều khung, rung, vết nứt
+const UCI = {}; function ucImg(n) { let i = UCI[n]; if (!i) { i = UCI[n] = new Image(); i.src = 'art/ultc/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
+['staff', 'dragon_head', 'dragon_body', 'dragon_tail', 'hound'].forEach(ucImg);
+const ease3 = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3), easeIn = x => Math.pow(Math.max(0, Math.min(1, x)), 2.2);
+function ucDark(p, k) { ctx.save(); ctx.globalAlpha = (k || 0.5) * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+function ucOnce(f, key, fn) { f.done = f.done || {}; if (!f.done[key]) { f.done[key] = 1; fn(); } }
+function ucStaff(px, py, ang, L, a, glow) {   // vẽ cây gậy: gốc tại (px,py), hướng ang (0 = thẳng lên), dài L
+  const im = ucImg('staff'); if (!im) return; const w = L * im.width / im.height * 1.15;
+  ctx.save(); ctx.translate(px, py); ctx.rotate(ang); ctx.globalAlpha = a;
+  if (glow) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * glow; ctx.fillStyle = '#ffcf3f'; ctx.filter = 'blur(10px)'; ctx.fillRect(-w * 0.9, -L, w * 1.8, L); ctx.restore(); }
+  ctx.drawImage(im, -w / 2, -L, w, L); ctx.restore();
+}
+const ULTC = {
+  // Ngộ Không — Như Ý Kim Cô Bổng: gậy trong tay phóng to, dựng thẳng lên trời, quật xuống chỗ quái đông nhất
+  ngokhong: { dur: 1.7, hit: 0.55, draw(f, p) {
+    ucDark(p, 0.45);
+    const px = f.x + 6, py = f.y, dx = f.tx - px, dy = (f.ty - 10) - py, dist = Math.hypot(dx, dy), target = Math.atan2(dx, -dy);
+    let L, ang, glow = 0;
+    if (p < 0.12) { L = 90 * ease3(p / 0.12); ang = 0.15; }
+    else if (p < 0.38) { const q = ease3((p - 0.12) / 0.26); L = 90 + q * 470; ang = 0.15 - 0.25 * q; glow = 0.6 * q; if (Math.random() < 0.5) B.shake = Math.max(B.shake, 0.15); }
+    else if (p < 0.55) { const q = easeIn((p - 0.38) / 0.17); L = 560 + q * Math.max(0, dist + 40 - 560); ang = -0.1 + (target + 0.1) * q; glow = 0.8;
+      for (let k = 1; k <= 4; k++) { const qq = easeIn(Math.max(0, (p - 0.38) / 0.17 - k * 0.06)); ucStaff(px, py, -0.1 + (target + 0.1) * qq, L, 0.18, 0); } }   // vệt mờ chuyển động
+    else if (p < 0.78) { L = dist + 40; ang = target; glow = 0.5 * (1 - (p - 0.55) / 0.23); }
+    else { const q = ease3((p - 0.78) / 0.22); L = (dist + 40) * (1 - q) + 70 * q; ang = target * (1 - q); glow = 0; }
+    ucStaff(px, py, ang, L, p > 0.95 ? (1 - p) * 20 : 1, glow);
+    if (p >= 0.55) ucOnce(f, 'hit', () => { B.shake = 1.0; B.flash = 0.25; sfx('boom'); B.decals.push({ x: f.tx, y: f.ty + 4, r: 190, t: 0, dur: 5 }); particles(f.tx, f.ty - 10, '#c8a070', 40, 380, 7); particles(f.tx, f.ty - 20, '#ffd34d', 30, 300, 5); });
+    if (p > 0.53 && p < 0.9) { const q = (p - 0.53) / 0.37; uxSheet('sheet_boom_gold', f.tx, f.ty - 40, 420, q); uxSheet('sheet_crack', f.tx, f.ty, 520, q); }
+  } },
+  // Dương Tiễn — Hao Thiên Khuyển: chó thần chạy ra từ chân, lao vút, nhảy vồ, xé vuốt
+  duongtien: { dur: 1.5, hit: 0.62, draw(f, p) {
+    ucDark(p, 0.4);
+    const im = ucImg('hound'); if (!im) return;
+    const sx = f.x + 50, sy = f.y + 30, tx = f.tx - 30, ty = f.ty - 20;
+    let x, y, s, rot = 0, a = 1;
+    if (p < 0.35) { const q = p / 0.35; x = sx + (tx - sx) * 0.55 * q; y = sy + (ty - sy) * 0.55 * q - Math.abs(Math.sin(q * Math.PI * 4)) * 14; s = 0.9 + q * 0.6; }
+    else if (p < 0.62) { const q = (p - 0.35) / 0.27, bx = sx + (tx - sx) * 0.55, by = sy + (ty - sy) * 0.55; x = bx + (tx - bx) * q; y = by + (ty - by) * q - Math.sin(q * Math.PI) * 170; s = 1.5 + q * 1.2; rot = -0.5 + q * 0.9;
+      for (let k = 1; k <= 5; k++) { const qq = Math.max(0, q - k * 0.07), gx = bx + (tx - bx) * qq, gy = by + (ty - by) * qq - Math.sin(qq * Math.PI) * 170;   // vệt sáng theo đường nhảy
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 * (1 - k / 6); ctx.translate(gx, gy); ctx.scale(s, s); ctx.filter = 'brightness(2) sepia(1) saturate(4)'; ctx.drawImage(im, -im.width / 4, -im.height / 2, im.width / 2, im.height / 2); ctx.restore(); } }
+    else { const q = (p - 0.62) / 0.38; x = tx; y = ty - 10; s = 2.7 - q * 0.6; a = 1 - q; }
+    ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 * a; ctx.filter = 'blur(6px) brightness(2) sepia(1) saturate(5)'; ctx.drawImage(im, -im.width / 4 - 4, -im.height / 2 - 4, im.width / 2 + 8, im.height / 2 + 8); ctx.restore();
+    ctx.drawImage(im, -im.width / 4, -im.height / 2, im.width / 2, im.height / 2); ctx.restore();
+    if (p >= 0.62) ucOnce(f, 'hit', () => { B.shake = 0.9; B.flash = 0.2; sfx('boom'); particles(f.tx, f.ty - 30, '#ffe58a', 36, 320, 5); });
+    if (p > 0.6 && p < 0.95) { const q = (p - 0.6) / 0.35; uxSheet('sheet_slash', f.tx, f.ty - 50, 380, q); uxDraw('duongtien_b3', f.tx, f.ty - 60, 320, (1 - q) * 1.0); }
+  } },
+  // Tiểu Bạch Long — Bạch Long Phi Thiên: rồng trắng dài bay uốn lượn ngang màn hình, quét qua bầy quái
+  tieubachlong: { dur: 2.2, hit: 0.5, draw(f, p) {
+    ucDark(p, 0.5);
+    const head = ucImg('dragon_head'), body = ucImg('dragon_body'), tail = ucImg('dragon_tail'); if (!head || !body) return;
+    const path = s => { const x = -260 + s * (W + 620); return [x, f.ty - 70 + Math.sin(s * 9) * 70 - Math.sin(s * Math.PI) * 30]; };
+    const hs = ease3(p) * 1.05, N = 16, gap = 0.028;
+    for (let i = N; i >= 0; i--) {   // từ đuôi lên đầu
+      const s = hs - i * gap; if (s < -0.1) continue;
+      const [x, y] = path(s), [x2, y2] = path(s + 0.004), ang = Math.atan2(y2 - y, x2 - x), sc = 1 - i * 0.025;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+      if (i === 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.filter = 'blur(14px)'; ctx.fillStyle = '#9fe8ff'; ctx.beginPath(); ctx.arc(30, 0, 90, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        ctx.drawImage(head, -40, -head.height * 0.42, head.width * 0.42, head.height * 0.42); }
+      else if (i === N && tail) ctx.drawImage(tail, -tail.width * 0.3, -tail.height * 0.3 / 2, tail.width * 0.3, tail.height * 0.3);
+      else { const bw = 64 * sc, bh = 58 * sc; ctx.drawImage(body, -bw / 2, -bh / 2, bw + 8, bh); }
+      ctx.restore();
+      if (i % 4 === 0 && Math.random() < 0.4) particles(x, y, '#bfeaff', 2, 80, 4);   // bọt nước theo thân
+    }
+    if (p >= 0.5) ucOnce(f, 'hit', () => { B.shake = 0.8; B.flash = 0.2; sfx('boom'); particles(f.tx, f.ty - 40, '#9fe8ff', 44, 360, 6); });
+    if (p > 0.45 && p < 0.85) uxSheet('sheet_boom_blue', f.tx, f.ty - 50, 440, (p - 0.45) / 0.4);
+  } },
+};
 function drawUltTex(f) {
   let im = ULTT[f.id]; if (!im) { im = ULTT[f.id] = new Image(); im.src = 'art/fx/ult_' + f.id + '.webp'; }
   if (!im.complete || !im.naturalWidth) return;
@@ -2034,7 +2101,7 @@ function drawProj(p) {
   ctx.restore();
 }
 function drawFx(f) {
-  if (f.k === 'sig') { if (f.t >= 0) { if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
+  if (f.k === 'sig') { if (f.t >= 0) { if (ULTC[f.id]) ULTC[f.id].draw(f, Math.min(1, f.t / f.dur)); else if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
   if (f.k === 'combo') { drawComboX(f); return; }
   const p = f.t / f.dur;
   ctx.save();
