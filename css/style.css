@@ -482,3 +482,7 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .result-modal .res-title { font-size: 40px; } .result-modal .res-stars span { font-size: 38px; }
 .result-modal .res-cond { font-size: 13px; display: flex; gap: 14px; } .rs-row { grid-template-columns: 26px 110px 1fr 1fr 1fr; font-size: 11px; } .rs-row img { width: 24px; height: 24px; }
 .result-modal .res-btns .btn { font-size: 16px; }
+
+.eq-row { border-bottom: 1px solid #c9985a; padding: 4px 0; font-size: 13px; } .eq-row p { margin: 2px 0; font-size: 13px; }
+.eq-cand { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; } .eq-cand .btn { font-size: 11px; }
+.det-actions { flex-wrap: wrap; }

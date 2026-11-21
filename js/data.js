@@ -437,7 +437,29 @@ const BONDS = [
     desc: 'Cả hai +10% công. Khi một người ngã, người còn lại +30% công trong 8 giây.' },
   { id: 'phutu', name: 'Phụ Tử Ngưu Ma', members: ['ngumavuong', 'honghainhi'],
     desc: 'Ngưu Ma Vương +20% máu. Hồng Hài Nhi nhận ít hơn 15% sát thương.' },
+  // Hợp bích (kiểu Phong Vân của VLĐMT): ra trận cùng nhau thì cộng chỉ số chung — cài theo bảng gen (g) bên dưới
+  { id: 'thayto', name: 'Thầy Trò Thỉnh Kinh', members: ['duongtang', 'ngokhong', 'batgioi', 'satang'], g: { atkPct: 0.12, hpPct: 0.12 },
+    desc: 'Đủ 4 thầy trò: cả 4 người +12% công, +12% máu.' },
+  { id: 'lyphu', name: 'Phụ Tử Lý Gia', members: ['litinh', 'nata'], g: { atkPct: 0.10, crit: 0.08 },
+    desc: 'Lý Tịnh và Na Tra: +10% công, +8% bạo kích.' },
+  { id: 'nhilang', name: 'Thần Khuyển Hộ Chủ', members: ['duongtien', 'ngokhong'], g: { atkPct: 0.15 },
+    desc: 'Dương Tiễn đấu Ngộ Không: cả hai +15% công.' },
+  { id: 'tamtieu', name: 'Tam Tiêu Đồng Tâm', members: ['vantieu', 'trieucongminh'], g: { hpPct: 0.15, crit: 0.06 },
+    desc: 'Vân Tiêu và Triệu Công Minh (huynh muội Triệt giáo): +15% máu, +6% bạo kích.' },
+  { id: 'nguyetlong', name: 'Nguyệt Quang Từ Bi', members: ['hangnga', 'quanam'], g: { hpPct: 0.15, dmgTaken: 0.08 },
+    desc: 'Hằng Nga và Quan Âm: +15% máu, nhận ít hơn 8% sát thương.' },
+  { id: 'phongthan', name: 'Khai Bảng Phong Thần', members: ['khuongtanha', 'duongtien', 'nata'], g: { atkPct: 0.10, hpPct: 0.10 },
+    desc: 'Khương Tử Nha cùng hai đại tướng Tây Kỳ: +10% công, +10% máu.' },
+  { id: 'hoason', name: 'Hoả Diệm Gia Đình', members: ['ngumavuong', 'thietphien', 'honghainhi'], g: { atkPct: 0.12, hpPct: 0.08 },
+    desc: 'Ngưu Ma, Thiết Phiến, Hồng Hài Nhi: +12% công, +8% máu.' },
 ];
+// Truyện Ký: mở theo cấp tướng, mỗi chương thưởng ngọc
+const LORE_LV = [1, 10, 20];
+const LORE_REW = [80, 150, 300];
+// Trang bị: 3 ô; độ hiếm quyết định chỉ số
+const EQ_SLOT = { vk: { name: 'Vũ khí', stat: 'atkPct', label: 'công' }, giap: { name: 'Giáp', stat: 'hpPct', label: 'máu' }, ngoc: { name: 'Ngọc bội', stat: 'crit', label: 'bạo kích' } };
+const EQ_RAR = { R: { v: 0.05, name: 'Thường', c: '#4f8cff' }, SR: { v: 0.10, name: 'Hiếm', c: '#9a5cff' }, SSR: { v: 0.18, name: 'Thần binh', c: '#ff9f1a' } };
+const EQ_NAMES = { vk: ['Thanh Đồng Kiếm', 'Huyền Thiết Thương', 'Thần Binh Lôi Hoả'], giap: ['Bố Giáp', 'Lân Giáp', 'Kim Lũ Thần Y'], ngoc: ['Ngọc Bội Xanh', 'Hồ Ly Châu', 'Định Hải Thần Châu'] };
 
 // ---------------------------------------------------------------------
 // Quái
