@@ -25,9 +25,9 @@ const SAVE_KEY = 'ttdc_save_v1';
 const newRec = () => ({ lv: 1, star: 1, shard: 0 });
 function defaultSave() {
   const owned = {};
-  ['batgioi', 'duongtang', 'honghainhi'].forEach(id => { owned[id] = newRec(); });   // tân thủ: 3 tướng SR, SSR đến dần qua chiêu mộ
+  ['culinhthan', 'hoangphongquai', 'longnu'].forEach(id => { owned[id] = newRec(); });   // tân thủ: 3 tướng R (Hộ Pháp, Chiến Tướng, Linh Y); SR/SSR mở dần qua chương
   return { ngoc: 1500, vang: 3000, univ: 0, owned,
-           lineup: ['batgioi', 'duongtang', 'honghainhi'],
+           lineup: ['culinhthan', 'hoangphongquai', 'longnu'],
            cleared: {}, pity: 0, pity10: 0, pulls: 0 };
 }
 function loadSave() {
@@ -71,6 +71,7 @@ const POSES = {};
 const EPOSES = {};   // quái vẽ bằng tư thế: walk1, walk2, attack, hit (+ master)
 const _enemyLoaded = {};
 function ensureEnemyAssets(ids) {
+  try { for (const id of ids) if (ENEMIES[id] && ENEMIES[id].boss) { formImg(id); scImg('ngumavuong_fx'); } } catch (e) {}   // tải sẵn hình biến hình boss
   return Promise.all([...new Set(ids)].filter(id => (window.EPOSE || {})[id]).map(id => {
     if (_enemyLoaded[id]) return _enemyLoaded[id];
     EPOSES[id] = {};
@@ -86,7 +87,13 @@ function stageEnemyIds(st) {
   for (const w of st.waves) for (const [t] of w.list) { s.add(t); for (const p of ((ENEMIES[t] || {}).phases || [])) if (p.summon) s.add(p.summon[0]); }
   return [...s];
 }
+const FORMI = {}; function formImg(id) { let i = FORMI[id]; if (!i) { i = FORMI[id] = new Image(); i.src = 'art/enemies/' + id + '/form.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function drawEnemyPose(u, alpha) {
+  if (u.form) { const im = formImg(u.id); if (im) {   // boss đã biến hình: hình mới to hơn, thở + rung khi đánh
+    const h = spriteH(u) * 1.35, w = h * im.width / im.height, bob = Math.sin(u.t * 2.4) * 2, lunge = u.atkAnim >= 0 ? Math.sin(Math.min(1, u.atkAnim) * Math.PI) * 14 : 0;
+    ctx.save(); ctx.scale(-u.f, 1); ctx.globalAlpha *= alpha; if (u.hitT > 0) ctx.filter = 'brightness(1.8)';
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.35 + 0.15 * Math.sin(u.t * 4); const g = ctx.createRadialGradient(0, -h * 0.45, 4, 0, -h * 0.45, h * 0.6); g.addColorStop(0, 'rgba(255,60,60,0.6)'); g.addColorStop(1, 'rgba(120,0,40,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, -h * 0.45, h * 0.55, h * 0.6, 0, 0, TAU); ctx.fill(); ctx.restore();
+    ctx.drawImage(im, -w / 2 - lunge, -h + bob, w, h); ctx.restore(); return true; } }
   const P = EPOSES[u.id], D = (window.EPOSE || {})[u.id]; if (!P || !D) return false;
   let n = 'master';
   if (u.dead || u.hitT > 0) n = 'hit'; else if (u.atkAnim >= 0 || u.castT > 0) n = 'attack'; else if (u.walk) n = Math.floor(u.t * 6) % 2 ? 'walk2' : 'walk1';
@@ -305,13 +312,14 @@ function applyBonuses(u, info) {
   if (pa.dr) u.bonus.dmgTaken += pa.dr;
 }
 
+function chBg(st) { const c = CHAPTERS[st.chap]; if (!c || st.raid) return null; const k = 'ch' + c.id; let i = BGIMG[k]; if (!i) { i = BGIMG[k] = new Image(); i.src = 'art/bg/' + k + '.webp'; } return i; }
 function startBattle(si) {   // nạp rig + tư thế của đội trước khi vào trận
   const need = S.lineup.filter(id => S.owned[id]);
   const en = stageEnemyIds(typeof si === 'object' ? si : STAGES[si]);
   if (need.every(id => _heroLoaded[id] && _heroLoaded[id].done) && en.every(id => !(window.EPOSE || {})[id] || (_enemyLoaded[id] && _enemyLoaded[id].done))) { startBattleNow(si); return; }
   let ov = document.getElementById('loadov');
   if (!ov) { ov = document.createElement('div'); ov.id = 'loadov'; ov.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(40,24,12,.72);color:#ffe9b0;font:800 22px Baloo 2,sans-serif;z-index:99'; ov.textContent = 'Đang tải tướng…'; document.body.appendChild(ov); }
-  Promise.all([ensureHeroAssets(need), ensureEnemyAssets(en)]).then(() => { need.forEach(id => { _heroLoaded[id].done = true; }); en.forEach(id => { if (_enemyLoaded[id]) _enemyLoaded[id].done = true; }); ov.remove(); startBattleNow(si); });
+  Promise.all([ensureHeroAssets(need), ensureEnemyAssets(en), new Promise(res => { const bi = chBg(typeof si === 'object' ? si : STAGES[si]); if (!bi || bi.complete) res(); else { bi.onload = res; bi.onerror = res; setTimeout(res, 4000); } })]).then(() => { need.forEach(id => { _heroLoaded[id].done = true; }); en.forEach(id => { if (_enemyLoaded[id]) _enemyLoaded[id].done = true; }); ov.remove(); startBattleNow(si); });
 }
 function startBattleNow(si) {
   bgmSet('battle');
@@ -324,7 +332,7 @@ function startBattleNow(si) {
     mods: {}, cp: {}, gate: { hp: st.gate, max: st.gate }, gateHurt: 0,
     stat: {}, mech: (CHAPTERS[st.chap] || {}).mk || null, mechT: 4, fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
     cutin: null, rerolls: 2, soul: 0, amMode: 'duong', amT: 5, gateT: 10, field: {}, slots: [], kcT: 12, lv: 1, xp: 0, pickQ: [], dodgeCd: 0, deaths: 0, kills: 0, banner: null, endT: null, win: false, joy: null,
-    bg: (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
+    bg: (chBg(st) && chBg(st).complete && chBg(st).naturalWidth) ? chBg(st) : (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
   };
   const info = teamInfo(ids);
   ids.forEach((id, i) => {
@@ -1376,6 +1384,7 @@ function bossSpecial(e, dt) {
     const nx = PH[e.phase - 1];
     if (nx && e.hp < maxHp(e) * nx.at) {
       e.phase++; e.phaseT = performance.now(); snd('roar', 1, 0.85);
+      if (e.phase > PH.length && formImg(e.id)) { e.form = true; startBossScene(e, nx.text || 'Biến hình!'); }
       if (nx.enrage) e.buffs.push({ k: 'aspd', v: nx.enrage, t: 9999 });
       if (nx.heal) e.hp = Math.min(maxHp(e), e.hp + maxHp(e) * nx.heal);
       if (B.mech === 'multiphase') {   // Vạn Tiên Trận: mỗi lần đổi giai đoạn boss bất tử 2 giây và giáng sấm lên cả đội
@@ -1524,6 +1533,15 @@ function offerRevive(why) {   // hồi sinh 1 lần/trận bằng ngọc (sau n�
   $('#rvN').onclick = () => { w.remove(); B.paused = false; endBattle(false, why === 'gate' ? 'Cổng thành đã vỡ' : 'Cả đội đã trọng thương'); };
   return true;
 }
+
+// ---- TIẾN TRÌNH: qua boss chương nhận Thần Tướng (R → SR → SSR theo cốt truyện)
+const CH_HERO = { 1: 'batgioi', 2: 'nata', 3: 'litinh', 4: 'duongtang', 5: 'honghainhi', 6: 'khuongtanha', 7: 'satang', 8: 'ngokhong', 9: 'thietphien', 10: 'duongtien', 11: 'tieubachlong', 12: 'quanam' };
+function chapterReward(st) {   // gọi khi thắng lần đầu ải boss cuối chương
+  const ch = CHAPTERS[st.chap]; if (!ch || st.kind !== 'boss' || st !== STAGES.filter(x => x.chap === st.chap).pop()) return null;
+  const id = CH_HERO[ch.id]; if (!id || !HEROES[id]) return null;
+  if (S.owned[id]) { S.owned[id].shard += DUP_SHARDS[HEROES[id].rar] * 2; return { id, dup: true }; }
+  S.owned[id] = newRec(); if (S.lineup.length < 5) S.lineup.push(id); return { id, dup: false };
+}
 function endBattle(win, reason) {
   if (B.over) return;
   if (B.st.raid) win = true;
@@ -1536,7 +1554,9 @@ function endBattle(win, reason) {
   qAdd('fight'); if (win) qAdd('win'); wqAdd('fight'); if (win) wqAdd('win'); if (B.st.tower && win) wqAdd('tower'); if (B.st.raid) wqAdd('raid'); qAdd('kill', B.kills || 0);
   if (win) {
     if (B.st.tower) { S.tower = Math.max(S.tower || 0, B.st.floor); lbPush(); }
+    if (B.st.nan) { const N = nanState(); if (N.run) { N.best = Math.max(N.best, B.st.nanN); N.run.n = B.st.nanN + 1; if (N.run.n <= 81) N.run.pick = nanPick3(); } }
     const first = !S.cleared[B.st.id];
+    if (first && typeof B.si === 'number') B.chRew = chapterReward(B.st);
     B.reward.ngoc = first ? B.st.reward.ngoc : Math.round(B.st.reward.ngoc * 0.2);
     B.reward.vang = first ? B.st.reward.vang : Math.round(B.st.reward.vang * 0.5);
     S.ngoc += B.reward.ngoc; S.vang += B.reward.vang;
@@ -1544,6 +1564,7 @@ function endBattle(win, reason) {
     const dropP = B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
     if (Math.random() < dropP) { const it = rollEquip(B.st); (S.items = S.items || []).push(it); B.reward.item = it; }
   } else {
+    if (B.st.nan) { const N = nanState(); B.nanEnd = N.run ? N.run.n - 1 : 0; N.run = null; }
     B.reward.vang = Math.round(B.st.reward.vang * 0.15 * (B.wave + 1) / B.st.waves.length);
     S.vang += B.reward.vang;
   }
@@ -2705,11 +2726,16 @@ const SCI = {}; function scImg(n) { let i = SCI[n]; if (!i) { i = SCI[n] = new I
 const SCENE_D = 1.4;
 const sceneUnlocked = id => isSSR(id) || (HEROES[id] && HEROES[id].rar === 'SR' && S.owned[id] && S.owned[id].star >= 5);   // SR: THỨC TỈNH (5★) mở cảnh cắt
 const scReady = id => sceneUnlocked(id) && ['_bg', '_hero', '_fx'].every(s => scImg(id + s));
+function startBossScene(e, text) {   // cảnh cắt ngắn khi boss biến hình
+  const hd = document.querySelector('.hud'); if (hd) hd.classList.add('cine');
+  B.scene = { boss: true, id: e.id, name: text, hero: e.name, t0: performance.now(), bgImg: B.bg, heroImg: formImg(e.id), fxImg: scImg('ngumavuong_fx') || scImg('nata_fx') };
+  B.hitstop = Math.max(B.hitstop || 0, SCENE_D); snd('gong'); setTimeout(() => snd('roar', 1, 0.8), 300);
+}
 function startScene(u, sk) { snd('charge_big'); snd('whoosh', 1, 0.8); const hd = document.querySelector('.hud'); if (hd) hd.classList.add('cine'); B.scene = { id: u.id, name: sk.name, hero: u.name, t0: performance.now() }; B.hitstop = Math.max(B.hitstop || 0, SCENE_D); B.cutin = null; }
 function drawScene() {
   const S = B.scene; if (!S) return; const a = window.__sceneA != null ? window.__sceneA : (performance.now() - S.t0) / 1000; if (a > SCENE_D) { B.scene = null; const hd = document.querySelector('.hud'); if (hd) hd.classList.remove('cine'); return; }
-  const bg = scImg(S.id + '_bg'), hero = scImg(S.id + '_hero'), fx = scImg(S.id + '_fx'); if (!bg || !hero || !fx) { B.scene = null; return; }
-  const q = a / SCENE_D, out = a > SCENE_D - 0.16 ? (SCENE_D - a) / 0.16 : 1, [c1] = cineTheme(S.id);
+  const bg = S.bgImg || scImg(S.id + '_bg'), hero = S.heroImg || scImg(S.id + '_hero'), fx = S.fxImg || scImg(S.id + '_fx'); if (!bg || !hero || (!fx && !S.boss)) { B.scene = null; const hd = document.querySelector('.hud'); if (hd) hd.classList.remove('cine'); return; }
+  const q = a / SCENE_D, out = a > SCENE_D - 0.16 ? (SCENE_D - a) / 0.16 : 1, c1 = S.boss ? '#ff4a4a' : cineTheme(S.id)[0];
   ctx.save();
   // 1) nền: camera đẩy chậm + trôi ngang
   const z = 1.1 + 0.14 * q, bw = W * z, bh = Math.max(H * z, bw * bg.height / bg.width);
@@ -2717,18 +2743,19 @@ function drawScene() {
   ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(0, 0, W, H);
   // 2) lớp năng lượng (hoà sáng): nở ra + xoay nhẹ, nhịp đập
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, a / 0.25) * (0.85 + 0.15 * Math.sin(a * 30));
-  const fz = 0.85 + 0.6 * ease3(q), fw = W * 1.1 * fz, fh = fw * fx.height / fx.width; ctx.translate(W * 0.6, H * 0.5); ctx.rotate(q * 0.12); ctx.drawImage(fx, -fw / 2, -fh / 2, fw, fh); ctx.restore();
+  if (fx) { const fz = 0.85 + 0.6 * ease3(q), fw = W * 1.1 * fz, fh = fw * fx.height / fx.width; ctx.translate(W * 0.6, H * 0.5); ctx.rotate(q * 0.12); ctx.drawImage(fx, -fw / 2, -fh / 2, fw, fh); } ctx.restore();
   // 3) vệt tốc độ chéo
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
   for (let i = 0; i < 34; i++) { const y = ((i * 71 + a * 1600 * (1 + i % 3)) % (H + 300)) - 150, x = (i * 137) % W, L = 120 + (i % 5) * 60; ctx.globalAlpha = 0.35; ctx.strokeStyle = i % 4 ? '#ffffff' : c1; ctx.lineWidth = 1 + (i % 3); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - L * 0.5, y - L); ctx.stroke(); }
   ctx.restore();
   // 4) nhân vật: lao vào từ trái kèm bóng mờ, rồi đẩy chậm vào camera
-  const hs = a < 0.28 ? ease3(a / 0.28) : 1, hh = H * 1.0 * (1 + 0.08 * q), hw = hh * hero.width / hero.height, hx = W * 0.36 - (1 - hs) * W * 0.7 + 24 * q, hy = H * 0.53 - 6 * q;
+  const hs = a < 0.28 ? ease3(a / 0.28) : 1, hh = H * 1.0 * (1 + 0.08 * q), hw = hh * hero.width / hero.height, hx = S.boss ? W * 0.64 + (1 - hs) * W * 0.7 - 24 * q : W * 0.36 - (1 - hs) * W * 0.7 + 24 * q, hy = H * 0.53 - 6 * q;
+  if (S.boss) { ctx.fillStyle = 'rgba(120,0,20,0.35)'; ctx.fillRect(0, 0, W, H); }
   if (hs < 1) for (let k = 1; k <= 4; k++) { ctx.globalAlpha = 0.18; ctx.drawImage(hero, hx - hw / 2 - k * 70 * (1 - hs), hy - hh / 2, hw, hh); }
   ctx.globalAlpha = 1; ctx.save(); ctx.shadowColor = c1; ctx.shadowBlur = 30; ctx.drawImage(hero, hx - hw / 2, hy - hh / 2, hw, hh); ctx.restore();
   // 5) viền điện ảnh + tên chiêu
   const lb = 58 * Math.min(1, a / 0.15); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, lb); ctx.fillRect(0, H - lb, W, lb);
-  const tx = W - 40 + (1 - Math.min(1, Math.max(0, (a - 0.2) / 0.25))) * 300; ctx.textAlign = 'right';
+  const tx = S.boss ? 40 - (1 - Math.min(1, Math.max(0, (a - 0.2) / 0.25))) * 300 : W - 40 + (1 - Math.min(1, Math.max(0, (a - 0.2) / 0.25))) * 300; ctx.textAlign = S.boss ? 'left' : 'right';
   ctx.font = '900 54px "Baloo 2",serif'; ctx.lineWidth = 9; ctx.strokeStyle = '#2a0a00'; ctx.strokeText(S.name, tx, H - lb - 40); const g = ctx.createLinearGradient(0, H - lb - 90, 0, H - lb - 40); g.addColorStop(0, '#fff6c8'); g.addColorStop(1, c1); ctx.fillStyle = g; ctx.fillText(S.name, tx, H - lb - 40);
   ctx.font = '800 22px "Baloo 2",sans-serif'; ctx.lineWidth = 5; ctx.strokeText(S.hero, tx, H - lb - 8); ctx.fillStyle = '#ffffff'; ctx.fillText(S.hero, tx, H - lb - 8);
   ctx.restore();
@@ -3329,6 +3356,7 @@ function showHome() {
       <button id="hGacha"><img src="art/ui/ic_summon.webp"><span>Chiêu Mộ</span></button>
       <button id="hBt"><img src="art/ui/ic_book.webp"><span>Tàng Kinh</span></button>
       <button id="hTower"><img src="art/ui/ic_battle.webp"><span>Tháp</span></button>
+      <button id="hNan"><img src="art/ui/ic_book.webp"><span>81 Nạn</span></button>
       <button id="hRaid"><img src="art/ui/ic_chest.webp"><span>Boss Ngày</span></button>
       <button id="hRank"><img src="art/ui/ic_team.webp"><span>Xếp Hạng</span></button>
     </nav>
@@ -3342,7 +3370,7 @@ function showHome() {
   $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle;
   $('#hGift').onclick = showGift; $('#hSave').onclick = showSaveTransfer; $('#hEv').onclick = showEvents;
-  $('#hTower').onclick = showTower; $('#hRaid').onclick = showRaid; $('#hRank').onclick = () => showRank();
+  $('#hTower').onclick = showTower; $('#hNan').onclick = showNan; $('#hRaid').onclick = showRaid; $('#hRank').onclick = () => showRank();
   $('#hAcc').onclick = async () => {
     if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
     if (Cloud.user) { if (confirm('Đăng xuất? Dữ liệu vẫn được giữ trên mạng và trên máy này.')) { await Cloud.signOut(); showHome(); } return; }
@@ -3369,6 +3397,7 @@ function showStages() {
       return `<p class="chap-el">Quái chủ yếu hệ <b style="color:${ELEMENTS[el].color}">${ELEMENTS[el].name}</b> → nên dùng tướng hệ <b style="color:${ELEMENTS[good].color}">${ELEMENTS[good].name}</b> (+30% sát thương), tránh hệ <b style="color:${ELEMENTS[bad].color}">${ELEMENTS[bad].name}</b> (−20%).</p>`; })()}
     ${(() => { const tr = new Set(); for (const st of STAGES) if (st.chap === curChap) for (const w of st.waves) for (const [t] of w.list) if (ENEMIES[t] && ENEMIES[t].trait) tr.add(ENEMIES[t].trait);
       return tr.size ? `<div class="chap-traits">${[...tr].map(k => `<span class="ct" title="${esc(TRAIT_INFO[k].desc)}"><i>${TRAIT_INFO[k].ico}</i><b>${TRAIT_INFO[k].name}</b><small>${esc(TRAIT_INFO[k].desc)}</small></span>`).join('')}</div>` : ''; })()}
+    ${(() => { const id = CH_HERO[CHAPTERS[curChap].id]; return id && HEROES[id] ? `<div class="ch-rew"><img src="${por(id, 48)}" alt=""><span>Qua boss chương nhận <b>${esc(HEROES[id].name)}</b> ${rarTag(HEROES[id].rar)}${S.owned[id] ? ' <small>(đã có)</small>' : ''}</span></div>` : ''; })()}
     <div class="stage-list">${STAGES.map((st, i) => {
       if (st.chap !== curChap) return '';
       const locked = i > 0 && !S.cleared[STAGES[i - 1].id];
@@ -3718,6 +3747,7 @@ function showResult() {
     })()}
     ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
     <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
+    ${B.chRew ? `<div class="res-hero"><img src="${fullImg(B.chRew.id, 160)}" alt=""><div><small>Thưởng qua chương</small><b>${esc(HEROES[B.chRew.id].name)}</b> ${rarTag(HEROES[B.chRew.id].rar)}${B.chRew.dup ? '<em>Đã có → +mảnh</em>' : '<em>Gia nhập đội!</em>'}</div></div>` : ''}
     <div class="res-btns">
       <button class="btn" id="rHome">Về sảnh</button>
       <button class="btn red" id="rRetry">Đánh lại</button>
@@ -3725,8 +3755,9 @@ function showResult() {
     </div>`;
   ui.appendChild(wrap);
   const si = B.si;
-  $('#rHome').onclick = () => { B = null; showHome(); };
-  $('#rRetry').onclick = () => enterStage(si);
+  $('#rHome').onclick = () => { const nan = B.st.nan; B = null; nan ? showNan() : showHome(); };
+  $('#rRetry').onclick = () => { if (B && B.st.nan) { const nan = true; B = null; showNan(); return; } enterStage(si); };
+  if (B.st.nan) { $('#rRetry').textContent = B.win ? 'Nạn tiếp' : 'Hành trình mới'; if (!B.win) wrap.querySelector('.res-title').insertAdjacentHTML('afterend', `<p class="res-reason">Hành trình kết thúc ở nạn ${B.st.nanN}. Đã vượt ${B.nanEnd || 0} nạn.</p>`); }
   if (next) $('#rNext').onclick = () => enterStage(si + 1);
 }
 
@@ -3747,9 +3778,42 @@ function tkSpend(n) {
   if (S.tk.v >= TK_MAX) S.tk.t = nowS();
   S.tk.v -= n; save(); return true;
 }
+
+// ---- CỐT TRUYỆN đầu mỗi chương (hiện một lần khi vào ải đầu chương)
+const CH_STORY = {
+  1: [['narr', 'Cuối đời nhà Thương, Trụ Vương say mê Đát Kỷ. Hồ yêu ngàn năm nhập vào nàng, hại trung thần, dựng Lộc Đài.'], ['khuongtanha', 'Thiên mệnh đã đổi. Ta phụng lệnh sư tôn xuống núi, lập Phong Thần Bảng, diệt yêu trừ ma.'], ['datkyboss', 'Một lão già câu cá cũng đòi phá giấc mộng của bổn cung sao? Hồ Tinh, ra tay!']],
+  2: [['narr', 'Tây Kỳ dựng cờ khởi binh. Văn Trọng, Thái Sư ba đời nhà Thương, kéo đại quân tới chặn đường.'], ['vantrong', 'Ba con mắt của lão phu đã thấy hết. Kẻ phản nghịch phải đền tội!'], ['nata', 'Lão già, để xem Hoả Tiêm Thương của ta nhanh hơn hay mắt ông nhanh hơn!']],
+  3: [['narr', 'Mười vị đạo sĩ Triệt Giáo bày Thập Tuyệt Trận, mỗi trận một cạm bẫy chết người.'], ['congminhboss', 'Định Hải Châu của ta có thể làm biển lặng, thì cũng làm các ngươi tan xương.'], ['khuongtanha', 'Cẩn thận bẫy trận dưới chân. Phá từng trận một!']],
+  4: [['narr', 'Huynh trưởng Triệu Công Minh tử trận. Tam Tiêu nương nương ở Kim Ngao Đảo thề báo thù.'], ['vantieuboss', 'Cửu Khúc Hoàng Hà Trận, thần tiên vào cũng mất hết đạo hạnh!'], ['duongtien', 'Trận pháp nào cũng có chỗ hở. Thiên Nhãn của ta sẽ tìm ra.']],
+  5: [['narr', 'Thông Thiên Giáo Chủ đích thân bày Vạn Tiên Trận, bốn thanh Tru Tiên Kiếm treo giữa trời.'], ['thongthien', 'Vạn tiên quy về một trận. Hôm nay Xiển Giáo sẽ không còn ai!'], ['thailaoquan', 'Đạo vốn không tranh. Nhưng ngươi đã cố chấp, lão phu đành ra tay.']],
+  6: [['narr', 'Đại chiến kết thúc, hồn phách tử sĩ tụ về Phong Thần Đài. Oán khí nhập vào Phong Thần Bảng.'], ['honbang', 'Ta là oán hận của vạn hồn... không ai được phong thần!'], ['khuongtanha', 'Bảng này ta lập, ta phải tự tay trấn áp.']],
+  7: [['narr', 'Năm trăm năm sau, con khỉ đá ở Hoa Quả Sơn tự xưng Tề Thiên Đại Thánh, đại náo Thiên Cung.'], ['ngokhong', 'Hoàng đế thay nhau làm, năm nay tới nhà ta! Thiên binh thiên tướng, xông lên hết đi!'], ['nhilangboss', 'Con khỉ ngông cuồng. Để Nhị Lang ta thu phục ngươi.']],
+  8: [['narr', 'Ngộ Không bị Như Lai đè dưới Ngũ Hành Sơn. Đường Tăng phụng chỉ đi thỉnh kinh, đi ngang qua núi.'], ['duongtang', 'Thí chủ dưới núi, nếu chịu theo bần tăng sang Tây Thiên, bần tăng sẽ gỡ lá bùa.'], ['nguumaboss', 'Đại ca đi theo hoà thượng à? Vậy để Ngưu Ma ta xem huynh còn mấy phần bản lĩnh!']],
+  9: [['narr', 'Hoả Diệm Sơn chắn đường, lửa cháy tám trăm dặm. Chỉ quạt Ba Tiêu mới dập được.'], ['honghainhi', 'Muốn qua núi? Nếm thử Tam Muội Chân Hoả của ta trước đã!'], ['thietphien', 'Các ngươi hại con ta, còn muốn mượn quạt? Đừng mơ!']],
+  10: [['narr', 'Bạch Hổ Lĩnh âm khí nặng nề. Bạch Cốt Tinh ba lần hoá thân để lừa thầy trò Đường Tăng.'], ['bachcotboss', 'Thịt Đường Tăng ăn vào trường sinh bất lão... Hì hì, để ta biến thành thôn nữ.'], ['ngokhong', 'Yêu tinh, đổi bao nhiêu lốt cũng không qua được Hoả Nhãn Kim Tinh!']],
+  11: [['narr', 'Thuỷ tộc nổi dậy dưới đáy sông, nước đục mịt mù, yêu vương đá vàng trấn giữ long cung.'], ['longnu', 'Long cung bị chiếm rồi. Xin các vị giúp ta đoạt lại!'], ['kimthach', 'Kim thân bất hoại của ta, thần binh cũng chém không đứt!']],
+  12: [['narr', 'Linh Sơn đã ở trước mắt. Nhưng ma khí phá pháp đã len vào cõi Phật.'], ['phatphapboss', 'Kinh thư sẽ hoá tro. Đường tới Tây Thiên kết thúc ở đây!'], ['quanam', 'Tám mươi mốt nạn chỉ còn nạn cuối. Đồng lòng vượt qua, chân kinh sẽ về tay các con.']],
+};
+function storyPortrait(who) { return HEROES[who] ? fullImg(who, 260) : ENEMIES[who] ? 'art/enemies/' + who + '/master.webp' : ''; }
+function storyName(who) { return HEROES[who] ? HEROES[who].name : ENEMIES[who] ? ENEMIES[who].name : ''; }
+function showStory(chId, done) {
+  const L = CH_STORY[chId]; if (!L) { done(); return; } let i = 0; const c = CHAPTERS.find(x => x.id === chId);
+  const wrap = document.createElement('div'); wrap.className = 'story-ov';
+  const draw = () => { const [who, text] = L[i], narr = who === 'narr', side = HEROES[who] ? 'L' : 'R';
+    wrap.innerHTML = `<div class="story-head"><small>Chương ${chId}</small><b>${esc(c ? c.name : '')}</b></div>
+      ${narr ? '' : `<img class="story-por ${side}" src="${storyPortrait(who)}" alt="">`}
+      <div class="story-box ${narr ? 'narr' : side}">${narr ? '' : `<div class="story-name">${esc(storyName(who))}</div>`}<p>${esc(text)}</p><span class="story-next">${i < L.length - 1 ? 'Chạm để tiếp ▸' : 'Chạm để vào trận ▸'}</span></div>
+      <button class="story-skip" id="stSkip">Bỏ qua</button>`;
+    wrap.querySelector('#stSkip').onclick = e => { e.stopPropagation(); finish(); }; };
+  const finish = () => { wrap.remove(); S.story = S.story || {}; S.story[chId] = 1; save(); done(); };
+  wrap.onclick = () => { i++; if (i >= L.length) finish(); else draw(); };
+  draw(); ui.appendChild(wrap);
+}
 function enterStage(si) {
   if (typeof si === 'object') { if (si.raid) { if (!raidUse()) return; } else if (si.tower && si.floor !== (S.tower || 0) + 1) { showTower(); return; } startBattle(si); return; }
-  if (tkSpend(tkCost(STAGES[si]))) startBattle(si);
+  const st = STAGES[si], ch = CHAPTERS[st.chap];
+  const go = () => { if (tkSpend(tkCost(st))) startBattle(si); };
+  if (ch && !(S.story || {})[ch.id] && st === STAGES.find(x => x.chap === st.chap)) showStory(ch.id, go); else go();
 }
 
 // ---- Nhiệm vụ ngày
@@ -3990,6 +4054,57 @@ function towerPairs(f) {   // 2 lựa chọn cố định theo tầng
   const r = i => { const x = Math.sin(f * 91.7 + i * 13.3) * 10000; return x - Math.floor(x); };
   return [0, 1].map(i => ({ boon: BOON[Math.floor(r(i) * BOON.length)], bane: BANE[(Math.floor(r(5) * BANE.length) + i * 2) % BANE.length] }));
 }
+
+// ---- TÁM MƯƠI MỐT NẠN: hành trình 81 trận liên tiếp; mỗi nạn một điều bất lợi, thắng thì chọn 1 phúc duyên giữ suốt hành trình; thua là kết thúc
+const NAN = ['Kim Thiền bị đày', 'Vừa sinh suýt bị giết', 'Trăng tròn thả sông', 'Tìm mẹ báo thù', 'Ra thành gặp hổ', 'Sa hố mất tuỳ tùng', 'Núi Song Xoa', 'Núi Lưỡng Giới', 'Khe sâu đổi ngựa',
+  'Đêm bị đốt chùa', 'Mất áo cà sa', 'Thu phục Bát Giới', 'Hoàng Phong cản đường', 'Cầu cứu Linh Cát', 'Lưu Sa khó qua', 'Thu phục Sa Tăng', 'Bốn thánh thử lòng', 'Ngũ Trang Quán',
+  'Khó cứu cây sâm', 'Đuổi Tâm Viên', 'Lạc rừng Hắc Tùng', 'Đưa thư Bảo Tượng', 'Điện vàng hoá hổ', 'Núi Bình Đỉnh gặp ma', 'Động Liên Hoa treo ngược', 'Cứu vua Ô Kê', 'Yêu quái biến hoá',
+  'Núi Hiệu gặp ma', 'Gió cuốn sư phụ', 'Tâm Viên bị hại', 'Mời thánh hàng yêu', 'Sông Hắc Thuỷ', 'Xa Trì kéo xe', 'Đấu phép thắng thua', 'Trừ đạo hưng tăng', 'Sông Thông Thiên',
+  'Rơi xuống sông băng', 'Giỏ cá hiện thân', 'Núi Kim Đâu', 'Thiên thần khó thắng', 'Hỏi Phật gốc yêu', 'Uống nước mang thai', 'Tây Lương giữ hôn', 'Động Tỳ Bà', 'Lại đuổi Tâm Viên',
+  'Thật giả khó phân', 'Hoả Diệm Sơn chặn lối', 'Cầu quạt Ba Tiêu', 'Bắt Ngưu Ma Vương', 'Tế Trại quét tháp', 'Lấy báu cứu tăng', 'Rừng Kinh Cức', 'Tiểu Lôi Âm', 'Chư thần bị khốn',
+  'Ngõ Hy Thị', 'Chu Tử chữa bệnh', 'Cứu hoàng hậu', 'Bảy nhện tinh', 'Đa Mục thương tổn', 'Sư Đà chặn đường', 'Ba ma hoá rết', 'Thành Sư Đà', 'Mời Phật thu ma', 'Tỉ Khâu cứu trẻ',
+  'Phân biệt tà chính', 'Rừng thông cứu yêu', 'Ốm nằm tăng phòng', 'Động Không Đáy', 'Diệt Pháp khó đi', 'Núi Ẩn Vụ', 'Phụng Tiên cầu mưa', 'Mất binh khí', 'Hội Đinh Ba',
+  'Núi Trúc Tiết', 'Động Huyền Anh', 'Bắt tê giác', 'Thiên Trúc cầu hôn', 'Ngục Đồng Đài', 'Lăng Vân thoát xác', 'Mười vạn tám nghìn dặm', 'Nạn cuối sông Thông Thiên'];
+const NAN_BOON = [...BOON, { t: 'Máu tối đa +30%', m: { hpPct: 0.30 } }, { t: 'Nhận ít hơn 15% sát thương', m: { kc: 0.15 } }, { t: 'Nội công hồi nhanh hơn 30%', m: { mpRegen: 0.30 } }, { t: 'Thêm 1 Thiên Thư đầu trận', book: 1 }];
+function nanState() { S.nan = S.nan || { best: 0, run: null }; return S.nan; }
+function nanStage(n, run) {
+  const c = Math.min(11, Math.floor((n - 1) / 7)), boss = n % 9 === 0, bane = BANE[run.banes[n - 1] % BANE.length];
+  const base = STAGES[c * 10 + (boss ? 9 : Math.min(8, (n - 1) % 9))];
+  const st = { ...base, id: 'N' + n, nan: true, nanN: n, kind: boss ? 'boss' : 'normal', lvl: 2 + Math.floor(n * 0.55), name: 'Nạn ' + n + ' · ' + NAN[n - 1],
+    reward: { ngoc: 15 + n * 2 + (boss ? 60 : 0), vang: 300 + n * 50 }, mech: TOWER_MECH[(n / 9 | 0) % TOWER_MECH.length], gate: 3000 + n * 50, par: 120 };
+  st.waves = base.waves.slice(0, boss ? base.waves.length : 6);
+  st.ehp = (bane.ehp || 1) * (1 + n * 0.025); st.eatk = (bane.eatk || 1) * (1 + n * 0.018); st.espd = bane.espd || 1; st.gateK = bane.gate || 1;
+  const hm = {}; let bk = 0; for (const bi of run.boons) { const b = NAN_BOON[bi]; for (const k in (b.m || {})) hm[k] = (hm[k] || 0) + b.m[k]; bk += b.book || 0; }
+  st.hmods = hm; st.bookN = bk; st.baneT = bane.t; return st;
+}
+function nanPick3() { const a = [...NAN_BOON.keys()]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, 3); }
+function showNan() {
+  const N = nanState(), run = N.run;
+  if (run && run.pick) {   // chọn phúc duyên sau khi vượt nạn
+    ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}<h3 style="margin:6px 4px">Vượt nạn ${run.n - 1}! Chọn 1 phúc duyên (giữ đến hết hành trình)</h3>
+      <div class="tw-pairs">${run.pick.map(bi => `<button class="tw-pair" data-nb="${bi}"><span class="boon">＋ ${esc(NAN_BOON[bi].t)}</span><em>Nhận</em></button>`).join('')}</div></div>`;
+    $('#bBack').onclick = showHome; ui.querySelectorAll('[data-nb]').forEach(b => b.onclick = () => { run.boons.push(+b.dataset.nb); run.pick = null; save(); showNan(); }); return;
+  }
+  if (!run) {
+    ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}
+      <p class="chap-story">Thầy trò Đường Tăng phải vượt <b>81 kiếp nạn</b> mới tới Tây Thiên. Hành trình gồm 81 trận ngắn liên tiếp, mỗi 9 nạn có một boss. Mỗi nạn mang một <b style="color:#c0392b">điều bất lợi</b>. Vượt nạn thì chọn 1 <b style="color:#2a9a4a">phúc duyên</b>, cộng dồn suốt hành trình. <b>Thua một nạn là hành trình kết thúc</b>, phải đi lại từ đầu. Không tốn Tiên Khí.</p>
+      <div class="hint">Kỷ lục: vượt <b>${N.best}</b>/81 nạn</div>
+      <div style="text-align:center"><button class="btn gold big" id="nanGo">Bắt đầu hành trình</button></div></div>`;
+    $('#bBack').onclick = showHome; $('#nanGo').onclick = () => { N.run = { n: 1, boons: [], banes: Array.from({ length: 81 }, () => Math.floor(Math.random() * 1000)) }; save(); showNan(); }; return;
+  }
+  if (run.n > 81) { ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}<h3 style="text-align:center">Viên mãn! Đã vượt đủ 81 nạn, thỉnh được chân kinh.</h3><div style="text-align:center"><button class="btn gold" id="nanEnd">Kết thúc hành trình</button></div></div>`;
+    $('#bBack').onclick = showHome; $('#nanEnd').onclick = () => { N.run = null; save(); showNan(); }; return; }
+  const st = nanStage(run.n, run);
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Tám Mươi Mốt Nạn')}
+    <div class="nan-track">${Array.from({ length: 9 }, (_, k) => { const i = Math.floor((run.n - 1) / 9) * 9 + k + 1; return `<span class="${i < run.n ? 'done' : i === run.n ? 'cur' : ''} ${i % 9 === 0 ? 'boss' : ''}">${i}</span>`; }).join('')}</div>
+    <h3 style="margin:6px 4px">${esc(st.name)}${st.kind === 'boss' ? ' · BOSS' : ''}</h3>
+    <div class="tw-pairs"><div class="tw-pair"><span class="bane">－ ${esc(st.baneT)}</span><em>Điều bất lợi của nạn này</em></div>
+      <div class="tw-pair"><span class="boon">Phúc duyên đang có (${run.boons.length})</span><em>${run.boons.map(bi => esc(NAN_BOON[bi].t)).join(' · ') || 'Chưa có'}</em></div></div>
+    <div class="hint">Thưởng: ${icon('ngoc')}${st.reward.ngoc} ${icon('vang')}${fmt(st.reward.vang)} · Kỷ lục ${N.best}/81</div>
+    <div style="text-align:center;display:flex;gap:10px;justify-content:center"><button class="btn red" id="nanQuit">Bỏ hành trình</button><button class="btn gold big" id="nanFight">Vượt nạn</button></div></div>`;
+  $('#bBack').onclick = showHome; $('#nanFight').onclick = () => enterStage(nanStage(run.n, run));
+  $('#nanQuit').onclick = () => { N.run = null; save(); showNan(); };
+}
 function showTower() {
   const f = (S.tower || 0) + 1, P = towerPairs(f);
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Tháp Thập Tuyệt')}
@@ -4120,7 +4235,7 @@ function route() {
       const tm = h.match(/(?:^|&)tier=(\d)/);   // (chụp thử) đặt tầng cho cả đội
       if (tm) for (const u of [...B.heroes, ...B.deploy]) { u.trong = +tm[1]; rebuildTang(u); }
       const bm = h.match(/(?:^|&)boss=(\w+)/);   // (chụp thử) gọi boss ngay
-      if (bm && ENEMIES[bm[1]]) { spawnEnemy({ type: bm[1] }); const e = B.enemies[B.enemies.length - 1]; e.x = W * 0.7; e.hp = maxHp(e) * 0.55; e.hpLag = 0.8; e.phase = 2; e.phaseT = performance.now(); for (let i = 0; i < 60; i++) update(1 / 60); }
+      if (bm && ENEMIES[bm[1]]) { spawnEnemy({ type: bm[1] }); const e = B.enemies[B.enemies.length - 1]; e.x = W * 0.7; e.hp = maxHp(e) * 0.55; e.hpLag = 0.8; e.phase = 2; e.phaseT = performance.now(); if (/(?:^|&)form/.test(h)) { e.form = true; formImg(e.id); if (/sceneA=/.test(h)) { window.__sceneA = +h.match(/sceneA=([\d.]+)/)[1]; setTimeout(() => startBossScene(e, 'Ngưu Ma hoá thân!'), 1500); } } for (let i = 0; i < 60; i++) update(1 / 60); }
       const sm = h.match(/(?:^|&)scene=(\w+):([\d.]+)/);   // (chụp thử) đứng hình cảnh cắt SSR ở giây thứ N
       if (sm) { const u = B.heroes.find(x => x.id === sm[1]) || B.deploy.find(x => x.id === sm[1]); if (u) { window.__sceneA = +sm[2]; startScene(u, u.d.ult); } }
       const xm = h.match(/(?:^|&)cx=(\w+),(\w+):([\d.]+)/);   // (chụp thử) hợp kích chủ động: &cx=ngokhong,duongtien:1.2
@@ -4139,6 +4254,9 @@ function route() {
   else if (k === 'full') grantAllHeroes();
   else if (k === 'quests') showQuests();
   else if (k === 'tower') showTower();
+  else if (k === 'nan') showNan();
+  else if (k === 'nantest') { const N = nanState(); N.run = { n: 9, boons: [0, 7], banes: Array.from({ length: 81 }, (_, i) => i) }; enterStage(nanStage(9, N.run)); }
+  else if (k === 'story') { showHome(); setTimeout(() => showStory(+v || 1, () => showHome()), 800); }
   else if (k === 'raid') showRaid();
   else if (k === 'rank') showRank();
   else if (k === 'events') showEvents();
