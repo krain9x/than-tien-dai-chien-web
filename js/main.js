@@ -1897,7 +1897,7 @@ function drawComboX(c) {
 
 // ---- TUYỆT KỸ BIÊN ĐẠO: vật thể thật chuyển động (art/ultc), kèm nổ nhiều khung, rung, vết nứt
 const UCI = {}; function ucImg(n) { let i = UCI[n]; if (!i) { i = UCI[n] = new Image(); i.src = 'art/ultc/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
-['staff', 'dragon_head', 'dragon_body', 'dragon_tail', 'hound'].forEach(ucImg);
+['staff', 'dragon_head', 'dragon_long', 'hound_run1', 'hound_run2', 'hound_leap', 'hound_bite'].forEach(ucImg);
 const ease3 = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3), easeIn = x => Math.pow(Math.max(0, Math.min(1, x)), 2.2);
 function ucDark(p, k) { ctx.save(); ctx.globalAlpha = (k || 0.5) * Math.sin(Math.PI * Math.min(1, p)); ctx.fillStyle = '#05020c'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
 function ucOnce(f, key, fn) { f.done = f.done || {}; if (!f.done[key]) { f.done[key] = 1; fn(); } }
@@ -1923,41 +1923,53 @@ const ULTC = {
     if (p >= 0.55) ucOnce(f, 'hit', () => { B.shake = 1.0; B.flash = 0.25; sfx('boom'); B.decals.push({ x: f.tx, y: f.ty + 4, r: 190, t: 0, dur: 5 }); particles(f.tx, f.ty - 10, '#c8a070', 40, 380, 7); particles(f.tx, f.ty - 20, '#ffd34d', 30, 300, 5); });
     if (p > 0.53 && p < 0.9) { const q = (p - 0.53) / 0.37; uxSheet('sheet_boom_gold', f.tx, f.ty - 40, 420, q); uxSheet('sheet_crack', f.tx, f.ty, 520, q); }
   } },
-  // Dương Tiễn — Hao Thiên Khuyển: chó thần chạy ra từ chân, lao vút, nhảy vồ, xé vuốt
-  duongtien: { dur: 1.5, hit: 0.62, draw(f, p) {
-    ucDark(p, 0.4);
-    const im = ucImg('hound'); if (!im) return;
-    const sx = f.x + 50, sy = f.y + 30, tx = f.tx - 30, ty = f.ty - 20;
-    let x, y, s, rot = 0, a = 1;
-    if (p < 0.35) { const q = p / 0.35; x = sx + (tx - sx) * 0.55 * q; y = sy + (ty - sy) * 0.55 * q - Math.abs(Math.sin(q * Math.PI * 4)) * 14; s = 0.9 + q * 0.6; }
-    else if (p < 0.62) { const q = (p - 0.35) / 0.27, bx = sx + (tx - sx) * 0.55, by = sy + (ty - sy) * 0.55; x = bx + (tx - bx) * q; y = by + (ty - by) * q - Math.sin(q * Math.PI) * 170; s = 1.5 + q * 1.2; rot = -0.5 + q * 0.9;
-      for (let k = 1; k <= 5; k++) { const qq = Math.max(0, q - k * 0.07), gx = bx + (tx - bx) * qq, gy = by + (ty - by) * qq - Math.sin(qq * Math.PI) * 170;   // vệt sáng theo đường nhảy
-        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 * (1 - k / 6); ctx.translate(gx, gy); ctx.scale(s, s); ctx.filter = 'brightness(2) sepia(1) saturate(4)'; ctx.drawImage(im, -im.width / 4, -im.height / 2, im.width / 2, im.height / 2); ctx.restore(); } }
-    else { const q = (p - 0.62) / 0.38; x = tx; y = ty - 10; s = 2.7 - q * 0.6; a = 1 - q; }
-    ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
-    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 * a; ctx.filter = 'blur(6px) brightness(2) sepia(1) saturate(5)'; ctx.drawImage(im, -im.width / 4 - 4, -im.height / 2 - 4, im.width / 2 + 8, im.height / 2 + 8); ctx.restore();
-    ctx.drawImage(im, -im.width / 4, -im.height / 2, im.width / 2, im.height / 2); ctx.restore();
-    if (p >= 0.62) ucOnce(f, 'hit', () => { B.shake = 0.9; B.flash = 0.2; sfx('boom'); particles(f.tx, f.ty - 30, '#ffe58a', 36, 320, 5); });
-    if (p > 0.6 && p < 0.95) { const q = (p - 0.6) / 0.35; uxSheet('sheet_slash', f.tx, f.ty - 50, 380, q); uxDraw('duongtien_b3', f.tx, f.ty - 60, 320, (1 - q) * 1.0); }
-  } },
-  // Tiểu Bạch Long — Bạch Long Phi Thiên: rồng trắng dài bay uốn lượn ngang màn hình, quét qua bầy quái
-  tieubachlong: { dur: 2.2, hit: 0.5, draw(f, p) {
-    ucDark(p, 0.5);
-    const head = ucImg('dragon_head'), body = ucImg('dragon_body'), tail = ucImg('dragon_tail'); if (!head || !body) return;
-    const path = s => { const x = -260 + s * (W + 620); return [x, f.ty - 70 + Math.sin(s * 9) * 70 - Math.sin(s * Math.PI) * 30]; };
-    const hs = ease3(p) * 1.05, N = 16, gap = 0.028;
-    for (let i = N; i >= 0; i--) {   // từ đuôi lên đầu
-      const s = hs - i * gap; if (s < -0.1) continue;
-      const [x, y] = path(s), [x2, y2] = path(s + 0.004), ang = Math.atan2(y2 - y, x2 - x), sc = 1 - i * 0.025;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
-      if (i === 0) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.filter = 'blur(14px)'; ctx.fillStyle = '#9fe8ff'; ctx.beginPath(); ctx.arc(30, 0, 90, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-        ctx.drawImage(head, -40, -head.height * 0.42, head.width * 0.42, head.height * 0.42); }
-      else if (i === N && tail) ctx.drawImage(tail, -tail.width * 0.3, -tail.height * 0.3 / 2, tail.width * 0.3, tail.height * 0.3);
-      else { const bw = 64 * sc, bh = 58 * sc; ctx.drawImage(body, -bw / 2, -bh / 2, bw + 8, bh); }
-      ctx.restore();
-      if (i % 4 === 0 && Math.random() < 0.4) particles(x, y, '#bfeaff', 2, 80, 4);   // bọt nước theo thân
+  // Dương Tiễn — Hao Thiên Khuyển: chó thần phóng ra (chạy đổi chân), bật nhảy duỗi người, há miệng vồ cắn xé, hất quái
+  duongtien: { dur: 1.7, hit: 0.6, draw(f, p) {
+    ucDark(p, 0.45);
+    const R1 = ucImg('hound_run1'), R2 = ucImg('hound_run2'), LP = ucImg('hound_leap'), BT = ucImg('hound_bite'); if (!R1 || !LP || !BT) return;
+    const sx = f.x + 40, sy = f.y + 30, tx = Math.min(f.tx - 40, W - 140), ty = Math.max(f.ty - 10, 300), mx = sx + (tx - sx) * 0.5, my = sy + (ty - sy) * 0.5;
+    const dog = (im, x, y, s, rot, a, glow) => { ctx.save(); ctx.translate(x, y); ctx.rotate(rot || 0); ctx.globalAlpha = a == null ? 1 : a; const w = 150 * s, h = w * im.height / im.width;
+      if (glow) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= glow; ctx.filter = 'blur(8px) brightness(2) sepia(1) saturate(5)'; ctx.drawImage(im, -w / 2 - 6, -h + 4, w + 12, h + 8); ctx.restore(); }
+      ctx.drawImage(im, -w / 2, -h + 8, w, h); ctx.restore(); };
+    if (p < 0.32) {   // chạy: đổi chân mỗi 0.06, bụi dưới chân
+      const q = p / 0.32, x = sx + (mx - sx) * ease3(q), y = sy + (my - sy) * q - Math.abs(Math.sin(q * Math.PI * 5)) * 8;
+      for (let k = 1; k <= 3; k++) dog(Math.floor(p / 0.06 - k) % 2 ? R1 : R2, x - k * 26, y, 0.9 + q * 0.4, 0, 0.15, 0.5);   // bóng tốc độ
+      dog(Math.floor(p / 0.06) % 2 ? R1 : R2, x, y, 0.9 + q * 0.4, 0, 1, 0.4);
+      if (Math.random() < 0.6) particles(x - 30, y, '#d8c090', 2, 60, 3);
+    } else if (p < 0.6) {   // phóng: cung parabol, duỗi người, to dần
+      const q = (p - 0.32) / 0.28, x = mx + (tx - mx) * q, y = my + (ty - my) * q - Math.sin(q * Math.PI) * 120, s = 1.3 + q * 1.1, rot = -0.35 + q * 0.75;
+      for (let k = 1; k <= 5; k++) { const qq = Math.max(0, q - k * 0.06); dog(LP, mx + (tx - mx) * qq, my + (ty - my) * qq - Math.sin(qq * Math.PI) * 120, 1.3 + qq * 1.1, -0.35 + qq * 0.75, 0.12, 0.8); }
+      dog(q < 0.55 ? LP : BT, x, y, s, rot, 1, 0.6);
+    } else {   // cắn: há miệng, giật lắc, rồi tan thành ánh vàng
+      if (p < 0.92) { const qq = (p - 0.58) / 0.34; uxSheet('sheet_slash', tx + 30, ty - 60, 360, qq); uxSheet('sheet_boom_gold', tx + 30, ty - 40, 280, qq); }
+      const q = (p - 0.6) / 0.4, sh = Math.sin(q * 40) * 8 * (1 - q);
+      dog(BT, tx + sh, ty - 10, 2.3 - q * 0.3, 0.4 + Math.sin(q * 30) * 0.08 * (1 - q), 1 - Math.max(0, q - 0.6) / 0.4, 0.8 * (1 - q));
     }
-    if (p >= 0.5) ucOnce(f, 'hit', () => { B.shake = 0.8; B.flash = 0.2; sfx('boom'); particles(f.tx, f.ty - 40, '#9fe8ff', 44, 360, 6); });
+    if (p >= 0.6) ucOnce(f, 'hit', () => { B.shake = 1.0; B.flash = 0.25; sfx('boom'); particles(f.tx, f.ty - 30, '#ffe58a', 40, 340, 5);
+      for (const e of enemiesIn({ x: f.tx, y: f.ty }, 160)) if (!e.boss && !e.dead) { e.x = Math.min(W + 30, e.x + 60); e.hitT = 0.5; } });
+  } },
+  // Tiểu Bạch Long — Bạch Long Phi Thiên: thân rồng liền mạch uốn theo đường bay (cắt lát ảnh), đầu dẫn, nước bắn
+  tieubachlong: { dur: 2.4, hit: 0.5, draw(f, p) {
+    ucDark(p, 0.5);
+    const head = ucImg('dragon_head'), body = ucImg('dragon_long'); if (!head || !body) return;
+    const amp = 75, cy = f.ty - 80, span = 0.55;
+    const path = s => [-300 + s * (W + 700), cy + Math.sin(s * 10 + p * 4) * amp - Math.sin(s * Math.PI) * 40];
+    const hs = ease3(p) * 1.15, N = 56, BH = 78, bw = body.width, bhImg = body.height, scale = BH / bhImg;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35;   // quầng sáng xanh theo thân
+    ctx.strokeStyle = '#7fd8ff'; ctx.lineWidth = BH * 1.3; ctx.lineCap = 'round'; ctx.filter = 'blur(12px)'; ctx.beginPath();
+    for (let j = 0; j <= N; j++) { const [x, y] = path(hs - j / N * span); j ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.stroke(); ctx.restore();
+    for (let j = N - 1; j >= 0; j--) {   // lát j = 0 sát cổ (mép phải ảnh), j = N-1 là đuôi (mép trái)
+      const s0 = hs - j / N * span, s1 = hs - (j + 1) / N * span, [x0, y0] = path(s0), [x1, y1] = path(s1);
+      const ang = Math.atan2(y0 - y1, x0 - x1), len = Math.hypot(x0 - x1, y0 - y1) + 1.5, srcW = bw / N, srcX = bw - (j + 1) * srcW;
+      ctx.save(); ctx.translate((x0 + x1) / 2, (y0 + y1) / 2); ctx.rotate(ang);
+      ctx.drawImage(body, srcX, 0, srcW, bhImg, -len / 2, -bhImg * scale / 2, len, bhImg * scale); ctx.restore();
+      if (j % 8 === 0 && Math.random() < 0.35) particles(x0, y0, '#bfeaff', 2, 90, 4);
+    }
+    const [hx, hy] = path(hs), [hx2, hy2] = path(hs - 0.01), ha = Math.atan2(hy - hy2, hx - hx2), HS = 170;
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(ha);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5; ctx.filter = 'blur(14px)'; ctx.fillStyle = '#9fe8ff'; ctx.beginPath(); ctx.arc(HS * 0.3, 0, HS * 0.55, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    ctx.drawImage(head, -HS * 0.32, -HS * head.height / head.width * 0.55, HS, HS * head.height / head.width); ctx.restore();
+    if (p >= 0.5) ucOnce(f, 'hit', () => { B.shake = 0.9; B.flash = 0.22; sfx('boom'); particles(f.tx, f.ty - 40, '#9fe8ff', 46, 360, 6); });
     if (p > 0.45 && p < 0.85) uxSheet('sheet_boom_blue', f.tx, f.ty - 50, 440, (p - 0.45) / 0.4);
   } },
 };
