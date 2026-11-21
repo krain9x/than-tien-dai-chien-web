@@ -781,3 +781,18 @@ const TRAIT_INFO = {
 const ETRAIT = { philiem: 'fly', hoanha: 'fly', hotinh: 'stealth', oanhon: 'stealth', hoahon: 'bomb', yeutien: 'heal', tiennu: 'heal',
   thienbinh: 'shield', thachtinh: 'shield', thiyeu: 'burrow', haiyeu: 'split', mala: 'split', phapsu: 'seal', daonhan: 'seal' };
 for (const k in ETRAIT) if (ENEMIES[k]) ENEMIES[k].trait = ETRAIT[k];
+
+// TẦNG RIÊNG cho 10 tướng đợt 2 (mỗi tầng đổi một thông số nhìn thấy được, theo VLĐMT)
+const TANG2 = {
+  loichantu: [{ d: 'Đòn thường nảy sét sang quái gần, +15% sát thương', m: { bounce: 1, atk: 0.15 } }, { d: 'Lôi Côn +40% sát thương, choáng thêm 0,5 giây', m: { skill: 0.4, stunPlus: 0.5 } }, { d: 'Đòn thường bắn 2 luồng sét', m: { proj: 1 } }, { d: 'Cửu Thiên Lôi Phạt +60% sát thương', m: { ult: 0.6 } }],
+  thohanhton: [{ d: 'Đòn thường 15% làm choáng', m: { stunHit: 0.15, atk: 0.1 } }, { d: 'Khổn Tiên Thằng trói lâu hơn 0,6 giây, +25% sát thương', m: { stunPlus: 0.6, skill: 0.25 } }, { d: 'Đòn thường nổ đất lan ra xung quanh', m: { splash: 60 } }, { d: 'Địa Liệt Thiên Băng +60% sát thương', m: { ult: 0.6 } }],
+  thaiatchannhan: [{ d: 'Đòn thường thiêu đốt kẻ địch', m: { burnAll: 1, atk: 0.1 } }, { d: 'Thần Hoả Châu rộng hơn, +40% sát thương', m: { skill: 0.4, size: 0.3 } }, { d: 'Đòn thường nổ lửa lan ra xung quanh', m: { splash: 70 } }, { d: 'Cửu Long Thần Hoả Tráo +60% sát thương', m: { ult: 0.6 } }],
+  thancongbao: [{ d: 'Báo Trảo ném thêm 2 vuốt', m: { skillN: 2 } }, { d: 'Đòn thường 15% làm choáng', m: { stunHit: 0.15 } }, { d: 'Đòn thường xuyên thấu, +30% sát thương', m: { pierce: 1, atk: 0.3 } }, { d: 'Hắc Báo Phi Thiên +60% sát thương, choáng thêm 0,5 giây', m: { ult: 0.6, stunPlus: 0.5 } }],
+  longnu: [{ d: 'Đòn thường hồi 2% máu cho đồng đội yếu nhất', m: { hitHeal: 0.02 } }, { d: 'Long Châu Thuỷ hồi máu +40%', m: { heal: 0.4 } }, { d: 'Mỗi lần chữa trị hồi thêm 3% máu cổng', m: { gateHeal: 0.03 } }, { d: 'Thuỷ Long Hộ Thể +60% hiệu quả', m: { ult: 0.6, heal: 0.2 } }],
+  kimgiac: [{ d: 'Đòn thường nảy sang quái gần', m: { bounce: 1 } }, { d: 'Thất Tinh Kiếm phóng thêm 2 kiếm, +20% sát thương', m: { skillN: 2, skill: 0.2 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Hồ Lô Thu Hồn +60% sát thương', m: { ult: 0.6 } }],
+  tieubachlong: [{ d: 'Máu tối đa +30%, tự hồi máu theo thời gian', m: { hp: 0.3, regen: 0.01 } }, { d: 'Long Thương +40% sát thương', m: { skill: 0.4 } }, { d: 'Đòn thường nổ nước lan ra xung quanh', m: { splash: 60 } }, { d: 'Bạch Long Phi Thiên +60% sát thương', m: { ult: 0.6 } }],
+  thaibachkimtinh: [{ d: 'Tinh Quang hồi máu +40%', m: { heal: 0.4 } }, { d: 'Đòn thường nảy sao sang quái gần', m: { bounce: 1 } }, { d: 'Mỗi lần chữa trị hồi thêm 3% máu cổng', m: { gateHeal: 0.03 } }, { d: 'Thái Bạch Giáng Thế +60% hiệu quả', m: { ult: 0.6, heal: 0.2 } }],
+  culinhthan: [{ d: 'Rìu to hơn, đòn thường chém lan ra xung quanh', m: { size: 0.3, splash: 70 } }, { d: 'Máu tối đa +30%', m: { hp: 0.3 } }, { d: 'Đòn thường 15% làm choáng', m: { stunHit: 0.15 } }, { d: 'Phá Thiên Nhất Phủ +60% sát thương', m: { ult: 0.6 } }],
+  hoangphongquai: [{ d: 'Đòn thường bắn 2 luồng cát', m: { proj: 1 } }, { d: 'Hoàng Sa Xoa +40% sát thương', m: { skill: 0.4 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tam Muội Hoàng Phong +60% sát thương', m: { ult: 0.6 } }],
+};
+for (const k in TANG2) if (HEROES[k]) HEROES[k].tang = TANG2[k];

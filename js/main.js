@@ -755,7 +755,8 @@ function applyPick(o) {
     const u = o.u, before = maxHp(u);
     u.trong = Math.min(5, trongOf(u) + 1); rebuildTang(u);
     u.hp += Math.max(0, maxHp(u) - before);
-    B.banner = { text: u.name + ' · Tầng ' + u.trong, sub: u.d.tang[u.trong - 2].d, t: 0, small: true };
+    B.banner = u.trong >= 5 ? { text: '✦ ĐẠI THÀNH · ' + u.name + ' ✦', sub: u.d.tang[u.trong - 2].d, t: 0 } : { text: u.name + ' · Tầng ' + u.trong, sub: u.d.tang[u.trong - 2].d, t: 0, small: true };
+    if (u.trong >= 5) { B.flash = 0.3; B.shake = Math.max(B.shake, 0.5); sfx('ult'); B.fx.push({ k: 'ring', x: u.x, y: u.y, r: 260, color: '#ffd34d', t: 0, dur: 0.7 }); fxBurst(u.x, u.y - 50, 'burst_gold', 240); particles(u.x, u.y - 60, '#ffe58a', 40, 260, 5); }
     particles(u.x, u.y - 30, '#ffe58a', 18, 160); buildTeamBar(); return;
   }
   const c = o.c;
@@ -1019,6 +1020,7 @@ function fireProj(u, tgt, o) {
     homing: o.homing ? tgt : null, pierce: !!o.pierce, hit: new Set(), life: o.life || 1.6, r: o.r || 8, rot: 0,
     pat: o.pat || '', pl: o.pl == null ? null : o.pl, bounces: o.bounces || 0, dmax: o.dmax || 0, trav: 0, ret: false, age: 0,
     splitN: o.splitN || 0, spin: !!o.spin, boom: o.boom || 0, stun: o.stun || 0, child: !!o.child, spinT: 0, tickT: 0,
+    dt: u.side === 'h' && !u.clone && trongOf(u) >= 5,
   });
   if (u.side === 'h' && B.fxb.length < 40) { fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70); sfx('shoot'); }   // chớp nòng
   return B.projs[B.projs.length - 1];
@@ -1638,6 +1640,25 @@ function drawTraitBadge(u) {   // biểu tượng kiểu quái trên đầu + b�
   const y = u.y - (u.flyH || 0) - 92 * sizeOf(u);
   ctx.save(); ctx.beginPath(); ctx.arc(u.x, y, 10, 0, TAU); ctx.fillStyle = 'rgba(20,8,4,0.8)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#ffd34d'; ctx.stroke();
   ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText(I.ico, u.x, y + 1); ctx.restore();
+}
+
+function drawTierAura(u) {   // tầng tướng trên sân: vạch tầng dưới chân; tầng 3–4 có vòng khí; Tầng 5 = Đại thành (hào quang vàng bốc lên)
+  if (u.dead || u.clone) return; const n = trongOf(u); if (n < 2) return; const s = sizeOf(u), t = B.time, col = (ELEMENTS[u.el] || {}).color || '#ffe58a';
+  ctx.save();
+  if (n >= 5) {
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(u.x, u.y - 40 * s, 4, u.x, u.y - 40 * s, 70 * s); g.addColorStop(0, 'rgba(255,230,120,0.45)'); g.addColorStop(1, 'rgba(255,180,40,0)');
+    ctx.fillStyle = g; ctx.globalAlpha = 0.8 + 0.2 * Math.sin(t * 4); ctx.beginPath(); ctx.ellipse(u.x, u.y - 40 * s, 52 * s, 76 * s, 0, 0, TAU); ctx.fill();
+    for (let i = 0; i < 6; i++) { const ph = (t * 0.9 + i / 6) % 1, x = u.x + Math.sin(i * 2.1 + t * 2) * 22 * s, y = u.y - ph * 90 * s; ctx.globalAlpha = (1 - ph) * 0.9; ctx.fillStyle = i % 2 ? '#ffe58a' : '#fff6c8'; ctx.beginPath(); ctx.ellipse(x, y, 3, 7, 0, 0, TAU); ctx.fill(); }
+    ctx.globalAlpha = 0.9; ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 2.5; ctx.save(); ctx.translate(u.x, u.y + 2); ctx.scale(1, 0.36); ctx.rotate(t * 1.5);
+    ctx.setLineDash([10, 6]); ctx.beginPath(); ctx.arc(0, 0, 34 * s, 0, TAU); ctx.stroke(); ctx.restore();
+  } else if (n >= 3) {
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.35 + 0.15 * Math.sin(t * 3); ctx.strokeStyle = col; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(u.x, u.y + 2, 30 * s, 10 * s, 0, 0, TAU); ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  for (let i = 0; i < n - 1; i++) { const x = u.x + (i - (n - 2) / 2) * 9, y = u.y + 14; ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4); ctx.fillStyle = n >= 5 ? '#ffd34d' : col; ctx.strokeStyle = '#2a0a04'; ctx.lineWidth = 1.5; ctx.fillRect(-3, -3, 6, 6); ctx.strokeRect(-3, -3, 6, 6); ctx.restore(); }
+  ctx.restore();
 }
 function drawUnit(u) {
   const s = 1.0;
@@ -2727,6 +2748,8 @@ function drawSparks() {
 
 }
 function drawProj(p) {
+  if (p.dt) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const R = (p.r || 8) * 2.6, g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R); g.addColorStop(0, 'rgba(255,240,170,0.9)'); g.addColorStop(1, 'rgba(255,170,30,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, TAU); ctx.fill(); ctx.restore();
+    if (Math.random() < 0.35) B.parts.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 40, vy: -20, life: 0.35, max: 0.35, color: '#ffe58a', size: 3 }); }
   if (p.side === 'h' && PFX[p.type]) drawProjFX(p);
   else if (p.side === 'h' && !p.child && p.kind !== 'sword') {   // vệt đuôi sáng sau đạn (theo vận tốc), màu theo loại đạn
     const sp = Math.hypot(p.vx, p.vy) || 1, L = Math.min(70, sp * 0.1), ux = p.vx / sp, uy = p.vy / sp, col = projColor(p.type);
@@ -3059,6 +3082,7 @@ function render() {
   const all = [...B.heroes, ...B.enemies].sort((a, b) => a.y - b.y);
   for (const u of all) if (!(u.dead && u.side === 'e')) Art.shadow(ctx, u.x, u.y, sizeOf(u) * 0.9);
   for (const d of B.drops) drawDrop(d);
+  for (const h of B.heroes) drawTierAura(h);
   drawGhosts();
   for (const u of all) drawUnit(u);
   for (const u of all) drawTraitBadge(u);
@@ -3576,7 +3600,7 @@ function updateHUD() {
     el.querySelector('.tm-state').textContent = u.dead ? 'Ngã' : waiting ? 'Chờ' : u.sealT > B.time ? '🔒 Phong ấn' : u.dk > 0 ? 'Điều khí' : '';
     el.classList.toggle('ready', !waiting && canCast(u, 'ult'));
     el.querySelector('.tm-ammo').textContent = waiting || u.dead || u.dk > 0 ? '' : (u.ammo == null ? ammoMax(u) : u.ammo);
-    el.querySelector('.tm-trong').textContent = 'Tầng ' + trongOf(u);
+    el.querySelector('.tm-trong').textContent = trongOf(u) >= 5 ? 'Đại thành' : 'Tầng ' + trongOf(u); el.classList.toggle('dthanh', trongOf(u) >= 5);
   });
   updateComboBtn();
 }
@@ -4024,6 +4048,8 @@ function route() {
         const u = B.heroes.find(x => x.id === um[1] && !x.dead);
         if (u) { u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; cast(u, 'ult'); for (let i = 0; i < +um[2] * 60; i++) update(1 / 60); }
       }
+      const tm = h.match(/(?:^|&)tier=(\d)/);   // (chụp thử) đặt tầng cho cả đội
+      if (tm) for (const u of [...B.heroes, ...B.deploy]) { u.trong = +tm[1]; rebuildTang(u); }
       const bm = h.match(/(?:^|&)boss=(\w+)/);   // (chụp thử) gọi boss ngay
       if (bm && ENEMIES[bm[1]]) { spawnEnemy({ type: bm[1] }); const e = B.enemies[B.enemies.length - 1]; e.x = W * 0.7; e.hp = maxHp(e) * 0.55; e.hpLag = 0.8; e.phase = 2; e.phaseT = performance.now(); for (let i = 0; i < 60; i++) update(1 / 60); }
       const sm = h.match(/(?:^|&)scene=(\w+):([\d.]+)/);   // (chụp thử) đứng hình cảnh cắt SSR ở giây thứ N
