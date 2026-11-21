@@ -584,17 +584,20 @@ const STAGES = [];
       const idx = c * 10 + k - 1, kind = k === 10 ? 'boss' : k === 5 ? 'elite' : 'normal';
       const lvl = 1 + c * 3 + Math.floor((k - 1) * 0.4);
       // số đợt theo GDD: thường 6-8, tinh anh 8-10, boss 10-12 (đợt boss tính vào tổng)
-      const total = kind === 'normal' ? 6 + (k >= 7 ? 1 : 0) + (k >= 9 ? 1 : 0) : kind === 'elite' ? 8 + (c >= 4 ? 1 : 0) + (c >= 8 ? 1 : 0) : 10 + (c >= 4 ? 1 : 0) + (c >= 8 ? 1 : 0);
-      const n = kind === 'boss' ? total - 1 : total, waves = [];
+      // SÓNG QUÁI KIỂU "CẮT CỎ" (VLĐMT): nhiều đợt nhỏ ra liên tục theo thời gian (≈4 giây/đợt, không chờ dọn xong),
+      // đợt "Địch mạnh" có tinh anh, đợt "Vô vàn kẻ địch" quái gấp đôi. Thường 14, tinh anh 18, boss 22 đợt (+ đợt boss).
+      const n = kind === 'normal' ? 14 : kind === 'elite' ? 18 : 22, waves = [];
       for (let w = 0; w < n; w++) {
-        const tie = 4 + Math.floor(c * 0.8) + k + w, cung = Math.floor((k + w) / 2) + Math.floor(c / 3), dau = Math.floor((k + w - 1) / 3), tinh = (kind !== 'normal' ? w >= 1 : (w >= 2 && k >= 3)) ? Math.floor((k + w) / 4) + (kind === 'elite' ? 1 : 0) : 0;
-        const list = [['tieuyeu', Math.min(tie, 26)]];
-        if (cung > 0) list.push(['cungyeu', Math.min(cung, 9)]);
-        if (dau > 0) list.push(['dauda', Math.min(dau, 8)]);
-        if (tinh > 0) list.push(['tinhanh', Math.min(tinh, 5)]);
-        const o = { list };
+        const horde = w % 7 === 6, strong = w % 6 === 5 && (k >= 3 || kind !== 'normal');
+        const tie = Math.min(14, 3 + Math.floor(w * 0.55) + Math.floor(c / 2) + Math.floor(k / 3)) * (horde ? 2 : 1);
+        const list = [['tieuyeu', tie]];
+        if (w % 2 === 1) list.push(['cungyeu', Math.min(6, 1 + Math.floor((w + c) / 5))]);
+        if (w % 3 === 2 && w >= 2) list.push(['dauda', Math.min(5, 1 + Math.floor((w + k) / 8))]);
+        if (strong) list.push(['tinhanh', Math.min(4, 1 + Math.floor(w / 10) + (kind === 'elite' ? 1 : 0))]);
+        const o = { list, gap: horde ? 5.5 : 4 };
         if (w >= 1) o.side = true;
-        o.dropLast = kind === 'elite' && w % 2 === 1 ? 'phu' : w % 3 === 0 ? 'phu' : w % 3 === 1 ? 'both' : 'thu';   // tinh anh rơi Linh Phù nhiều hơn (GDD 4.6)
+        if (horde) o.horde = true; if (strong) o.strong = true;
+        if (w % 3 === 2 || strong) o.dropLast = strong ? 'both' : (kind === 'elite' ? 'phu' : w % 2 ? 'thu' : 'phu');
         waves.push(o);
       }
       if (kind === 'boss') waves.push({ list: [['hoyeu', 1 + (c >= 6 ? 1 : 0)], ['tieuyeu', 4 + c]], boss: true });

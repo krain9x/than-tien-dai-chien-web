@@ -326,6 +326,8 @@ function startBattleNow(si) {
   });
   showHUD();
   nextWave();
+  { let extra = 0; for (const sy of Object.keys(SYS_NAME)) { const b = btBonus(sy); if (b.all && b.tot >= 15) extra++; }   // Hợp Nhất: thêm Thiên Thư đầu trận
+    for (let i = 0; i < Math.min(2, extra); i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1500 + i * 300); }
 }
 
 // ------------------------------------------------------------------ WAVES
@@ -343,10 +345,13 @@ function nextWave() {
     // vật phẩm rơi gắn vào con cuối của đợt → hạ nó lúc nào cũng rơi, kể cả khi đợt sau đã tới
     const drop = i === list.length - 1 ? wd.dropLast : null;
     B.spawnQ.push({ type, at: B.time + delay + (big ? 1.2 : 0), side: !!wd.side, drop });
-    delay += 0.42;
+    delay += 0.24;
   });
   const last = B.wave === B.st.waves.length - 1;
-  B.banner = { text: wd.boss ? 'BOSS XUẤT HIỆN' : `Đợt ${B.wave + 1}/${B.st.waves.length}`, sub: last && !wd.boss ? 'Đợt cuối' : '', t: 0, boss: !!wd.boss };
+  if (wd.boss) B.banner = { text: 'BOSS XUẤT HIỆN', sub: '', t: 0, boss: true };
+  else if (wd.horde) { B.banner = { text: 'Vô vàn kẻ địch tập kích!', sub: '', t: 0, boss: true }; B.shake = Math.max(B.shake, 0.3); }
+  else if (wd.strong) B.banner = { text: 'Địch mạnh tấn công!', sub: '', t: 0, small: true };
+  else if (B.wave === 0 || last) B.banner = { text: last ? 'Đợt cuối' : 'Bắt đầu!', sub: '', t: 0, small: true };
   if (M('waveMp')) for (const h of B.heroes) if (!h.dead) h.mp = Math.min(100, h.mp + M('waveMp'));
 }
 function spawnEnemy(q) {
@@ -376,6 +381,7 @@ function dealDmg(src, tgt, mult, kind) {
   if (!tgt || tgt.dead) return 0;
   if (tgt.inv > 0) { if (kind !== 'dot') floater(tgt.x, tgt.y - 60, 'Né', '#bff3ff', 14); return 0; }
   let a = getAtk(src) * mult;
+  if (src.side === 'e' && B.alive >= 40) a *= B.alive >= 50 ? 1.8 : 1.5;   // quái đông trên sân thì mạnh hơn (VLĐMT): ≥40 +50%, ≥50 +80%
   if (src.side === 'h') {
     const sp = M('skillPct') + RM(src, 'skillPct') + ((src.d.passive && src.d.passive.skillPct) || 0);
     if (kind === 'skill' || kind === 'dot') a *= 1 + sp + TG(src, 'skill');
@@ -544,6 +550,16 @@ function updateDrops(dt) {
 }
 function xpNeed() { return 8 + 5 * B.lv; }
 // các khung chọn (Thiên Thư, Linh Phù) xếp hàng, không mở chồng lên nhau
+
+// Công pháp đủ chiều sâu (VLĐMT): bậc 3 có cấp 1–6 (giới hạn cấp = 3 + sao Bí Tịch/3), bậc 3.1 khi đạt cấp 3, bậc 4 cần Bí Tịch ≥5★ và đã có 3.1
+const EVO2 = { the_core: 'Bàn Cổ Khai Thiên', the_ht1: 'Phiên Thiên Thần Ấn', the_ht2: 'Phá Sơn Thần Phủ', the_ts: 'Kim Cương Bất Diệt', the_ct: 'Lôi Âm Chấn Thế',
+  phap_core: 'Ngũ Lôi Oanh Đỉnh', phap_tp1: 'Cưỡi Gió Vạn Dặm', phap_tp2: 'Súc Địa Thành Thốn', phap_ct: 'Hải Long Đằng Không', phap_qn: 'Vạn Hồn Quy Tông',
+  dan_core: 'Cam Lộ Phổ Độ', dan_ad1: 'Âm Dương Hoà Hợp', dan_ad2: 'Khởi Tử Hồi Sinh', dan_tt: 'Phi Thăng Chân Kinh', dan_ct: 'Hoa Nở Vạn Phương',
+  sat_core: 'Tru Tiên Tuyệt Kiếm', sat_ct: 'Vạn Kiếm Triều Tông', sat_vk: 'Nguyệt Hoa Vô Biên', sat_vn1: 'Thần Nhập Kiếm Tâm', sat_vn2: 'Nhân Kiếm Hợp Nhất',
+  tran_core: 'Bát Môn Kim Toả', tran_xt1: 'Trói Tiên Thiên La', tran_xt2: 'Phá Ma Thần Chú', tran_bn: 'Võng Thiên Khốn Địa', tran_ct: 'Kim Châm Diệt Hồn' };
+const PEAK = { the: 'Bàn Cổ Thần Thể', phap: 'Thiên Lôi Vạn Pháp', dan: 'Bồ Đề Diệu Pháp', sat: 'Tru Tiên Tứ Kiếm', tran: 'Phong Thần Đại Trận' };
+const cpCap = id => Math.min(6, 3 + Math.floor((typeof btStars === 'function' ? btStars(id) : 0) / 3));
+function scaleMod(mod, k) { const o = {}; for (const x in mod) if (typeof mod[x] === 'number' && !/Now$|Max$|^tp$|^vn$|^vk|Evo$|^soul$|^ad1$|^ad2$/.test(x)) o[x] = mod[x] * k; return o; }
 function queuePick(fn) { if (B.paused || ui.querySelector('.cp-modal')) B.pickQ.push(fn); else fn(); }
 function closePick(wrap) {
   wrap.remove(); B.paused = false; lastT = performance.now();
@@ -611,6 +627,10 @@ function rollCongPhap() {
     }
   }
   for (const sl of B.slots) if (sl.tier === 2) cand.push({ kind: 'evo', c: cpOf(sl.id), w: 3 });
+  for (const sl of B.slots) if (sl.tier >= 3 && (sl.lv || 1) < cpCap(sl.id)) cand.push({ kind: 'evolv', c: cpOf(sl.id), sl, w: 2.2 });
+  for (const sl of B.slots) if (sl.tier === 3 && (sl.lv || 1) >= 3 && !sl.e2) cand.push({ kind: 'evo2', c: cpOf(sl.id), sl, w: 2.5 });
+  { const sys = {}; for (const sl of B.slots) if (sl.e2) sys[cpOf(sl.id).sys] = 1;
+    for (const sy in sys) if (!(B.peak || {})[sy] && typeof btBonus === 'function' && btBonus(sy).tot >= 5) cand.push({ kind: 'peak', sy, c: B.slots.map(sl => cpOf(sl.id)).find(c => c.sys === sy && slotOf(c.id).e2), w: 1.6 }); }
   for (const h of field) if (trongOf(h) < 5 && (h.d.tang || []).length) cand.push({ kind: 'tu', u: h, w: 2.5 });
   const out = [];
   while (out.length < 3 && cand.length) {
@@ -632,6 +652,12 @@ function cardHTML(o, i) {
       <img class="cp-por" src="${porB(o.u.id, 96)}"><small>${esc(t.d)}</small><em class="tg-step">${n} ➜ ${n + 1}</em></button>`;
   }
   const c = o.c;
+  if (o.kind === 'evolv') return `<button class="cp-card r3" data-i="${i}"><span class="cp-rar">${esc(c.evo.name)} · Cấp ${(o.sl.lv || 1) + 1}</span>${lpTag(c.lp)}
+      <span class="cp-icon">${esc(c.evo.name.slice(0, 1))}</span><small>Tăng cấp công pháp: hiệu quả tiến bậc +40%.<br><i>Giới hạn cấp ${cpCap(c.id)} (nâng bằng sao Bí Tịch)</i></small><em class="cp-rec">Cấp ${o.sl.lv || 1} ➜ ${(o.sl.lv || 1) + 1}</em></button>`;
+  if (o.kind === 'evo2') return `<button class="cp-card r3" data-i="${i}"><span class="cp-rar">${esc(EVO2[c.id] || c.evo.name)}</span>${lpTag(c.lp)}
+      <span class="cp-icon">${esc((EVO2[c.id] || 'T').slice(0, 1))}</span><small><b class="evo-from">${esc(c.evo.name)} tiến bậc lần 2</b>ST cuối Thần Tướng hệ ${SYS_NAME[c.sys]} +8%, toàn thể +10%</small><em class="cp-rec">Tiến bậc 2</em></button>`;
+  if (o.kind === 'peak') return `<button class="cp-card r3" data-i="${i}" style="box-shadow:0 0 26px #ff5a2a"><span class="cp-rar">${esc(PEAK[o.sy])}</span>
+      <span class="cp-icon">${esc(PEAK[o.sy].slice(0, 1))}</span><small><b class="evo-from">Bậc Đỉnh hệ ${SYS_NAME[o.sy]} (cần Bí Tịch ≥5★)</b>ST cuối hệ ${SYS_NAME[o.sy]} +15%, ST toàn thể +12%, tốc đánh +10%</small><em class="cp-rec">Bậc 4</em></button>`;
   if (o.kind === 'evo') return `<button class="cp-card r3" data-i="${i}"><span class="cp-rar">${esc(c.evo.name)}</span>${lpTag(c.lp)}
       <span class="cp-icon">${esc(c.evo.name.slice(0, 1))}</span><small><b class="evo-from">${esc(c.name)} tiến bậc ${esc(c.evo.name)}</b>${dsc(c.evo.desc)}</small>
       <em class="cp-rec">Tiến bậc</em></button>`;
@@ -712,6 +738,15 @@ function applyPick(o) {
     sl.id = c.id; sl.tier = 2; addMods(c.mod);
     if (c.field) B.field[c.field] = { t: 1.5 };
     B.banner = { text: c.name, sub: LUUPHAI[c.lp].name + ' · ' + c.desc.replace(/ ?\[VLĐMT\]/g, ''), t: 0, small: true };
+  } else if (o.kind === 'evolv') {
+    o.sl.lv = (o.sl.lv || 1) + 1; addMods(scaleMod(c.evo.mod, 0.4));
+    B.banner = { text: c.evo.name + ' · Cấp ' + o.sl.lv, sub: 'Hiệu quả tiến bậc tăng', t: 0, small: true };
+  } else if (o.kind === 'evo2') {
+    o.sl.e2 = 1; addMods({ [c.sys + '.final']: 0.08, atkPct: 0.10 });
+    B.banner = { text: EVO2[c.id] || c.evo.name, sub: 'Tiến bậc lần 2', t: 0, small: true };
+  } else if (o.kind === 'peak') {
+    (B.peak = B.peak || {})[o.sy] = 1; addMods({ [o.sy + '.final']: 0.15, dmgPct: 0.12, aspdPct: 0.10 });
+    B.banner = { text: PEAK[o.sy], sub: 'Bậc Đỉnh hệ ' + SYS_NAME[o.sy], t: 0, boss: true }; B.shake = 0.4;
   } else if (o.kind === 'evo') {
     slotOf(c.id).tier = 3; addMods(c.evo.mod);
     if (c.evo.mod.soulNow) B.soul += c.evo.mod.soulNow;
@@ -1395,6 +1430,7 @@ function update(dt) {
   if (B.over) { updateFx(dt); if (B.endT != null && (B.endT -= dt) <= 0) { B.endT = null; showResult(); } return; }
   B.time += dt;
   while (B.spawnQ.length && B.spawnQ[0].at <= B.time) spawnEnemy(B.spawnQ.shift());
+  B.alive = 0; for (const e of B.enemies) if (!e.dead) B.alive++;
   updateHeroes(dt);
   updateEnemies(dt);
   updateProjs(dt);
@@ -1406,8 +1442,8 @@ function update(dt) {
   if (cleared && B.drops.length === 0) {
     if (last) endBattle(true);
     else if (B.nextT == null) B.nextT = B.time + 1.4;
-  } else if (!last && B.spawnQ.length === 0 && B.nextT == null && B.time - B.waveStart > 30) {
-    B.nextT = B.time; // áp lực: đợt sau tới dù chưa dọn xong
+  } else if (!last && B.spawnQ.length === 0 && B.nextT == null && B.time - B.waveStart > (B.waveDef.gap || 30) && !(B.enemies.some(e => e.boss && !e.dead))) {
+    B.nextT = B.time; // sóng ra theo thời gian, không chờ dọn xong (kiểu VLĐMT)
   }
   if (B.nextT != null && B.time >= B.nextT && !B.over) nextWave();
   if (B.gate.hp <= 0) { B.gate.hp = 0; endBattle(false, 'Cổng thành đã vỡ'); }
