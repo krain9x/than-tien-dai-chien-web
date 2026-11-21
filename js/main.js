@@ -106,7 +106,7 @@ const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tư�
 function ensureHeroAssets(ids) {
   return Promise.all([...new Set(ids)].map(id => {
     if (_heroLoaded[id]) return _heroLoaded[id];
-    try { if (isSSR(id)) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ datky: ['fx_ninetails'], quanam: ['fx_halo'], tieubachlong: ['fx_waterpillar'] }[id] || []).forEach(scImg); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'], nata: ['firewheel'] }[id] || []).forEach(ucImg); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
+    try { if (sceneUnlocked(id) || SRX[id]) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ datky: ['fx_ninetails'], quanam: ['fx_halo'], tieubachlong: ['fx_waterpillar'] }[id] || []).forEach(scImg); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'], nata: ['firewheel'] }[id] || []).forEach(ucImg); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
     const jobs = [];
     if (typeof Skel !== 'undefined' && (window.SKEL_IDS || []).includes(id)) jobs.push(new Promise(res => {
       const sc = document.createElement('script'); sc.src = 'art/skel/' + id + '.js';
@@ -2529,6 +2529,19 @@ function bagua(x, y, R, rot, col, a) {   // trận Bát Quái trên mặt đất
   for (let i = 0; i < 8; i++) { ctx.save(); ctx.rotate(i * Math.PI / 4); for (let j = 0; j < 3; j++) { const yy = -R * 0.9 + j * 9; ctx.beginPath(); if ((i >> j) & 1) { ctx.moveTo(-16, yy); ctx.lineTo(-4, yy); ctx.moveTo(4, yy); ctx.lineTo(16, yy); } else { ctx.moveTo(-16, yy); ctx.lineTo(16, yy); } ctx.stroke(); } ctx.restore(); }
   ctx.restore();
 }
+// lớp vẽ tay cho tướng SR (dùng tranh năng lượng <id>_fx): 'ground' trận dưới đất, 'burst' nổ khi trúng, 'hero' toả sau lưng lúc ra chiêu, 'travel' bay theo đường chiêu
+const SRX = {
+  batgioi: { k: 'burst', at: 0.55, w: 520, sy: 0.7 }, satang: { k: 'hero', w: 360, sy: 0.6 }, duongtang: { k: 'ground', w: 520, at: 0.3 },
+  honghainhi: { k: 'burst', at: 0.5, w: 560 }, thietphien: { k: 'travel', at: 0.38, w: 380 }, bachcot: { k: 'ground', w: 480, at: 0.25 },
+  litinh: { k: 'burst', at: 0.48, w: 420, up: 1 }, trieucongminh: { k: 'burst', at: 0.5, w: 480 }, kimgiac: { k: 'hero', w: 420, at: 0.18 },
+};
+function drawSRX(f, p) {
+  const c = SRX[f.id]; if (!c) return; const n = f.id + '_fx', [tx, ty] = tgtXY(f), at = c.at || 0;
+  if (c.k === 'ground') { if (p > at) scTex(n, tx, ty, c.w, p * 2.4, fadeIO((p - at) / (1 - at), 0.2, 0.8), 0.42); }
+  else if (c.k === 'burst') { if (p > at && p < at + 0.42) { const q = (p - at) / 0.42; scTex(n, tx, ty - (c.up ? 150 : 40), c.w * (0.55 + 0.6 * ease3(q)), 0, (1 - q) * 1.4, c.sy); } }
+  else if (c.k === 'hero') { if (p > at && p < 0.85) scTex(n, f.x + 70, f.y - 30, c.w, p * 1.5, fadeIO((p - at) / (0.85 - at), 0.25, 0.7), c.sy); }
+  else if (c.k === 'travel') { if (p > at && p < at + 0.5) { const q = (p - at) / 0.5; scTex(n, f.x + 80 + (VIEW_R() - f.x) * ease3(q), ty - 50, c.w, 0, (1 - q) * 1.2); } }
+}
 // lớp riêng cho tướng SSR (vẽ sau khuôn chiêu) — dùng tranh hiệu ứng vẽ tay (art/scene), hoà sáng
 function scTex(n, x, y, w, rot, a, sy) { const im = scImg(n); if (!im || !(a > 0)) return; const h = w * im.height / im.width;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, a); ctx.translate(x, y); if (sy) ctx.scale(1, sy); if (rot) ctx.rotate(rot); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
@@ -2569,7 +2582,8 @@ const SSRX = {
 // ===================== CẢNH CẮT TUYỆT KỸ SSR =====================
 const SCI = {}; function scImg(n) { let i = SCI[n]; if (!i) { i = SCI[n] = new Image(); i.src = 'art/scene/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 const SCENE_D = 1.4;
-const scReady = id => isSSR(id) && ['_bg', '_hero', '_fx'].every(s => scImg(id + s));
+const sceneUnlocked = id => isSSR(id) || (HEROES[id] && HEROES[id].rar === 'SR' && S.owned[id] && S.owned[id].star >= 5);   // SR: THỨC TỈNH (5★) mở cảnh cắt
+const scReady = id => sceneUnlocked(id) && ['_bg', '_hero', '_fx'].every(s => scImg(id + s));
 function startScene(u, sk) { const hd = document.querySelector('.hud'); if (hd) hd.classList.add('cine'); B.scene = { id: u.id, name: sk.name, hero: u.name, t0: performance.now() }; B.hitstop = Math.max(B.hitstop || 0, SCENE_D); B.cutin = null; }
 function drawScene() {
   const S = B.scene; if (!S) return; const a = window.__sceneA != null ? window.__sceneA : (performance.now() - S.t0) / 1000; if (a > SCENE_D) { B.scene = null; const hd = document.querySelector('.hud'); if (hd) hd.classList.remove('cine'); return; }
@@ -2744,7 +2758,7 @@ function drawProj(p) {
   ctx.restore();
 }
 function drawFx(f) {
-  if (f.k === 'sig') { if (f.t < 0 && f.uc) drawCharge(f, Math.min(1, 1 + f.t / 0.45)); if (f.t >= 0) { if (f.uc) { const pp = Math.min(1, f.t / f.dur); drawCineSky(f, pp); ULTC[f.id].draw(f, pp); if (SSRX[f.id]) SSRX[f.id](f, pp); } else if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
+  if (f.k === 'sig') { if (f.t < 0 && f.uc) drawCharge(f, Math.min(1, 1 + f.t / 0.45)); if (f.t >= 0) { if (f.uc) { const pp = Math.min(1, f.t / f.dur); drawCineSky(f, pp); ULTC[f.id].draw(f, pp); if (SSRX[f.id]) SSRX[f.id](f, pp); else drawSRX(f, pp); } else if (ULTX[f.id]) drawUltX(f, ULTX[f.id]); else { VFX.draw(ctx, f); drawUltTex(f); } } return; }
   if (f.k === 'combo') { drawComboX(f); return; }
   if (f.k === 'cx') { drawCX(f); return; }
   const p = f.t / f.dur;
@@ -3319,6 +3333,7 @@ function showHeroDetail(id) {
         <div class="skill"><span class="sk-kind">Nội tại</span><b>${esc(h.passive.name)}</b><p>${esc(h.passive.desc)}</p></div>
         <div class="skill"><span class="sk-kind">Tiểu chiêu · 30 nội công</span><b>${esc(h.small.name)}</b><p>${esc(h.small.desc)}</p></div>
         <div class="skill ult"><span class="sk-kind">Tuyệt kỹ · 60 nội công</span><b>${esc(h.ult.name)}</b><p>${esc(h.ult.desc)}</p></div>
+        ${h.rar === 'SR' ? `<div class="skill awaken ${o && o.star >= 5 ? 'on' : ''}"><span class="sk-kind">Thức tỉnh · 5★</span><b>${o && o.star >= 5 ? 'Đã thức tỉnh' : 'Chưa thức tỉnh'}</b><p>Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR.</p></div>` : ''}
         ${bonds.map(b => `<div class="skill bond"><span class="sk-kind">Duyên phận</span><b>${esc(b.name)}</b><p>${esc(b.desc)}</p></div>`).join('')}
       </div>
       ${o ? `<div class="det-actions">
@@ -3342,6 +3357,7 @@ function showHeroDetail(id) {
     if (have < starNeed) { toast('Chưa đủ mảnh'); return; }
     const useOwn = Math.min(o.shard, starNeed);
     o.shard -= useOwn; S.univ -= starNeed - useOwn; o.star++; save(); showHeroDetail(id);
+    if (o.star >= 5 && h.rar === 'SR') toast('✦ THỨC TỈNH! ' + h.name + ' mở khoá cảnh tuyệt kỹ toàn màn hình');
   };
 }
 

@@ -570,3 +570,5 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .hcard.r-R { background: linear-gradient(#e6f2ff, #a8d0ff); }
 .detail.r-R .det-art { background: radial-gradient(circle at 50% 60%, #fff, #cfe6ff 50%, #5a9cff); }
 .r-R .pc-inner { background: var(--r); }
+
+.skill.awaken { border-style: dashed; opacity: .75; } .skill.awaken.on { opacity: 1; border-style: solid; border-color: #ffd34d; box-shadow: 0 0 12px rgba(255,200,60,.6); background: linear-gradient(90deg, #fff6d0, #ffe7a0); }

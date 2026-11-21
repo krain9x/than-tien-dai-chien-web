@@ -31,7 +31,7 @@ const FACTIONS = {
 const FACTION_TIERS = [[5, 0.25], [4, 0.15], [3, 0.08]];
 
 const STAR_MUL = [1, 1.15, 1.3225, 1.587, 1.984];
-const STAR_COST = { SSR: [10, 20, 30, 50], SR: [5, 10, 20, 40] };
+const STAR_COST = { SSR: [10, 20, 30, 50], SR: [5, 10, 20, 40], R: [3, 6, 12, 25] };
 const DUP_SHARDS = { SSR: 10, SR: 5, R: 2 };
 const MAX_LV = 30;
 
