@@ -2982,6 +2982,7 @@ const BANNERS = [
 function saveCode() { return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
 function grantAllHeroes() {   // (thử nghiệm) nhận toàn bộ Thần Tướng
   let n = 0; for (const id of Object.keys(HEROES)) if (!S.owned[id]) { S.owned[id] = newRec(); n++; }
+  for (const id of ['ngokhong', 'duongtien', 'tieubachlong', 'quanam', 'nata']) if (S.lineup.length < 5 && !S.lineup.includes(id)) S.lineup.push(id);   // đội đủ 5 để thử ngay
   save(); if (window.Cloud && Cloud.user) Cloud.pushNow(S).catch(() => {});
   if (location.hash) history.replaceState(null, '', location.pathname); B = null; showHome(); toast('Đã nhận ' + n + ' Thần Tướng (tổng ' + Object.keys(S.owned).length + ')');
 }
