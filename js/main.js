@@ -2980,14 +2980,21 @@ const BANNERS = [
 
 // ---- Chuyển dữ liệu giữa các máy: mã lưu (chưa có máy chủ — chép mã rồi dán ở máy kia)
 function saveCode() { return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+function grantAllHeroes() {   // (thử nghiệm) nhận toàn bộ Thần Tướng
+  let n = 0; for (const id of Object.keys(HEROES)) if (!S.owned[id]) { S.owned[id] = newRec(); n++; }
+  save(); if (window.Cloud && Cloud.user) Cloud.pushNow(S).catch(() => {});
+  if (location.hash) history.replaceState(null, '', location.pathname); B = null; showHome(); toast('Đã nhận ' + n + ' Thần Tướng (tổng ' + Object.keys(S.owned).length + ')');
+}
+window.addEventListener('hashchange', () => { if (location.hash === '#full') grantAllHeroes(); });
 function showSaveTransfer() {
   const w = document.createElement('div'); w.className = 'modal';
   w.innerHTML = `<div class="xfer"><h3>Chuyển dữ liệu</h3><p>Máy này: bấm <b>Sao chép mã</b>, gửi mã sang máy kia (Zalo, ghi chú…). Máy kia: dán mã rồi bấm <b>Nhập mã</b>.</p>
     <textarea id="xCode" spellcheck="false">${saveCode()}</textarea>
-    <div class="res-btns"><button class="btn gold" id="xCopy">Sao chép mã</button><button class="btn red" id="xLoad">Nhập mã</button><button class="btn" id="xClose">Đóng</button></div>
+    <div class="res-btns"><button class="btn" id="xFull">Nhận full tướng (thử)</button><button class="btn gold" id="xCopy">Sao chép mã</button><button class="btn red" id="xLoad">Nhập mã</button><button class="btn" id="xClose">Đóng</button></div>
     <small>Lưu trực tuyến (tự đồng bộ) cần tài khoản máy chủ — sẽ bổ sung sau.</small></div>`;
   ui.appendChild(w);
   $('#xClose').onclick = () => w.remove();
+  $('#xFull').onclick = () => { w.remove(); grantAllHeroes(); };
   $('#xCopy').onclick = () => { const t = $('#xCode'); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand('copy'); } toast('Đã sao chép mã'); };
   $('#xLoad').onclick = () => {
     try { const s = JSON.parse(decodeURIComponent(escape(atob($('#xCode').value.trim())))); if (!s || !s.owned) throw 0;
@@ -3261,10 +3268,7 @@ function route() {
     $('#bBack').onclick = () => { SHOW = null; location.hash = ''; showHome(); };
   }
   else if (k === 'gacha') showGacha();
-  else if (k === 'full') {   // (thử nghiệm) nhận toàn bộ Thần Tướng
-    let n = 0; for (const id of Object.keys(HEROES)) if (!S.owned[id]) { S.owned[id] = newRec(); n++; }
-    save(); location.hash = ''; showHome(); toast('Đã nhận ' + n + ' Thần Tướng để thử');
-  }
+  else if (k === 'full') grantAllHeroes();
   else if (k === 'quests') showQuests();
   else if (k === 'tower') showTower();
   else if (k === 'raid') showRaid();
