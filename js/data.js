@@ -25,7 +25,7 @@ const ROLES = {
 const FACTIONS = {
   xien: 'Xiển giáo', triet: 'Triệt giáo', thien: 'Thiên đình',
   phat: 'Phật môn', yeu: 'Yêu giới', nhan: 'Nhân Giới',
-  dao: 'Đạo môn', nguyet: 'Nguyệt cung', quy: 'Quỷ giới',
+  dao: 'Đạo môn',
 };
 // Cộng hưởng phe: [số người, % chỉ số]
 const FACTION_TIERS = [[5, 0.25], [4, 0.15], [3, 0.08]];
@@ -246,7 +246,7 @@ const HEROES = {
   },
   hangnga: {
     name: 'Hằng Nga', title: 'Quảng Hàn Tiên Tử', src: 'Truyền thuyết / Tây Du',
-    role: 'dan', el: 'thuy', fac: 'nguyet', rar: 'R',
+    role: 'dan', el: 'thuy', fac: 'thien', rar: 'R',
     hp: 1650, atk: 115, def: 65, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'light',
     look: { style: 'veil', skin: '#fff1e6', hair: '#1c1c28', outfit: '#f3f0ff', outfit2: '#ffc4de', belt: '#c8c8e8', weapon: 'orb', wcolor: '#e8f0ff', robe: true },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Nguyệt Quang +40% hiệu quả', m: { skill: 0.40 } }, { d: 'Máu tối đa +30%', m: { hp: 0.30 } }, { d: 'Tuyệt kỹ +60% hiệu quả', m: { ult: 0.60 } }],
@@ -258,7 +258,7 @@ const HEROES = {
   },
   bachcot: {
     name: 'Bạch Cốt Phu Nhân', title: 'Thi Ma Bạch Cốt', src: 'Tây Du Ký',
-    role: 'tran', el: 'tho', fac: 'quy', rar: 'SR',
+    role: 'tran', el: 'tho', fac: 'yeu', rar: 'SR',
     hp: 1450, atk: 105, def: 68, aspd: 0.85, range: 190, move: 150, ranged: true, proj: 'bead',
     look: { style: 'fox', skin: '#f0e8f8', hair: '#e8e0f0', outfit: '#e8e0f0', outfit2: '#8a5ac8', belt: '#8a5ac8', weapon: 'khakkhara', wcolor: '#e8e0d0', robe: true, evil: true },
     tang: [{ d: 'Đòn đánh thường +25% sát thương', m: { atk: 0.25 } }, { d: 'Cốt Trảo +40% sát thương', m: { skill: 0.40 } }, { d: 'Đòn thường xuyên thấu', m: { pierce: 1 } }, { d: 'Tuyệt kỹ +60% sát thương', m: { ult: 0.60 } }],
