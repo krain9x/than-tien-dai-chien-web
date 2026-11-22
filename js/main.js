@@ -76,7 +76,7 @@ function ensureEnemyAssets(ids) {
   return Promise.all([...new Set(ids)].filter(id => (window.EPOSE || {})[id]).map(id => {
     if (_enemyLoaded[id]) return _enemyLoaded[id];
     EPOSES[id] = {};
-    return (_enemyLoaded[id] = Promise.all(['master', 'walk1', 'walk2', 'attack', 'hit'].map(n => new Promise(res => { const im = new Image(); im.onload = () => { EPOSES[id][n] = im; res(); }; im.onerror = res; im.src = 'art/enemies/' + id + '/' + n + '.webp'; }))));
+    return (_enemyLoaded[id] = Promise.all(['master', 'walk1', 'walk2', 'attack', 'hit', 'prep', 'step'].map(n => new Promise(res => { const im = new Image(); im.onload = () => { EPOSES[id][n] = im; res(); }; im.onerror = res; im.src = 'art/enemies/' + id + '/' + n + '.webp'; }))));
   }));
 }
 function chapElem(c) {   // hệ ngũ hành chiếm đa số trong quái của chương
@@ -102,12 +102,12 @@ function drawEnemyPose(u, alpha) {
   if (u.dead || u.hitT > 0) { n = 'hit'; const q = u.dead ? 1 : Math.max(0, u.hitT / 0.35); ox = -10 * q; rot = -0.08 * q; sy = 1 - 0.04 * q; }
   else if (u.atkAnim >= 0 || u.castT > 0) {
     const q = u.atkAnim >= 0 ? Math.min(1, u.atkAnim) : 0.5;
-    if (q < 0.35) { n = 'master'; const e = q / 0.35; ox = -6 * e; rot = -0.06 * e; sx = 1 + 0.03 * e; sy = 1 - 0.04 * e; }   // lấy đà
+    if (q < 0.35) { n = 'prep'; const e = q / 0.35; ox = -6 * e; rot = -0.06 * e; sx = 1 + 0.03 * e; sy = 1 - 0.04 * e; }   // lấy đà
     else { n = 'attack'; const e = (q - 0.35) / 0.65, k2 = Math.sin(Math.min(1, e * 1.6) * Math.PI / 2); ox = 14 * k2 * (1 - e * 0.6); rot = 0.07 * (1 - e); sx = 1.05 - 0.05 * e; sy = 0.97 + 0.03 * e; }
-  } else if (u.flyH && u.d.wings) { n = (u.t * 6) % 1 < 0.5 ? 'walk1' : 'walk2'; oy = Math.sin(u.t * 12) * 3;   // vỗ cánh
+  } else if (u.flyH && u.d.wings) { const wf = (u.t * 6) % 1; n = wf < 0.33 ? 'walk1' : wf < 0.66 ? 'step' : 'walk2'; oy = Math.sin(u.t * 12) * 3;   // vỗ cánh
   } else if (u.flyH) { rot = 0.08 + Math.sin(u.t * 3) * 0.02; sy = 1 + Math.sin(u.t * 3) * 0.012;   // cưỡi mây: đứng yên trên mây, nghiêng về trước
   } else if (u.walk) {
-    n = ph < 0.25 ? 'walk1' : ph < 0.5 ? 'master' : ph < 0.75 ? 'walk2' : 'master';
+    n = ph < 0.25 ? 'walk1' : ph < 0.5 ? 'step' : ph < 0.75 ? 'walk2' : 'step';
     oy = -Math.abs(Math.sin(ph * Math.PI * 2)) * 3.5; rot = 0.04 + Math.sin(ph * Math.PI * 2) * 0.025; sy = 1 + Math.sin(ph * Math.PI * 4) * 0.02; sx = 2 - sy;
   } else { sy = 1 + Math.sin(u.t * 2.4) * 0.015; sx = 1 - Math.sin(u.t * 2.4) * 0.008; }
   const img = P[n] || P.master; if (!img) return false;
