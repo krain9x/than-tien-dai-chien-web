@@ -869,3 +869,88 @@ ENEMIES.docbuc = { name: 'Độc Bức', hp: 230, atk: 26, def: 14, aspd: 1.1, r
   const add = (chId, type, n, from) => { for (const st of STAGES) if (CHAPTERS[st.chap].id === chId) st.waves.forEach((w, i) => { if (i >= from && i % 4 === 1 && !w.boss) w.list.push([type, n]); }); };
   add(6, 'docbuc', 2, 2); add(10, 'docbuc', 3, 2); add(8, 'kimsidieu', 1, 5); add(12, 'kimsidieu', 1, 4);
 })();
+
+// ===== ĐỢT 3: 10 THẦN TƯỚNG (vũ khí / pháp bảo đúng cốt truyện) =====
+(function heroes3() {
+  const L = (o) => ({ style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d', ...o });
+  const T = (a, b, c, e) => [{ d: a[0], m: a[1] }, { d: b[0], m: b[1] }, { d: c[0], m: c[1] }, { d: e[0], m: e[1] }];
+  Object.assign(HEROES, {
+    bodetosu: { name: 'Bồ Đề Tổ Sư', title: 'Tà Nguyệt Tam Tinh Động Chủ', src: 'Tây Du Ký', role: 'tran', el: 'moc', fac: 'dao', rar: 'SSR',
+      hp: 1600, atk: 120, def: 74, aspd: 0.95, range: 200, move: 150, ranged: true, proj: 'light', look: L({ outfit: '#dfefff' }),
+      tang: T(['Giới Xích nảy thêm 1 lần', { bounce: 1 }], ['Bồ Đề Chú +40% sát thương, choáng +0,5 giây', { skill: 0.4, stunPlus: 0.5 }], ['Đòn thường 15% làm choáng', { stunHit: 0.15 }], ['Tam Tinh Giáng Pháp +60%', { ult: 0.6 }]),
+      passive: { name: 'Truyền Đạo', desc: 'Cả đội hồi nội công nhanh hơn 15%.', skillPct: 0.1 },
+      small: { name: 'Bồ Đề Chú', desc: 'Niệm chú chỗ quái đông nhất: 150% công, choáng 1 giây; cả đội +15 nội công.', fx: [{ t: 'aoe', at: 'cluster', r: 110, mult: 1.5, stun: 1.0, color: '#9fe8a0' }, { t: 'mp', v: 15 }] },
+      ult: { name: 'Tam Tinh Giáng Pháp', desc: 'Giới Xích khổng lồ giáng xuống 420% công, choáng 2 giây; cả đội +25% công 6 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 180, mult: 4.2, stun: 2.0, color: '#bfffd0' }, { t: 'buff', k: 'atk', v: 0.25, dur: 6 }] } },
+    tranguyentu: { name: 'Trấn Nguyên Tử', title: 'Địa Tiên Chi Tổ', src: 'Tây Du Ký', role: 'the', el: 'tho', fac: 'dao', rar: 'SSR',
+      hp: 3300, atk: 96, def: 132, aspd: 0.8, range: 150, move: 140, ranged: true, proj: 'light', look: L({ outfit: '#8a5a2a' }),
+      tang: T(['Máu tối đa +30%', { hp: 0.3 }], ['Tụ Lý Càn Khôn +40%', { skill: 0.4 }], ['Đòn thường nổ lan', { splash: 60 }], ['Càn Khôn Đại Tụ +60%', { ult: 0.6 }]),
+      passive: { name: 'Nhân Sâm Quả', desc: 'Tự hồi 1,5% máu mỗi giây.', regen: 0.015 },
+      small: { name: 'Tụ Lý Càn Khôn', desc: 'Tay áo hút chỗ quái đông nhất 140% công, khiêu khích 3 giây, nhận khiên 20% máu.', fx: [{ t: 'aoe', at: 'cluster', r: 110, mult: 1.4, color: '#c8a070' }, { t: 'taunt', r: 220, dur: 3 }, { t: 'shield', who: 'self', pct: 0.2, dur: 5 }] },
+      ult: { name: 'Càn Khôn Đại Tụ', desc: 'Tay áo khổng lồ thu cả vùng 380% công, choáng 1,5 giây; cả đội nhận khiên 15% máu.', fx: [{ t: 'aoe', at: 'cluster', r: 200, mult: 3.8, stun: 1.5, color: '#e8c080' }, { t: 'shield', who: 'team', pct: 0.15, dur: 6 }] } },
+    hoangphiho: { name: 'Hoàng Phi Hổ', title: 'Võ Thành Vương', src: 'Phong Thần Diễn Nghĩa', role: 'sat', el: 'kim', fac: 'xien', rar: 'SR',
+      hp: 1500, atk: 160, def: 60, aspd: 1.0, range: 200, move: 160, ranged: true, proj: 'spear', look: L({ outfit: '#c0302a' }),
+      tang: T(['Đòn thường xuyên thêm 2 quái', { pierce: 1 }], ['Thần Ngưu Xung Phong +40%', { skill: 0.4 }], ['Đòn thường +25%', { atk: 0.25 }], ['Ngũ Sắc Thần Ngưu +60%', { ult: 0.6 }]),
+      passive: { name: 'Võ Thành', desc: '+10% bạo kích.', crit: 0.1 },
+      small: { name: 'Thần Ngưu Xung Phong', desc: 'Lao thẳng chỗ quái đông nhất 170% công, đẩy lùi.', fx: [{ t: 'aoe', at: 'cluster', r: 100, mult: 1.7, knock: 60, color: '#ffd34d' }] },
+      ult: { name: 'Ngũ Sắc Thần Ngưu', desc: 'Cưỡi Thần Ngưu húc xuyên đội quái 450% công.', fx: [{ t: 'aoe', at: 'cluster', r: 170, mult: 4.5, color: '#ff9a3a' }] } },
+    dienmau: { name: 'Điện Mẫu', title: 'Kim Quang Thánh Mẫu', src: 'Tây Du Ký', role: 'phap', el: 'kim', fac: 'thien', rar: 'SR',
+      hp: 1280, atk: 165, def: 50, aspd: 0.9, range: 210, move: 150, ranged: true, proj: 'bolt', look: L({ outfit: '#8a5ad8' }),
+      tang: T(['Tia sét nảy thêm 1 quái', { bounce: 1 }], ['Song Kính Phóng Điện +40%', { skill: 0.4 }], ['Đòn thường 15% làm choáng', { stunHit: 0.15 }], ['Lôi Quang Song Kính +60%', { ult: 0.6 }]),
+      passive: { name: 'Kim Quang', desc: '+12% sát thương chiêu thức.', skillPct: 0.12 },
+      small: { name: 'Song Kính Phóng Điện', desc: 'Hai gương phóng sét chỗ quái đông nhất 170% công, choáng 0,6 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 100, mult: 1.7, stun: 0.6, color: '#d0a0ff' }] },
+      ult: { name: 'Lôi Quang Song Kính', desc: 'Hai gương bắn chéo tia sét 440% công, choáng 1 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 170, mult: 4.4, stun: 1.0, color: '#e0c0ff' }] } },
+    thanhnguutinh: { name: 'Thanh Ngưu Tinh', title: 'Độc Giác Hủy Đại Vương', src: 'Tây Du Ký', role: 'the', el: 'thuy', fac: 'yeu', rar: 'SR',
+      hp: 2900, atk: 100, def: 118, aspd: 0.85, range: 160, move: 140, ranged: true, proj: 'ring', look: L({ outfit: '#3a6a6a' }),
+      tang: T(['Máu tối đa +30%', { hp: 0.3 }], ['Kim Cương Trác +40%', { skill: 0.4 }], ['Đòn thường xuyên thấu', { pierce: 1 }], ['Thu Vạn Binh +60%', { ult: 0.6 }]),
+      passive: { name: 'Độc Giác', desc: 'Nhận ít hơn 12% sát thương.', dr: 0.12 },
+      small: { name: 'Kim Cương Trác', desc: 'Ném vòng bạc chỗ quái đông nhất 140% công, khiêu khích 3 giây, khiên 20%.', fx: [{ t: 'aoe', at: 'cluster', r: 110, mult: 1.4, color: '#e0e8f0' }, { t: 'taunt', r: 220, dur: 3 }, { t: 'shield', who: 'self', pct: 0.2, dur: 5 }] },
+      ult: { name: 'Thu Vạn Binh', desc: 'Vòng Kim Cương hút cả vùng 360% công, choáng 1,5 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 180, mult: 3.6, stun: 1.5, color: '#f0f4ff' }] } },
+    longvuong: { name: 'Đông Hải Long Vương', title: 'Ngao Quảng', src: 'Tây Du Ký', role: 'dan', el: 'thuy', fac: 'thien', rar: 'SR',
+      hp: 1650, atk: 116, def: 66, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'drop', look: L({ outfit: '#2a6ab0' }),
+      tang: T(['Hồi máu +25%', { heal: 0.25 }], ['Hành Vũ +40%', { heal: 0.4 }], ['Đòn thường hồi 2% máu đồng đội yếu nhất', { hitHeal: 0.02 }], ['Long Vương Thi Vũ +60%', { ult: 0.6, heal: 0.2 }]),
+      passive: { name: 'Hải Vương', desc: 'Hiệu quả hồi máu +15%.', healPct: 0.15 },
+      small: { name: 'Hành Vũ', desc: 'Làm mưa hồi máu cả đội bằng 190% công.', fx: [{ t: 'heal', mult: 1.9 }] },
+      ult: { name: 'Long Vương Thi Vũ', desc: 'Mưa lớn hồi máu cả đội 460% công, giải khống chế, khiên 10%.', fx: [{ t: 'heal', mult: 4.6 }, { t: 'shield', who: 'team', pct: 0.1, dur: 6 }] } },
+    dangthienngoc: { name: 'Đặng Thiền Ngọc', title: 'Ngũ Quang Nữ Tướng', src: 'Phong Thần Diễn Nghĩa', role: 'sat', el: 'hoa', fac: 'xien', rar: 'R',
+      hp: 1400, atk: 150, def: 58, aspd: 1.05, range: 200, move: 165, ranged: true, proj: 'pearl', look: L({ outfit: '#c0302a' }),
+      tang: T(['Đá nảy thêm 1 quái', { bounce: 1 }], ['Ngũ Quang Thạch +40%', { skill: 0.4 }], ['Đòn thường +25%', { atk: 0.25 }], ['Ngũ Thạch Liên Hoàn +60%', { ult: 0.6 }]),
+      passive: { name: 'Nữ Tướng', desc: '+8% bạo kích.', crit: 0.08 },
+      small: { name: 'Ngũ Quang Thạch', desc: 'Ném đá ngũ sắc chỗ quái đông nhất 160% công, choáng 0,5 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 90, mult: 1.6, stun: 0.5, color: '#ff9ad0' }] },
+      ult: { name: 'Ngũ Thạch Liên Hoàn', desc: 'Mưa đá ngũ sắc 380% công vùng rộng.', fx: [{ t: 'aoe', at: 'cluster', r: 170, mult: 3.8, color: '#ffd0f0' }] } },
+    kimtra: { name: 'Kim Tra', title: 'Đại Ca Na Tra', src: 'Phong Thần Diễn Nghĩa', role: 'tran', el: 'kim', fac: 'xien', rar: 'R',
+      hp: 1480, atk: 104, def: 68, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'ring', look: L({ outfit: '#2a5ab0' }),
+      tang: T(['Đòn thường 15% làm choáng', { stunHit: 0.15 }], ['Độn Long Thung trói lâu hơn 0,6 giây', { stunPlus: 0.6 }], ['Đòn thường xuyên thấu', { pierce: 1 }], ['Kim Trụ Khốn Long +60%', { ult: 0.6 }]),
+      passive: { name: 'Huynh Trưởng', desc: '+10% sát thương chiêu thức.', skillPct: 0.1 },
+      small: { name: 'Độn Long Thung', desc: 'Trụ vàng trói chỗ quái đông nhất 130% công, choáng 1,2 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 100, mult: 1.3, stun: 1.2, color: '#ffd34d' }] },
+      ult: { name: 'Kim Trụ Khốn Long', desc: 'Ba trụ vàng khoá vùng 260% công, choáng 2 giây; cả đội +15% công 6 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 180, mult: 2.6, stun: 2.0, color: '#ffe58a' }, { t: 'buff', k: 'atk', v: 0.15, dur: 6 }] } },
+    hachhung: { name: 'Hắc Hùng Tinh', title: 'Hắc Phong Sơn Chủ', src: 'Tây Du Ký', role: 'the', el: 'tho', fac: 'yeu', rar: 'R',
+      hp: 3000, atk: 98, def: 112, aspd: 0.85, range: 140, move: 140, ranged: true, proj: 'boulder', look: L({ outfit: '#2a2a2a' }),
+      tang: T(['Máu tối đa +30%', { hp: 0.3 }], ['Hùng Trảo +40%', { skill: 0.4 }], ['Đòn thường nổ lan', { splash: 60 }], ['Hắc Phong Hùng Hồn +60%', { ult: 0.6 }]),
+      passive: { name: 'Da Dày', desc: 'Nhận ít hơn 10% sát thương.', dr: 0.1 },
+      small: { name: 'Hùng Trảo', desc: 'Vả chỗ quái đông nhất 140% công, khiêu khích 3 giây, khiên 20%.', fx: [{ t: 'aoe', at: 'cluster', r: 100, mult: 1.4, color: '#6a5a4a' }, { t: 'taunt', r: 220, dur: 3 }, { t: 'shield', who: 'self', pct: 0.2, dur: 5 }] },
+      ult: { name: 'Hắc Phong Hùng Hồn', desc: 'Hồn gấu đen vồ 340% công, khiêu khích, khiên cả đội 10%.', fx: [{ t: 'aoe', at: 'cluster', r: 170, mult: 3.4, color: '#4a3a2a' }, { t: 'taunt', r: 260, dur: 3 }, { t: 'shield', who: 'team', pct: 0.1, dur: 6 }] } },
+    thodia: { name: 'Thổ Địa Công', title: 'Phúc Đức Chính Thần', src: 'Tây Du Ký', role: 'dan', el: 'tho', fac: 'thien', rar: 'R',
+      hp: 1600, atk: 110, def: 64, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'pill', look: L({ outfit: '#8a5a2a' }),
+      tang: T(['Hồi máu +25%', { heal: 0.25 }], ['Phúc Đức +40%', { heal: 0.4 }], ['Đòn thường hồi 2% máu đồng đội yếu nhất', { hitHeal: 0.02 }], ['Địa Mạch Hồi Xuân +60%', { ult: 0.6, heal: 0.2 }]),
+      passive: { name: 'Phúc Đức', desc: 'Vàng nhận sau trận +5%.', healPct: 0.1 },
+      small: { name: 'Phúc Đức', desc: 'Hồi máu cả đội bằng 180% công.', fx: [{ t: 'heal', mult: 1.8 }] },
+      ult: { name: 'Địa Mạch Hồi Xuân', desc: 'Địa mạch dâng hồi máu cả đội 420% công, cả đội +15% công 6 giây.', fx: [{ t: 'heal', mult: 4.2 }, { t: 'buff', k: 'atk', v: 0.15, dur: 6 }] } },
+  });
+  Object.assign(ATK_STYLE, {
+    bodetosu: { pat: 'bounce', proj: 'light', name: 'Giới Xích', desc: 'Thước ngọc nảy lan 4 quái; sau mỗi lần điều khí, loạt đầu phóng thêm bùa chú.', bounces: 4 },
+    tranguyentu: { pat: 'lob', proj: 'pill', name: 'Nhân Sâm Quả', desc: 'Ném quả nhân sâm nổ lan; trúng thì hút quái lại gần.', boom: 90 },
+    hoangphiho: { pat: 'pierce', proj: 'spear', name: 'Ngân Thương', desc: 'Phóng thương bạc xuyên 3 quái.', pierceN: 3 },
+    dienmau: { pat: 'bounce', proj: 'bolt', name: 'Kính Quang', desc: 'Tia sét từ gương nảy lan 4 quái.', bounces: 4, speed: 900 },
+    thanhnguutinh: { pat: 'boomerang', proj: 'ring', name: 'Kim Cương Trác', desc: 'Ném vòng bạc xuyên quái rồi quay về.' },
+    longvuong: { pat: 'fan', proj: 'drop', name: 'Thuỷ Châu', desc: 'Toả 3 giọt nước; cứ 3 đòn hồi máu 1 đồng đội yếu nhất.', n: 3, heal: 3 },
+    dangthienngoc: { pat: 'fan', proj: 'pearl', name: 'Ngũ Quang Thạch', desc: 'Ném 3 viên đá ngũ sắc hình quạt.', n: 3 },
+    kimtra: { pat: 'split', proj: 'ring', name: 'Kim Hoàn', desc: 'Vòng vàng tách 2 khi trúng.', n: 2 },
+    hachhung: { pat: 'lob', proj: 'boulder', name: 'Hùng Chưởng', desc: 'Vả sóng đất nổ lan.', boom: 90 },
+    thodia: { pat: 'lob', proj: 'pill', name: 'Kim Nguyên Bảo', desc: 'Ném nén vàng nổ lan; cứ 4 đòn hồi máu 1 đồng đội.', boom: 70, heal: 4 },
+  });
+  SSR_POOL.push('bodetosu', 'tranguyentu'); SR_POOL.push('hoangphiho', 'dienmau', 'thanhnguutinh', 'longvuong'); R_POOL.push('dangthienngoc', 'kimtra', 'hachhung', 'thodia');
+  Object.assign(CAP_SPECIAL, { bodetosu: { n: 'Truyền Đạo Thụ Nghiệp', d: 'Nội công cả đội hồi nhanh hơn 40%', m: { mpRegen: 0.40 } }, tranguyentu: { n: 'Địa Tiên Hộ Pháp', d: 'Cả đội nhận ít hơn 18% sát thương', m: { kc: 0.18 } } });
+  BONDS.push({ id: 'sudo', name: 'Sư Đồ Linh Đài', members: ['bodetosu', 'ngokhong'], g: { atkPct: 0.12, crit: 0.06 }, desc: 'Bồ Đề và Ngộ Không: +12% công, +6% bạo kích.' },
+             { id: 'kimtrana', name: 'Huynh Đệ Lý Gia', members: ['kimtra', 'nata'], g: { atkPct: 0.10, hpPct: 0.10 }, desc: 'Kim Tra và Na Tra: +10% công, +10% máu.' },
+             { id: 'nhansam', name: 'Nhân Sâm Quả Kiếp', members: ['tranguyentu', 'ngokhong'], g: { hpPct: 0.15 }, desc: 'Trấn Nguyên Tử và Ngộ Không: +15% máu.' });
+})();

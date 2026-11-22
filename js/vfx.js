@@ -493,7 +493,7 @@
   };
 
   // tuyệt kỹ chung cho tướng mới (hình chính lấy từ art/fx/ult_<id>.webp, vẽ trong main.js)
-  const GEN = { loichantu: '#9fd0ff', thohanhton: '#d8b86a', thaiatchannhan: '#ff7a2e', thancongbao: '#6a7ad8', longnu: '#9fe8ff', kimgiac: '#b88aff', tieubachlong: '#bfeaff', thaibachkimtinh: '#ffe58a', culinhthan: '#ffd34d', hoangphongquai: '#e8c060' };
+  const GEN = { bodetosu: '#bfffd0', tranguyentu: '#e8c080', hoangphiho: '#ffb060', dienmau: '#d0a0ff', thanhnguutinh: '#e0e8f0', longvuong: '#7fc8ff', dangthienngoc: '#ff9ad0', kimtra: '#ffd34d', hachhung: '#8a7a6a', thodia: '#ffe58a', loichantu: '#9fd0ff', thohanhton: '#d8b86a', thaiatchannhan: '#ff7a2e', thancongbao: '#6a7ad8', longnu: '#9fe8ff', kimgiac: '#b88aff', tieubachlong: '#bfeaff', thaibachkimtinh: '#ffe58a', culinhthan: '#ffd34d', hoangphongquai: '#e8c060' };
   for (const id in GEN) FX[id] = (c, f, p) => { const x = f.tx, y = f.ty, o = out3(seg(p, 0, 0.3)), al = fade(p, 0.75, 1);
     glow(c, x, y - 40, 190 * o, GEN[id] + '88', 0.8 * al); shock(c, x, y, 40 + 170 * out3(seg(p, 0.2, 0.7)), 8, GEN[id], 0.9 * al); shock(c, x, y, 20 + 110 * out3(seg(p, 0.25, 0.75)), 4, '#ffffff', 0.7 * al);
     sparks(c, x, y - 30, 26, 190, seg(p, 0.15, 1), ['#ffffff', GEN[id]], 91, true); };
