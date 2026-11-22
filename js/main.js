@@ -1597,13 +1597,16 @@ function endBattle(win, reason) {
   if (win) {
     if (B.st.tower) { S.tower = Math.max(S.tower || 0, B.st.floor); lbPush(); }
     if (B.st.nan) { const N = nanState(); if (N.run) { if (B.st.nanN > N.best) setTimeout(lbPush, 500); N.best = Math.max(N.best, B.st.nanN); N.run.n = B.st.nanN + 1; if (N.run.n <= 81) N.run.pick = nanPick3(); } }
-    const first = !S.cleared[B.st.id];
+    if (B.st.pb) { const P = PB[B.st.pb], d = B.st.pbD, r = P.rew(d); B.st.reward = { ngoc: 0, vang: (r.vang || 0) + (P.perKill ? P.perKill[d] * (B.kills || 0) : 0) };
+      if (r.univ) { S.univ += r.univ; B.reward.univ = r.univ; }
+      if (P.items) { B.reward.items = []; for (let k = 0; k < P.items[d]; k++) { const it = rollEquip({ kind: d >= 2 ? 'boss' : 'elite', chap: PB_DIFF[d].ch }); (S.items = S.items || []).push(it); B.reward.items.push(it); } B.reward.item = B.reward.items[0]; } }
+    const first = !S.cleared[B.st.id] && !B.st.pb;
     if (first && typeof B.si === 'number') B.chRew = chapterReward(B.st);
-    B.reward.ngoc = first ? B.st.reward.ngoc : Math.round(B.st.reward.ngoc * 0.2);
-    B.reward.vang = first ? B.st.reward.vang : Math.round(B.st.reward.vang * 0.5);
+    B.reward.ngoc = first || B.st.pb ? B.st.reward.ngoc : Math.round(B.st.reward.ngoc * 0.2);
+    B.reward.vang = first || B.st.pb ? B.st.reward.vang : Math.round(B.st.reward.vang * 0.5);
     S.ngoc += B.reward.ngoc; S.vang += B.reward.vang;
-    S.cleared[B.st.id] = Math.max(S.cleared[B.st.id] || 0, B.stars);
-    const dropP = B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
+    if (!B.st.pb) S.cleared[B.st.id] = Math.max(S.cleared[B.st.id] || 0, B.stars);
+    const dropP = B.st.pb ? 0 : B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
     if (Math.random() < dropP) { const it = rollEquip(B.st); (S.items = S.items || []).push(it); B.reward.item = it; }
   } else {
     if (B.st.nan) { const N = nanState(); B.nanEnd = N.run ? N.run.n - 1 : 0; N.run = null; }
@@ -1815,6 +1818,7 @@ function poseFor(u) {
 const HFIX = { kimgiac: 1.1, hoangphongquai: 1.06 };   // bù dáng đứng khom / tai nhọn để cao ngang các tướng khác
 function drawPose(u, name, t, h, alpha) {
   h *= HFIX[u.id] || 1;
+  if (!POSES[u.id]) return false;
   const img = POSES[u.id][name], D = (window.HPOSE && HPOSE[u.id]) || (window.SKEL_DEFS && SKEL_DEFS[u.id]); if (!img || !D) return false;
   const k = h / D.H / 0.5, gx = D.gnd[0] * 0.5 * k, gy = D.gnd[1] * 0.5 * k;   // ảnh tư thế = hình gốc giảm nửa, đặt chân tại gốc xương root
   let sx = 1, sy = 1, rot = 0, ox = 0;
@@ -3430,16 +3434,47 @@ function showSettings() {
     S = defaultSave(); save(); w.remove(); showHome(); };
 }
 // ---- THỬ LUYỆN: gom các chế độ phụ
+
+// ---- PHÓ BẢN TÀI NGUYÊN (khung VLĐMT: PB Vàng / PB EXP / PB Đan Đột Phá — 4 độ khó, giới hạn lượt/ngày)
+const PB = {
+  gold: { name: 'Kim Khố', ico: 'ic_chest', bg: 'ch4', desc: 'Yêu quái canh giữ kho vàng. Diệt càng nhiều càng nhiều vàng.', rew: d => ({ vang: [4000, 9000, 16000, 28000][d] }), perKill: [15, 30, 55, 90] },
+  univ: { name: 'Vạn Năng Bí Cảnh', ico: 'ic_tangkinh', bg: 'ch6', desc: 'Bí cảnh chứa mảnh vạn năng, dùng để tăng sao bất kỳ Thần Tướng.', rew: d => ({ univ: [3, 6, 10, 16][d], vang: [800, 1500, 2500, 4000][d] }) },
+  equip: { name: 'Thần Binh Khố', ico: 'ic_battle', bg: 'ch8', desc: 'Kho binh khí của Thiên Đình. Chắc chắn rơi trang bị, độ khó cao rơi đồ quý hơn.', rew: d => ({ vang: [1000, 2000, 3500, 5500][d] }), items: [1, 1, 2, 3] },
+};
+const PB_DIFF = [{ n: 'Dễ', ch: 0, need: '1-3' }, { n: 'Thường', ch: 3, need: '3-10' }, { n: 'Khó', ch: 6, need: '6-10' }, { n: 'Ác Mộng', ch: 9, need: '9-10' }];
+const PB_TRIES = 3;
+function pbDay() { const k = dayKey(); if (!S.pb || S.pb.d !== k) S.pb = { d: k, n: {} }; return S.pb; }
+function pbLeft(t) { return PB_TRIES - (pbDay().n[t] || 0); }
+function pbStage(t, d) {
+  const D = PB_DIFF[d], base = STAGES[D.ch * 10 + 6];
+  return { ...base, id: 'PB-' + t + '-' + d, pb: t, pbD: d, kind: 'normal', name: PB[t].name + ' · ' + D.n, lvl: base.lvl + 1, par: 90, gate: 9e9,
+    reward: { ngoc: 0, vang: 0 }, waves: base.waves.slice(0, 12), theme: base.theme, ehp: 1 + d * 0.1, eatk: 1 + d * 0.05 };
+}
+function showPB(t) {
+  if (!t) {   // danh sách 3 phó bản
+    ui.innerHTML = `<div class="screen panel-screen">${topBar('Phó Bản Tài Nguyên')}<p class="chap-story">Mỗi phó bản có <b>${PB_TRIES} lượt mỗi ngày</b>, không tốn Tiên Khí. Độ khó cao mở khi qua boss chương tương ứng, thưởng gấp nhiều lần.</p>
+      <div class="tr-grid">${Object.keys(PB).map(k => `<button class="tr-card" data-pbt="${k}" style="--bg:url('art/bg/${PB[k].bg}.webp')"><span class="tr-ic">${IC2(PB[k].ico, 'ic_chest')}</span><b>${PB[k].name}</b><small>Còn ${pbLeft(k)}/${PB_TRIES} lượt hôm nay</small><em>${PB[k].desc}</em></button>`).join('')}</div></div>`;
+    $('#bBack').onclick = showTrials; ui.querySelectorAll('[data-pbt]').forEach(b => b.onclick = () => showPB(b.dataset.pbt)); return;
+  }
+  const P = PB[t], left = pbLeft(t);
+  ui.innerHTML = `<div class="screen panel-screen">${topBar(P.name)}<p class="chap-story">${P.desc} Còn <b>${left}/${PB_TRIES}</b> lượt hôm nay.</p>
+    <div class="pb-list">${PB_DIFF.map((D, d) => { const open = !!S.cleared[D.need], r = P.rew(d);
+      return `<div class="pb-row ${open ? '' : 'locked'}"><div><b>${D.n}</b><small>${open ? `Quái cấp ${pbStage(t, d).lvl}` : `Mở khi qua ải ${D.need}`}</small></div>
+        <span class="rew">${rewTxt(r)}${P.perKill ? ` <small>+${P.perKill[d]} vàng/quái</small>` : ''}${P.items ? ` <small>+${P.items[d]} trang bị</small>` : ''}</span>
+        <button class="btn ${open && left > 0 ? 'gold' : ''}" data-pbd="${d}" ${open && left > 0 ? '' : 'disabled'}>Khiêu chiến</button></div>`; }).join('')}</div></div>`;
+  $('#bBack').onclick = () => showPB(); ui.querySelectorAll('[data-pbd]').forEach(b => b.onclick = () => enterStage(pbStage(t, +b.dataset.pbd)));
+}
 function showTrials() {
   const t = S.tower || 0, N = nanState(), rd = 3 - raidToday().n;
   const card = (id, ic, fb, bg, title, sub, note) => `<button class="tr-card" id="${id}" style="--bg:url('art/bg/${bg}.webp')"><span class="tr-ic">${IC2(ic, fb)}</span><b>${title}</b><small>${sub}</small>${note ? `<em>${note}</em>` : ''}</button>`;
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thử Luyện')}<div class="tr-grid">
+    ${card('trPB', 'ic_chest', 'ic_chest', 'ch4', 'Phó Bản Tài Nguyên', `Vàng · Mảnh vạn năng · Trang bị`, `Còn ${Object.keys(PB).reduce((s, k) => s + pbLeft(k), 0)} lượt hôm nay`)}
     ${card('trTower', 'ic_tower', 'ic_battle', 'ch7', 'Tháp Thập Tuyệt', `Đã qua ${t}/100 tầng`, 'Chọn lợi/hại mỗi tầng')}
     ${card('trNan', 'ic_nan', 'ic_book', 'ch12', 'Tám Mươi Mốt Nạn', `Kỷ lục ${N.best}/81`, N.run ? `Đang ở nạn ${N.run.n}` : 'Hành trình roguelike')}
     ${card('trRaid', 'ic_raid', 'ic_chest', 'ch9', 'Boss Xâm Lược', `Còn ${rd}/3 lượt hôm nay`, 'Thưởng theo sát thương')}
     ${card('trRank', 'ic_rank', 'ic_team', 'ch6', 'Bảng Xếp Hạng', 'Lực chiến · Tháp · 81 Nạn · Boss', '')}
   </div></div>`;
-  $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank();
+  $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trPB').onclick = () => showPB(); $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank();
 }
 function IC2(n, fb) { return `<img src="art/ui/${n}.webp" onerror="this.onerror=null;this.src='art/ui/${fb}.webp'" alt="">`; }
 function showHome() {
@@ -3878,7 +3913,7 @@ function showResult() {
         <div class="rs-leg"><span class="d">Sát thương</span><span class="t">Chịu đòn</span><span class="h">Hồi máu</span></div></div>`;
     })()}
     ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
-    <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
+    <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.univ ? `<span>${icon('univ')}+${B.reward.univ}</span>` : ''}${B.reward.items && B.reward.items.length > 1 ? `<span>+${B.reward.items.length} trang bị</span>` : ''}${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
     ${B.chRew ? `<div class="res-hero"><img src="${fullImg(B.chRew.id, 160)}" alt=""><div><small>Thưởng qua chương</small><b>${esc(HEROES[B.chRew.id].name)}</b> ${rarTag(HEROES[B.chRew.id].rar)}${B.chRew.dup ? '<em>Đã có → +mảnh</em>' : '<em>Gia nhập đội!</em>'}</div></div>` : ''}
     <div class="res-btns">
       <button class="btn" id="rHome">Về sảnh</button>
@@ -3887,7 +3922,7 @@ function showResult() {
     </div>`;
   ui.appendChild(wrap);
   const si = B.si;
-  $('#rHome').onclick = () => { const nan = B.st.nan; B = null; nan ? showNan() : showHome(); };
+  $('#rHome').onclick = () => { const nan = B.st.nan, pb = B.st.pb; B = null; nan ? showNan() : pb ? showPB(pb) : showHome(); };
   $('#rRetry').onclick = () => { if (B && B.st.nan) { const nan = true; B = null; showNan(); return; } enterStage(si); };
   if (B.st.nan) { $('#rRetry').textContent = B.win ? 'Nạn tiếp' : 'Hành trình mới'; if (!B.win) wrap.querySelector('.res-title').insertAdjacentHTML('afterend', `<p class="res-reason">Hành trình kết thúc ở nạn ${B.st.nanN}. Đã vượt ${B.nanEnd || 0} nạn.</p>`); }
   if (next) $('#rNext').onclick = () => enterStage(si + 1);
@@ -3942,7 +3977,7 @@ function showStory(chId, done) {
   draw(); ui.appendChild(wrap);
 }
 function enterStage(si) {
-  if (typeof si === 'object') { if (si.raid) { if (!raidUse()) return; } else if (si.tower && si.floor !== (S.tower || 0) + 1) { showTower(); return; } startBattle(si); return; }
+  if (typeof si === 'object') { if (si.pb) { if (pbLeft(si.pb) <= 0) { toast('Hết lượt hôm nay'); return; } pbDay().n[si.pb] = (pbDay().n[si.pb] || 0) + 1; save(); startBattle(si); return; } if (si.raid) { if (!raidUse()) return; } else if (si.tower && si.floor !== (S.tower || 0) + 1) { showTower(); return; } startBattle(si); return; }
   const st = STAGES[si], ch = CHAPTERS[st.chap];
   const go = () => { if (tkSpend(tkCost(st))) startBattle(si); };
   if (ch && !(S.story || {})[ch.id] && st === STAGES.find(x => x.chap === st.chap)) showStory(ch.id, go); else go();
@@ -4399,6 +4434,8 @@ function route() {
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();
   else if (k === 'trials') showTrials();
+  else if (k === 'pb') showPB(v || '');
+  else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
   else if (k === 'settings') { showHome(); setTimeout(showSettings, 600); }
   else if (k === 'balance') { window.__dmgBy = {}; const eg = (location.hash.match(/eg=([\d.]+)/) || [])[1]; if (eg) window.__eg = +eg;   // (đo cân bằng) máy tự đánh: #balance=1-12 → kết quả trong <pre id="bal">
     const [c0, c1] = (v || '1-12').split('-').map(Number), out = [], RANK = { SSR: 3, SR: 2, R: 1 };

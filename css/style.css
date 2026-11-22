@@ -741,3 +741,9 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .ch-box .cb.done, .pull-box .pb.done { opacity: .5; } .ch-box .cb:disabled:not(.done), .pull-box .pb:disabled:not(.done) { opacity: .75; cursor: default; }
 .pull-box { margin: 8px 0; } .pull-box > div { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
 .eq-up { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0; } .eq-pl { font-style: normal; color: #2a9a4a; }
+
+.pb-list { display: grid; gap: 8px; }
+.pb-row { display: grid; grid-template-columns: minmax(110px, 1fr) 2fr auto; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: #fff6dc; border: 2px solid #c08a1a; }
+.pb-row b { font-size: 17px; display: block; } .pb-row small { color: #8a6a4a; } .pb-row .rew { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-weight: 800; }
+.pb-row.locked { opacity: .6; filter: grayscale(.5); }
+@media (max-width: 640px) { .pb-row { grid-template-columns: 1fr auto; } .pb-row .rew { grid-column: 1 / -1; } }
