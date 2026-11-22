@@ -72,7 +72,7 @@ const POSES = {};
 const EPOSES = {};   // quái vẽ bằng tư thế: walk1, walk2, attack, hit (+ master)
 const _enemyLoaded = {};
 function ensureEnemyAssets(ids) {
-  try { for (const id of ids) if (ENEMIES[id] && ENEMIES[id].boss) { formImg(id); scImg('ngumavuong_fx'); } } catch (e) {}   // tải sẵn hình biến hình boss
+  try { ucImg('cloud'); for (const id of ids) if (ENEMIES[id] && ENEMIES[id].boss) { formImg(id); scImg('ngumavuong_fx'); } } catch (e) {}   // tải sẵn hình biến hình boss
   return Promise.all([...new Set(ids)].filter(id => (window.EPOSE || {})[id]).map(id => {
     if (_enemyLoaded[id]) return _enemyLoaded[id];
     EPOSES[id] = {};
@@ -96,16 +96,28 @@ function drawEnemyPose(u, alpha) {
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha *= 0.35 + 0.15 * Math.sin(u.t * 4); const g = ctx.createRadialGradient(0, -h * 0.45, 4, 0, -h * 0.45, h * 0.6); g.addColorStop(0, 'rgba(255,60,60,0.6)'); g.addColorStop(1, 'rgba(120,0,40,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, -h * 0.45, h * 0.55, h * 0.6, 0, 0, TAU); ctx.fill(); ctx.restore();
     ctx.drawImage(im, -w / 2 - lunge, -h + bob, w, h); ctx.restore(); return true; } }
   const P = EPOSES[u.id], D = (window.EPOSE || {})[u.id]; if (!P || !D) return false;
-  let n = 'master';
-  if (u.dead || u.hitT > 0) n = 'hit'; else if (u.atkAnim >= 0 || u.castT > 0) n = 'attack'; else if (u.walk) n = Math.floor(u.t * 6) % 2 ? 'walk2' : 'walk1';
+  // dáng + biến dạng mượt: đi 4 nhịp (bước-trung gian-bước-trung gian) theo tốc độ, ra đòn lấy đà rồi lao, trúng đòn giật lùi
+  const sp = Math.max(0.6, (u.move || 70) / 70), ph = (u.t * 2.2 * sp) % 1;   // chu kỳ bước
+  let n = 'master', sx = 1, sy = 1, ox = 0, oy = 0, rot = 0;
+  if (u.dead || u.hitT > 0) { n = 'hit'; const q = u.dead ? 1 : Math.max(0, u.hitT / 0.35); ox = -10 * q; rot = -0.08 * q; sy = 1 - 0.04 * q; }
+  else if (u.atkAnim >= 0 || u.castT > 0) {
+    const q = u.atkAnim >= 0 ? Math.min(1, u.atkAnim) : 0.5;
+    if (q < 0.35) { n = 'master'; const e = q / 0.35; ox = -6 * e; rot = -0.06 * e; sx = 1 + 0.03 * e; sy = 1 - 0.04 * e; }   // lấy đà
+    else { n = 'attack'; const e = (q - 0.35) / 0.65, k2 = Math.sin(Math.min(1, e * 1.6) * Math.PI / 2); ox = 14 * k2 * (1 - e * 0.6); rot = 0.07 * (1 - e); sx = 1.05 - 0.05 * e; sy = 0.97 + 0.03 * e; }
+  } else if (u.walk) {
+    n = ph < 0.25 ? 'walk1' : ph < 0.5 ? 'master' : ph < 0.75 ? 'walk2' : 'master';
+    oy = -Math.abs(Math.sin(ph * Math.PI * 2)) * 3.5; rot = 0.04 + Math.sin(ph * Math.PI * 2) * 0.025; sy = 1 + Math.sin(ph * Math.PI * 4) * 0.02; sx = 2 - sy;
+  } else { sy = 1 + Math.sin(u.t * 2.4) * 0.015; sx = 1 - Math.sin(u.t * 2.4) * 0.008; }
   const img = P[n] || P.master; if (!img) return false;
-  const h = spriteH(u), k = h / D.h, bob = u.walk ? Math.abs(Math.sin(u.t * 9)) * 2 : Math.sin(u.t * 2.4) * 1;
+  if (u.epN !== n) { u.epPrev = u.epN; u.epAt = u.t; u.epN = n; }
+  const h = spriteH(u), k = h / D.h, fade = u.epPrev ? Math.max(0, 1 - (u.t - u.epAt) / 0.06) : 0;
   ctx.save(); ctx.scale(u.f, 1); ctx.globalAlpha *= alpha;
   const FORM = u.d.forms && u.d.forms[(u.phase || 1) - 1];   // boss biến hình: mỗi giai đoạn một dáng (màu/cỡ)
   if (FORM) { ctx.filter = FORM.f; ctx.scale(FORM.s, FORM.s); }
   if (u.hurt > 0) ctx.filter = 'brightness(2) saturate(0.6)';
-  if (n === 'attack') ctx.translate(8, 0);
-  ctx.drawImage(img, -D.gx * k, -D.gy * k - bob, img.width * k, img.height * k);
+  ctx.translate(ox, oy); ctx.rotate(rot); ctx.scale(sx, sy);
+  if (fade > 0 && P[u.epPrev]) { const a0 = ctx.globalAlpha; ctx.globalAlpha = a0 * fade; const pi = P[u.epPrev]; ctx.drawImage(pi, -D.gx * k, -D.gy * k, pi.width * k, pi.height * k); ctx.globalAlpha = a0; }
+  ctx.drawImage(img, -D.gx * k, -D.gy * k, img.width * k, img.height * k);
   ctx.filter = 'none'; ctx.restore(); return true;
 }
 const POSE_NAMES = ['windup', 'strike', 'skill', 'ult', 'idle1', 'idle2', 'hit'];
@@ -389,7 +401,7 @@ function initTrait(e) {   // gán thuộc tính theo kiểu quái
 }
 function spawnEnemy(q) {
   let x = VIEW_R() + rand(20, 60), y = rand(LANE_Y0, LANE_Y1);
-  if (q.side && Math.random() < 0.4 && !ENEMIES[q.type].boss) { x = rand(W * 0.55, W - 40); y = Math.random() < 0.5 ? LANE_Y0 - 30 : LANE_Y1 + 30; }
+  if (q.side && Math.random() < 0.4 && !ENEMIES[q.type].boss) { x = VIEW_R() + rand(10, 40); y = Math.random() < 0.5 ? LANE_Y0 + rand(0, 30) : LANE_Y1 - rand(0, 30); }   // ra theo mép trên/dưới nhưng vẫn từ ngoài màn phải
   if (ENEMIES[q.type].boss) { x = VIEW_R() + 60; y = H * 0.56; }
   const e = initTrait(makeEnemy(q.type, B.st.lvl, x, y));
   e.drop = q.drop || null;
@@ -1176,7 +1188,7 @@ function tickUnit(u, dt) {
   u.t += dt;
   if (u.hurt > 0) u.hurt -= dt;
   // tướng có rig vung vũ khí chậm hơn để thấy rõ động tác lấy đà → đập
-  if (u.atkAnim >= 0) { u.atkAnim += dt * (hasRig(u.id) ? 2.4 : 4.5); if (u.atkAnim > 1) u.atkAnim = -1; }
+  if (u.atkAnim >= 0) { u.atkAnim += dt * (hasRig(u.id) ? 2.4 : u.side === 'e' ? 2.8 : 4.5); if (u.atkAnim > 1) u.atkAnim = -1; }
   if (u.castT > 0) u.castT -= dt;
   if (u.hitT > 0) u.hitT -= dt;
   u.cdA -= dt;
@@ -1732,7 +1744,9 @@ function drawUnit(u) {
   if (u.side === 'h' && u.dead && hasSkel(u.id)) alpha = Math.max(0.35, 1 - (u.deathT || 0) * 0.8);
   if (u.side === 'e' && u.trait && !u.dead) {
     if (u.under) { ctx.save(); ctx.fillStyle = '#6a4a28'; ctx.beginPath(); ctx.ellipse(0, 0, 26, 9, 0, Math.PI, TAU); ctx.fill(); ctx.fillStyle = '#8a6a40'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(-14 + i * 9, -4 - Math.abs(Math.sin(u.t * 9 + i)) * 5, 3, 0, TAU); ctx.fill(); } ctx.restore(); ctx.restore(); return; }
-    if (u.flyH) { ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 2, 22, 7, 0, 0, TAU); ctx.fill(); ctx.restore(); ctx.translate(0, -u.flyH + Math.sin(u.t * 4) * 5); }
+    if (u.flyH) { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 2, 26, 8, 0, 0, TAU); ctx.fill(); ctx.restore(); ctx.translate(0, -u.flyH + Math.sin(u.t * 4) * 5);
+      const cl = ucImg('cloud'); if (cl) { const cw = 96 * sizeOf(u), ch = cw * cl.height / cl.width; ctx.save(); if (u.d.flyTint) ctx.filter = u.d.flyTint; ctx.drawImage(cl, -cw / 2, -ch * 0.45, cw, ch); ctx.restore(); }
+      if (Math.random() < 0.3) B.parts.push({ x: u.x - u.f * 30, y: u.y - u.flyH + 6, vx: -u.f * 30, vy: 0, life: 0.4, max: 0.4, color: u.d.flyTint ? '#ffb070' : '#fff6e0', size: 4 }); }
     if (u.hidden && !(u.revealT > 0)) alpha *= 0.14 + 0.06 * Math.sin(u.t * 10);
     if (u.trait === 'shield') { ctx.save(); ctx.translate(-22 * sizeOf(u), -30 * sizeOf(u)); ctx.globalAlpha = 0.8; ctx.fillStyle = '#c8d8f0'; ctx.strokeStyle = '#5a6a8a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, 9, 26, 0, 0, TAU); ctx.fill(); ctx.stroke();
       ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.1 * Math.sin(u.t * 5); ctx.fillStyle = '#9fd0ff'; ctx.beginPath(); ctx.ellipse(-4, 0, 16, 40, 0, 0, TAU); ctx.fill(); ctx.restore(); }
@@ -3079,7 +3093,8 @@ function drawTargetMark() {   // dấu nhắm của đội trưởng
   const e = B.capTgt;
   if (!e || e.dead) return;
   const y = e.y - 4, r = 22 * sizeOf(e) + (B.tgtMark > 0 ? B.tgtMark * 40 : 0), a = B.time * 3;
-  ctx.save(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.globalAlpha = 0.9;
+  ctx.save(); ctx.translate(GATE_X, H * VIEW_PY); ctx.scale(VIEW_Z, VIEW_Z); ctx.translate(-GATE_X, -H * VIEW_PY);   // cùng hệ toạ độ với sân
+  ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 3; ctx.globalAlpha = 0.9;
   for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(e.x, y, r, r * 0.5, 0, a + k * TAU / 4, a + k * TAU / 4 + 0.9); ctx.stroke(); }
   ctx.restore();
 }
@@ -4326,6 +4341,8 @@ function route() {
       if (/(?:^|&)buffs(?:&|$)/.test(h)) setTimeout(showBuffs, 300);   // (chụp thử) mở bảng hiệu ứng
       const tm = h.match(/(?:^|&)tier=(\d)/);   // (chụp thử) đặt tầng cho cả đội
       if (tm) for (const u of [...B.heroes, ...B.deploy]) { u.trong = +tm[1]; rebuildTang(u); }
+      const fm = h.match(/(?:^|&)spawn=(\w+)/);   // (chụp thử) gọi 3 quái loại này
+      if (fm && ENEMIES[fm[1]]) { for (let i = 0; i < 3; i++) spawnEnemy({ type: fm[1] }); for (let i = 0; i < 90; i++) update(1 / 60); B.capTgt = B.enemies.find(e => !e.dead && e.id === fm[1]) || null; }
       const bm = h.match(/(?:^|&)boss=(\w+)/);   // (chụp thử) gọi boss ngay
       if (bm && ENEMIES[bm[1]]) { spawnEnemy({ type: bm[1] }); const e = B.enemies[B.enemies.length - 1]; e.x = W * 0.7; e.hp = maxHp(e) * 0.55; e.hpLag = 0.8; e.phase = 2; e.phaseT = performance.now(); if (/(?:^|&)form/.test(h)) { e.form = true; formImg(e.id); if (/sceneA=/.test(h)) { window.__sceneA = +h.match(/sceneA=([\d.]+)/)[1]; setTimeout(() => startBossScene(e, 'Ngưu Ma hoá thân!'), 1500); } } for (let i = 0; i < 60; i++) update(1 / 60); }
       const sm = h.match(/(?:^|&)scene=(\w+):([\d.]+)/);   // (chụp thử) đứng hình cảnh cắt SSR ở giây thứ N

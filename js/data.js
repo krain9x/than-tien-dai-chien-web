@@ -821,3 +821,8 @@ for (const st of STAGES) { const d = CH_DIFF[CHAPTERS[st.chap].id]; if (!d) cont
 if (ATK_STYLE.hoangphongquai) ATK_STYLE.hoangphongquai.proj = 'sand';
 if (ATK_STYLE.culinhthan) Object.assign(ATK_STYLE.culinhthan, { proj: 'axe', name: 'Phi Phủ', desc: 'Ném rìu xoay nổ lan vùng rộng.' });
 if (ATK_STYLE.thietphien) Object.assign(ATK_STYLE.thietphien, { proj: 'wind', name: 'Phong Nhận', desc: 'Quạt ra lưỡi gió nảy lan sang 4 quái gần nhau, mỗi lần giảm 12% sát thương.' });
+// KIỂU QUÁI KHỚP HÌNH (rà soát 2026-11-22): bay = cưỡi mây (Phi Liêm là thần gió, Hoả Nha cưỡi hoả vân); tàng hình = hồ ly/oan hồn;
+// chia đôi = Hải Yêu (nước); hồi máu = Tiên Nữ; Ma La / Yêu Tiên bỏ kiểu không hợp.
+delete ENEMIES.mala.trait; delete ENEMIES.yeutien.trait;
+ENEMIES.hoanha.flyTint = 'hue-rotate(-30deg) saturate(3) brightness(1.05)';
+TRAIT_INFO.fly.desc = 'Cưỡi mây bay qua đầu hàng trước, lao thẳng vào tướng hàng sau. Tướng cận chiến không đánh tới.';
