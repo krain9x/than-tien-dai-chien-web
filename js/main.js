@@ -474,6 +474,7 @@ function dealDmg(src, tgt, mult, kind) {
   a = Math.max(1, Math.round(a * rand(0.94, 1.06)));
   // cảm giác đánh: đứng hình, đẩy lùi, tia sáng, rung màn hình
   if (src.side === 'h' && tgt.side === 'e' && kind !== 'dot') {
+    if (kind === 'atk' && ssrFxOn(src)) { ssrHit(src, tgt, crit); if (crit) B.hitstop = Math.max(B.hitstop || 0, 0.06); }
     const strong = crit || kind === 'ult' || src === B.cap;
     if (strong) B.hitstop = Math.max(B.hitstop || 0, kind === 'ult' ? 0.12 : crit ? 0.09 : 0.05);
     if (crit) B.shake = Math.max(B.shake, 0.12);
@@ -1503,7 +1504,7 @@ function updateFx(dt) {
   if (B.hits.t > 0) B.hits.t -= dt;
   for (const f of B.fx) f.t += dt;
   B.fx = B.fx.filter(f => f.t < f.dur);
-  for (const p of B.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 420 * dt; p.vx *= 0.97; }
+  for (const p of B.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.nograv) { p.vy *= 0.96; p.rot += (p.vr || 0) * dt; } else p.vy += 420 * dt; p.vx *= 0.97; }
   B.parts = B.parts.filter(p => p.life > 0);
   if (B.parts.length > 600) B.parts.splice(0, B.parts.length - 600);
   for (const f of B.floaters) f.t += dt;
@@ -1934,6 +1935,7 @@ function rigDraw(c, id, st, h, opt) {
 function drawSprite(u, img, alpha) {
   const h = spriteH(u), w = h * img.width / img.height;
   if (hasRig(u.id)) {
+    if (ssrFxOn(u) && !u.dead) drawSsrAura(u, h);
     if (u.castT > 0 && !u.dead) {
       const g = ctx.createRadialGradient(0, -h * 0.5, 4, 0, -h * 0.5, h * 0.6);
       g.addColorStop(0, 'rgba(255,240,160,0.55)'); g.addColorStop(1, 'rgba(255,200,80,0)');
@@ -2863,6 +2865,37 @@ const SSRX = {
 };
 
 // ===================== CẢNH CẮT TUYỆT KỸ SSR =====================
+// ---- VFX SSR vẽ tay (art/ssrfx): hào quang, đạn, chuỗi nổ trúng, hạt
+const SSR_FX = {
+  ngokhong: { col: '#ffcf3f', pt: [1, 3], spin: 1 }, duongtien: { col: '#9fd0ff', pt: [5, 3] }, nata: { col: '#ff7a2e', pt: [2, 3] },
+  quanam: { col: '#ffd0e8', pt: [0, 3] }, thailaoquan: { col: '#9fffd0', pt: [4, 3] }, ngumavuong: { col: '#ff5a2a', pt: [2, 2] },
+  khuongtanha: { col: '#ffe58a', pt: [5, 3] }, bodetosu: { col: '#bfffd0', pt: [4, 3] }, tranguyentu: { col: '#d0a0ff', pt: [3, 3] },
+};
+const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
+function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low'; }
+function drawSsrAura(u, h) {   // hào quang sau lưng: xoay chậm, đập nhịp, sáng hơn khi đầy nộ
+  const im = sfImg('aura_' + u.id); if (!im) return; const full = u.mp >= 100 ? 1 : 0;
+  const S_ = h * (1.35 + 0.05 * Math.sin(u.t * 3)) * (1 + 0.15 * full);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.42 + 0.12 * Math.sin(u.t * 2.2) + 0.25 * full;
+  ctx.translate(0, -h * 0.5); ctx.rotate(u.t * 0.35); ctx.drawImage(im, -S_ / 2, -S_ / 2, S_, S_); ctx.restore();
+  if (Math.random() < 0.05 + 0.1 * full) ssrPart(u.id, u.x + rand(-30, 30), u.y - h * rand(0.2, 0.9), rand(-20, 20), -rand(20, 60), 0.9);
+}
+function ssrPart(id, x, y, vx, vy, life) { const F = SSR_FX[id]; if (!F || !B) return; B.parts.push({ x, y, vx, vy, life, max: life, color: F.col, size: 9 + Math.random() * 6, img: F.pt[0], rot: Math.random() * 6, vr: rand(-4, 4), nograv: 1 }); }
+function drawSsrProj(p) {   // đạn vẽ tay + quầng sáng (bloom giả bằng gradient cộng sáng)
+  const im = sfImg('proj_' + p.src.id); if (!im) return false; const F = SSR_FX[p.src.id];
+  const a = Math.atan2(p.vy, p.vx), L = (p.r || 8) * 6.5, w = L, h = L * im.height / im.width;
+  ctx.save(); ctx.translate(p.x, p.y); ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, L * 0.5); g.addColorStop(0, F.col + '77'); g.addColorStop(1, F.col + '00'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, L * 0.5, 0, TAU); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over'; ctx.rotate(F.spin ? p.rot * 1.5 : a); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore();
+  if (Math.random() < 0.3) ssrPart(p.src.id, p.x, p.y, -p.vx * 0.1 + rand(-20, 20), -p.vy * 0.1 + rand(-20, 20), 0.5);
+  return true;
+}
+function ssrHit(src, tgt, crit) {   // nổ trúng vẽ tay 6 khung + hạt
+  B.fx.push({ k: 'ssrhit', id: src.id, x: tgt.x, y: tgt.y - 34 * sizeOf(tgt), t: 0, dur: 0.38, s: crit ? 170 : 120 });
+  for (let i = 0; i < (crit ? 6 : 3); i++) ssrPart(src.id, tgt.x, tgt.y - 40, rand(-140, 140), rand(-160, -20), 0.6);
+}
+function drawSsrHit(f) { const im = sfImg('hit_' + f.id), p = f.t / f.dur; if (!im || p >= 1) return; const fw = im.width / 6, fr = Math.min(5, Math.floor(p * 6)), S_ = f.s;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.drawImage(im, fr * fw, 0, fw, im.height, f.x - S_ / 2, f.y - S_ * im.height / fw / 2, S_, S_ * im.height / fw); ctx.restore(); }
 const SCI = {}; function scImg(n) { let i = SCI[n]; if (!i) { i = SCI[n] = new Image(); i.src = 'art/scene/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 const SCENE_D = 1.4;
 const sceneUnlocked = id => isSSR(id) || (HEROES[id] && HEROES[id].rar === 'SR' && S.owned[id] && S.owned[id].star >= 5);   // SR: THỨC TỈNH (5★) mở cảnh cắt
@@ -2942,6 +2975,7 @@ function drawSparks() {
 function drawProj(p) {
   if (p.dt) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const R = (p.r || 8) * 2.6, g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, R); g.addColorStop(0, 'rgba(255,240,170,0.9)'); g.addColorStop(1, 'rgba(255,170,30,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, R, 0, TAU); ctx.fill(); ctx.restore();
     if (Math.random() < 0.35) B.parts.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 40, vy: -20, life: 0.35, max: 0.35, color: '#ffe58a', size: 3 }); }
+  if (p.side === 'h' && p.kind === 'atk' && !p.child && ssrFxOn(p.src) && drawSsrProj(p)) return;
   if (p.side === 'h' && PFX[p.type]) drawProjFX(p);
   else if (p.side === 'h' && !p.child && p.kind !== 'sword') {   // vệt đuôi sáng sau đạn (theo vận tốc), màu theo loại đạn
     const sp = Math.hypot(p.vx, p.vy) || 1, L = Math.min(70, sp * 0.1), ux = p.vx / sp, uy = p.vy / sp, col = projColor(p.type);
@@ -3321,9 +3355,12 @@ function render() {
   for (const f of B.fx) drawFx(f);
   drawFxBursts();
   drawSparks();
+  const PT = sfImg('particles');
+  for (const f of B.fx) if (f.k === 'ssrhit') drawSsrHit(f);
   for (const p of B.parts) {
-    ctx.globalAlpha = clamp(p.life / p.max, 0, 1); ctx.fillStyle = p.color;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
+    ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+    if (p.img != null && PT) { const fw = PT.width / 6, s2 = p.size * 2.4; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(p.x, p.y); ctx.rotate(p.rot || 0); ctx.drawImage(PT, p.img * fw, 0, fw, PT.height, -s2 / 2, -s2 / 2 * PT.height / fw, s2, s2 * PT.height / fw); ctx.restore(); continue; }
+    ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
   }
   ctx.globalAlpha = 1;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -3864,6 +3901,14 @@ function showGacha() {
   $('#gFree').onclick = () => { S.ngoc += 1500; save(); showGacha(); };
   ui.querySelectorAll('[data-pb]').forEach(b => b.onclick = () => { S.pullBox = S.pullBox || []; const k = +b.dataset.pb; if (S.pullBox.includes(k)) return; S.pullBox.push(k); giveRew(PULL_BOX[k][1]); toast('Đã nhận quà ' + PULL_BOX[k][0] + ' lượt'); showGacha(); });
 }
+function ssrReveal(ids, done) {   // lá thẻ vàng rung, nứt sáng rồi vỡ ra tranh tuyệt kỹ vẽ tay của tướng SSR
+  const id = ids[0], h = HEROES[id], el = document.createElement('div'); el.className = 'ssr-rv';
+  el.innerHTML = `<div class="rv-bg" style="background-image:url(art/scene/${id}_bg.webp)"></div><div class="rv-rays"></div><div class="rv-card"><i></i><b>SSR</b></div>
+    <img class="rv-hero" src="art/scene/${id}_hero.webp" alt=""><div class="rv-name"><small>${esc(h.title)}</small><h2>${esc(h.name)}</h2><em>Tuyệt kỹ · ${esc(h.ult.name)}</em></div><div class="rv-tap">Chạm để tiếp tục</div>`;
+  ui.appendChild(el); snd('charge_big'); setTimeout(() => { el.classList.add('burst'); snd('gong'); setTimeout(() => snd('roar', 1, 0.8), 250); }, 1300);
+  setTimeout(() => el.classList.add('ready'), 2300);
+  el.onclick = () => { if (!el.classList.contains('ready')) return; el.remove(); if (ids.length > 1) ssrReveal(ids.slice(1), done); else done(); };
+}
 function doPull(n) {
   const cost = n === 10 ? GACHA.cost10 : GACHA.cost1 * n;
   if (S.ngoc < cost) { toast('Không đủ Ngọc'); return; }
@@ -3882,6 +3927,8 @@ function doPull(n) {
         ${r.isNew ? '<em class="new">MỚI</em>' : r.dup ? `<em>+${r.dup} mảnh</em>` : ''}
       </div></div>`).join('')}</div>
     <button class="btn gold" id="pullOk" style="animation-delay:${0.4 + n * 0.12}s">Xác nhận</button>`;
+  const ssrs = res.filter(r => r.rar === 'SSR' && r.id);
+  if (ssrs.length) { wrap.style.visibility = 'hidden'; ssrReveal(ssrs.map(r => r.id), () => { wrap.style.visibility = ''; }); }
   ui.appendChild(wrap);
   $('#pullOk').onclick = () => { wrap.remove(); showGacha(); };
 }
@@ -4560,6 +4607,7 @@ function route() {
   }
   else if (k === 'gacha') showGacha();
   else if (k === 'full') grantAllHeroes();
+  else if (k === 'rv') { showGacha(); ssrReveal([v || 'ngokhong'], () => {}); }   // (chụp thử) màn quay ra SSR
   else if (k === 'quests') showQuests();
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();

@@ -805,3 +805,32 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .tag .sys-ico { width: 16px; height: 16px; margin: -2px 3px 0 -4px; }
 .hc2-sys { position: absolute; top: 3px; right: 3px; display: flex; flex-direction: column; gap: 1px; } .hc2-sys .sys-ico { width: 22px; height: 22px; margin: 0; }
 .team .tm .tm-role { position: absolute; z-index: 5; top: 44px; right: 2px; width: 20px; height: 20px; margin: 0; }
+
+/* ===== quay ra SSR ===== */
+.ssr-rv { position: fixed; inset: 0; z-index: 80; background: #0a0414; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ssr-rv .rv-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transform: scale(1.15); transition: opacity .6s, transform 3s ease-out; }
+.ssr-rv .rv-rays { position: absolute; width: 220vmax; height: 220vmax; background: repeating-conic-gradient(from 0deg, rgba(255,214,90,.28) 0 6deg, transparent 6deg 18deg); animation: rvspin 8s linear infinite; opacity: .5; }
+@keyframes rvspin { to { transform: rotate(360deg); } }
+.ssr-rv .rv-card { position: relative; width: 150px; height: 210px; border-radius: 14px; background: linear-gradient(135deg, #fff3b0, #f2a218 45%, #a85a08); border: 4px solid #fff6d0; box-shadow: 0 0 40px #ffcf3f, 0 0 90px #ff9a2e; display: flex; align-items: center; justify-content: center; animation: rvshake .12s infinite alternate .4s; }
+.ssr-rv .rv-card b { font-size: 46px; font-weight: 900; color: #fff; text-shadow: 0 3px 0 #a85a08, 0 0 20px #fff; letter-spacing: 2px; }
+.ssr-rv .rv-card i { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.9) 48%, transparent 60%); background-size: 250% 100%; animation: rvshine 1s linear infinite; border-radius: 10px; }
+@keyframes rvshine { from { background-position: 150% 0; } to { background-position: -100% 0; } }
+@keyframes rvshake { from { transform: rotate(-2deg) scale(1); } to { transform: rotate(2deg) scale(1.04); } }
+.ssr-rv.burst .rv-card { animation: rvburst .45s ease-out forwards; }
+@keyframes rvburst { 0% { transform: scale(1); filter: brightness(1); } 40% { transform: scale(1.3); filter: brightness(3); } 100% { transform: scale(4); opacity: 0; filter: brightness(5); } }
+.ssr-rv.burst .rv-bg { opacity: .85; transform: scale(1); }
+.ssr-rv .rv-hero { position: absolute; height: 92vh; max-width: 70vw; object-fit: contain; left: 4vw; bottom: -2vh; opacity: 0; transform: translateX(-40px) scale(.95); transition: all .7s cubic-bezier(.2,1.4,.4,1) .25s; filter: drop-shadow(0 0 24px rgba(255,210,90,.8)); }
+.ssr-rv.burst .rv-hero { opacity: 1; transform: none; }
+.ssr-rv .rv-name { position: absolute; right: 5vw; bottom: 18vh; text-align: right; color: #fff; opacity: 0; transform: translateX(40px); transition: all .6s .6s; }
+.ssr-rv.burst .rv-name { opacity: 1; transform: none; }
+.ssr-rv .rv-name h2 { margin: 0; font-size: clamp(34px, 6vw, 64px); font-weight: 900; color: #ffe58a; text-shadow: 0 4px 0 #7a3a04, 0 0 24px #ff9a2e; }
+.ssr-rv .rv-name small { font-size: 16px; color: #ffe; text-shadow: 0 2px 4px #000; } .ssr-rv .rv-name em { display: block; font-style: normal; font-weight: 800; color: #fff; text-shadow: 0 2px 4px #000; }
+.ssr-rv .rv-tap { position: absolute; bottom: 4vh; width: 100%; text-align: center; color: #fff; opacity: 0; font-weight: 800; text-shadow: 0 2px 4px #000; }
+.ssr-rv.ready .rv-tap { opacity: .85; animation: rvblink 1.2s infinite; } @keyframes rvblink { 50% { opacity: .3; } }
+/* viền thẻ SSR có ánh sáng chạy quanh */
+@property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.hc2.r-SSR, .pcard.r-SSR .pc-inner { position: relative; }
+.hc2.r-SSR::after, .pcard.r-SSR .pc-inner::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; padding: 3px; pointer-events: none;
+  background: conic-gradient(from var(--ang), transparent 0 70%, #fff6c0 80%, #ffcf3f 88%, transparent 96%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: ssrRim 2.4s linear infinite; }
+@keyframes ssrRim { to { --ang: 360deg; } }
+.ssr-rv.burst .rv-rays { opacity: .22; }
