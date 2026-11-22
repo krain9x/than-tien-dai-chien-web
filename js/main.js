@@ -3482,7 +3482,7 @@ function showHome() {
   B = null;
   ensureHeroAssets(S.lineup.filter(id => S.owned[id]));   // nạp tư thế để tướng ở trang chủ có dáng đứng riêng
   const cap = S.lineup.find(id => S.owned[id]), nf = STAGES.findIndex(st => !S.cleared[st.id]), nx = STAGES[nf < 0 ? STAGES.length - 1 : nf];
-  const dq0 = dq(), qDot = DAILY.some(q => (dq0.p[q.id] || 0) >= q.need && !dq0.c[q.id]), ir = idleReward();
+  const dq0 = dq(), qDot = DAILY.some(q => (dq0.p[q.id] || 0) >= q.need && !dq0.c[q.id]) || WEEKLY.some(q => (wq().p[q.id] || 0) >= q.need && !wq().c[q.id]), ir = idleReward();
   const L7 = loginState(), giftLeft = LOGIN7.some((r, i2) => !L7.got.includes(i2)), giftDot = LOGIN7.some((r, i2) => i2 < L7.d && !L7.got.includes(i2));
   const heroDot = Object.keys(S.owned).some(id => { const o = S.owned[id], h = HEROES[id]; return h && o.star < 5 && o.shard + S.univ >= STAR_COST[h.rar][o.star - 1]; });
   const nanRun = S.nan && S.nan.run, rdLeft = 3 - raidToday().n;
@@ -3545,13 +3545,16 @@ function showStages() {
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Chương ' + ch.id + ' · ' + ch.name)}
     <div class="chap-tabs">${CHAPTERS.map((c, i) => `<button class="btn small ${i === curChap ? 'gold' : ''}" data-ch="${i}" ${open(i) ? '' : 'disabled'}>${open(i) ? c.id : '🔒'} ${esc(c.name)} <small>${done(i)}/10</small></button>`).join('')}</div>
     <p class="chap-story">${esc(ch.story)} <b>Boss: ${esc(ch.boss)}</b> · <i>${esc(ch.mech)}</i></p>
+    <div class="ch-info"><div class="ci-col"><b class="ci-h">Gợi ý đội hình</b>
     ${(() => { const el = chapElem(curChap); if (!el) return ''; const good = Object.keys(BEATS).find(k => BEATS[k] === el), bad = BEATS[el];
       return `<p class="chap-el">Quái chủ yếu hệ <b style="color:${ELEMENTS[el].color}">${ELEMENTS[el].name}</b> → nên dùng tướng hệ <b style="color:${ELEMENTS[good].color}">${ELEMENTS[good].name}</b> (+30% sát thương), tránh hệ <b style="color:${ELEMENTS[bad].color}">${ELEMENTS[bad].name}</b> (−20%).</p>`; })()}
+    ${(() => { const cr = CH_ROLE[CHAPTERS[curChap].id]; return cr ? `<p class="chap-el">Khắc hệ phái: quái chương này <b style="color:#2a9a4a">yếu trước ${ROLES[cr[0]].name}</b> (+25% sát thương), <b style="color:#c0392b">kháng ${ROLES[cr[1]].name}</b> (−15%).</p>` : ''; })()}
     ${(() => { const tr = new Set(); for (const st of STAGES) if (st.chap === curChap) for (const w of st.waves) for (const [t] of w.list) if (ENEMIES[t] && ENEMIES[t].trait) tr.add(ENEMIES[t].trait);
       return tr.size ? `<div class="chap-traits">${[...tr].map(k => `<span class="ct" title="${esc(TRAIT_INFO[k].desc)}"><i>${TRAIT_INFO[k].ico}</i><b>${TRAIT_INFO[k].name}</b><small>${esc(TRAIT_INFO[k].desc)}</small></span>`).join('')}</div>` : ''; })()}
+    </div><div class="ci-col"><b class="ci-h">Phần thưởng chương</b>
     ${chBoxHTML(curChap)}
-    ${(() => { const cr = CH_ROLE[CHAPTERS[curChap].id]; return cr ? `<p class="chap-el">Khắc hệ phái: quái chương này <b style="color:#2a9a4a">yếu trước ${ROLES[cr[0]].name}</b> (+25% sát thương), <b style="color:#c0392b">kháng ${ROLES[cr[1]].name}</b> (−15%).</p>` : ''; })()}
     ${(() => { const id = CH_HERO[CHAPTERS[curChap].id]; return id && HEROES[id] ? `<div class="ch-rew"><img src="${por(id, 48)}" alt=""><span>Qua boss chương nhận <b>${esc(HEROES[id].name)}</b> ${rarTag(HEROES[id].rar)}${S.owned[id] ? ' <small>(đã có)</small>' : ''}</span></div>` : ''; })()}
+    </div></div>
     <div class="stage-list">${STAGES.map((st, i) => {
       if (st.chap !== curChap) return '';
       const locked = i > 0 && !S.cleared[STAGES[i - 1].id];
@@ -3645,51 +3648,62 @@ function showHeroes() {
   ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
   ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.h));
 }
-function showHeroDetail(id) {
-  const h = HEROES[id], o = S.owned[id];
-  const st = heroStats(id);
-  const lvCost = o ? 150 * o.lv : 0;
-  const starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
+let HD_TAB = 'info';
+function showHeroDetail(id, tab) {
+  if (tab) HD_TAB = tab;
+  const h = HEROES[id], o = S.owned[id], st = heroStats(id);
+  const lvCost = o ? 150 * o.lv : 0, starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
   const bonds = BONDS.filter(b => b.members.includes(id));
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
-    <div class="detail r-${h.rar}">
-      <div class="det-art"><img src="${fullImg(id, 220)}"></div>
-      <div class="det-head">${rarTag(h.rar)}<h3>${esc(h.name)}</h3><small>${esc(h.title)} · ${esc(h.src)}</small>
+  const list = Object.keys(HEROES).filter(k => S.owned[k]).sort((a, b) => power(b) - power(a)), ix = list.indexOf(id);
+  const next = o && o.lv < MAX_LV ? (() => { const sv = o.lv; o.lv++; const n2 = heroStats(id); o.lv = sv; return n2; })() : null;
+  const delta = (a, b) => b ? `<em class="up">+${fmt(b - a)}</em>` : '';
+  const tabs = [['info', 'Thông tin'], ['up', 'Bồi dưỡng'], ['eq', 'Trang bị'], ['bond', 'Duyên phận']];
+  const body = {
+    info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
+      <div class="hd-skills">
+        <div class="hs"><i>Đòn thường</i><b>${esc((ATK_STYLE[id] || {}).name || 'Đánh thường')}</b><p>${esc((ATK_STYLE[id] || {}).desc || '')}</p></div>
+        <div class="hs"><i>Nội tại</i><b>${esc(h.passive.name)}</b><p>${esc(h.passive.desc)}</p></div>
+        <div class="hs"><i>Tiểu chiêu · 30 nội công</i><b>${esc(h.small.name)}</b><p>${esc(h.small.desc)}</p></div>
+        <div class="hs ult"><i>Tuyệt kỹ · 60 nội công</i><b>${esc(h.ult.name)}</b><p>${esc(h.ult.desc)}</p></div>
+        <div class="hs"><i>Đội trưởng</i><b>${esc(capSkill(id).n)}</b><p>${esc(capSkill(id).d)}</p></div></div>`,
+    up: o ? `<div class="hd-up">
+        <div class="hu-row"><div><b>Cấp ${o.lv}/${MAX_LV}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
+          <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng 1 cấp<small>${icon('vang')}${fmt(lvCost)}</small></button>
+          <button class="btn" id="bLv5" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
+        <div class="hu-row"><div><b>Sao ${starsHTML(o.star, 5)}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
+          <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= 5 ? 'disabled' : ''}>Tăng sao</button>${o.star >= 5 && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh</button>` : ''}</div></div>
+        ${h.rar === 'SR' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã mở cảnh tuyệt kỹ toàn màn hình' : 'Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR'}</small></div></div>` : ''}
+        <div class="hu-row"><div><b>Truyện Ký</b><small>${(o.lore || []).length}/3 chương đã nhận thưởng</small></div><div class="hu-btns"><button class="btn" id="bLore">Đọc</button></div></div></div>` : '<p class="hint">Chưa sở hữu, nhận qua Chiêu Mộ hoặc qua chương.</p>',
+    eq: o ? `<div class="hd-eq">${Object.keys(EQ_SLOT).map(sl => { const it = (S.items || []).find(x => x.id === (o.eq || {})[sl]), pl = (o.eqLv || {})[sl] || 0;
+        return `<div class="he"><i>${EQ_SLOT[sl].name} <em>+${pl}</em></i><b>${it ? eqTxt(it) : 'Trống'}</b></div>`; }).join('')}</div>
+      <div class="hu-btns"><button class="btn gold" id="bEq">Thay / cường hoá trang bị</button></div>` : '',
+    bond: bonds.length ? bonds.map(b => { const lv = bondLv(b);
+        return `<div class="hb"><b>${esc(b.name)}</b> <span class="lvl">Cấp ${lv}/10</span><div class="hb-m">${b.members.map(k => `<img class="${S.owned[k] ? '' : 'off'}" src="${por(k, 40)}" title="${esc(HEROES[k].name)}">`).join('')}</div>
+          <p>${esc(b.desc)}${lv ? ` · Thêm +${Math.round(BOND_LV[lv] * 100)}% công, máu` : ''}</p><div class="hb-bar"><i style="width:${lv * 10}%"></i></div></div>`; }).join('') + '<small>Cấp duyên phận tăng theo tổng sao và cấp của các thành viên.</small>' : '<p class="hint">Tướng này chưa có duyên phận.</p>',
+  };
+  ui.innerHTML = `<div class="screen panel-screen hd2">${topBar('Thần Tướng')}
+    <div class="hd-wrap r-${h.rar}">
+      <div class="hd-left"><button class="hd-nav" id="hdPrev" ${ix <= 0 ? 'disabled' : ''}>‹</button><button class="hd-nav r" id="hdNext" ${ix < 0 || ix >= list.length - 1 ? 'disabled' : ''}>›</button>
+        <div class="hd-art"><img src="${fullImg(id, 240)}"></div>
+        <div class="hd-name">${rarTag(h.rar)}<h3>${esc(h.name)}</h3></div><small>${esc(h.title)} · ${esc(h.src)}</small>
         <div class="tags">${roleTag(h.role)}${elTag(h.el)}<span class="tag" style="--c:#8a6a4a">${FACTIONS[h.fac]}</span></div>
-        ${o ? `<div class="lvrow">Lv ${o.lv}/${MAX_LV} · ${starsHTML(o.star, 5)} · Lực chiến ${fmt(power(id))}</div>` : '<div class="lvrow">Chưa sở hữu, nhận qua Chiêu Mộ</div>'}
-      </div>
-      <div class="det-stats">
-        <div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div>
-        <div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div>
-      </div>
-      <div class="skills-list">
-        <div class="skill"><span class="sk-kind">Nội tại</span><b>${esc(h.passive.name)}</b><p>${esc(h.passive.desc)}</p></div>
-        <div class="skill"><span class="sk-kind">Tiểu chiêu · 30 nội công</span><b>${esc(h.small.name)}</b><p>${esc(h.small.desc)}</p></div>
-        <div class="skill ult"><span class="sk-kind">Tuyệt kỹ · 60 nội công</span><b>${esc(h.ult.name)}</b><p>${esc(h.ult.desc)}</p></div>
-        ${h.rar === 'SR' ? `<div class="skill awaken ${o && o.star >= 5 ? 'on' : ''}"><span class="sk-kind">Thức tỉnh · 5★</span><b>${o && o.star >= 5 ? 'Đã thức tỉnh' : 'Chưa thức tỉnh'}</b><p>Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR.</p></div>` : ''}
-        ${bonds.map(b => `<div class="skill bond"><span class="sk-kind">Duyên phận</span><b>${esc(b.name)}</b><p>${esc(b.desc)}</p></div>`).join('')}
-      </div>
-      ${o ? `<div class="det-actions">
-        <button class="btn gold" id="bLv" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng cấp<small>${icon('vang')}${fmt(lvCost)}</small></button>
-        <button class="btn red" id="bStar" ${o.star >= 5 ? 'disabled' : ''}>Tăng sao<small>Mảnh ${o.shard}/${starNeed || '-'} · vạn năng ${S.univ}</small></button>
-        <button class="btn" id="bEq">Trang bị<small>${Object.keys(o.eq || {}).length}/3</small></button>
-        <button class="btn" id="bLore">Truyện Ký<small>${(o.lore || []).length}/3</small></button>
-        ${o.star >= 5 && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải mảnh<small>${o.shard} → ${o.shard} vạn năng</small></button>` : ''}
-      </div>` : ''}
+        ${o ? `<div class="hd-pw">Lv ${o.lv} · ${starsHTML(o.star, 5)} · ⚔ ${fmt(power(id))}</div>` : '<div class="hd-pw">Chưa sở hữu</div>'}</div>
+      <div class="hd-right"><div class="hd-tabs">${tabs.map(([k, n]) => `<button class="${HD_TAB === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div><div class="hd-body">${body[HD_TAB] || body.info}</div></div>
     </div></div>`;
   $('#bBack').onclick = showHeroes;
+  ui.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showHeroDetail(id, b.dataset.tab));
+  if ($('#hdPrev')) $('#hdPrev').onclick = () => ix > 0 && showHeroDetail(list[ix - 1]);
+  if ($('#hdNext')) $('#hdNext').onclick = () => ix >= 0 && ix < list.length - 1 && showHeroDetail(list[ix + 1]);
   if (!o) return;
-  $('#bLv').onclick = () => {
-    if (S.vang < lvCost) { toast('Không đủ vàng'); return; }
-    S.vang -= lvCost; o.lv++; qAdd('lv'); save(); showHeroDetail(id);
-  };
-  $('#bEq').onclick = () => showEquip(id); $('#bLore').onclick = () => showLore(id);
-  if ($('#bDis')) $('#bDis').onclick = () => { S.univ += o.shard; toast('Phân giải ' + o.shard + ' mảnh'); o.shard = 0; save(); showHeroDetail(id); };
-  $('#bStar').onclick = () => {
-    const have = o.shard + S.univ;
-    if (have < starNeed) { toast('Chưa đủ mảnh'); return; }
-    const useOwn = Math.min(o.shard, starNeed);
-    o.shard -= useOwn; S.univ -= starNeed - useOwn; o.star++; save(); showHeroDetail(id);
+  const q = s => $(s);
+  if (q('#bLv')) q('#bLv').onclick = () => { if (S.vang < lvCost) { toast('Không đủ vàng'); return; } S.vang -= lvCost; o.lv++; qAdd('lv'); save(); showHeroDetail(id); };
+  if (q('#bLv5')) q('#bLv5').onclick = () => { let n = 0; while (o.lv < MAX_LV && S.vang >= 150 * o.lv) { S.vang -= 150 * o.lv; o.lv++; n++; qAdd('lv'); } save(); toast(n ? `Đã nâng ${n} cấp` : 'Không đủ vàng'); showHeroDetail(id); };
+  if (q('#bEq')) q('#bEq').onclick = () => showEquip(id);
+  if (q('#bLore')) q('#bLore').onclick = () => showLore(id);
+  if (q('#bDis')) q('#bDis').onclick = () => { S.univ += o.shard; toast('Phân giải ' + o.shard + ' mảnh'); o.shard = 0; save(); showHeroDetail(id); };
+  if (q('#bStar')) q('#bStar').onclick = () => {
+    if (o.shard + S.univ < starNeed) { toast('Chưa đủ mảnh'); return; }
+    const useOwn = Math.min(o.shard, starNeed); o.shard -= useOwn; S.univ -= starNeed - useOwn; o.star++; save(); showHeroDetail(id);
     if (o.star >= 5 && h.rar === 'SR') toast('✦ THỨC TỈNH! ' + h.name + ' mở khoá cảnh tuyệt kỹ toàn màn hình');
   };
 }
@@ -3998,15 +4012,24 @@ function dq() { const k = dayKey(); if (!S.daily || S.daily.d !== k) S.daily = {
 function qAdd(id, n) { const d = dq(); d.p[id] = Math.min(999, (d.p[id] || 0) + (n == null ? 1 : n)); save(); }
 function grant(r) { if (r.ngoc) S.ngoc += r.ngoc; if (r.vang) S.vang += r.vang; if (r.univ) S.univ += r.univ; if (r.tk) { tkNow(); S.tk.v = Math.min(TK_MAX + 60, S.tk.v + r.tk); } }
 const rewTxt = r => [r.ngoc && `${icon('ngoc')}${fmt(r.ngoc)}`, r.vang && `${icon('vang')}${fmt(r.vang)}`, r.univ && `${icon('univ')}${r.univ}`, r.tk && `⚡${r.tk}`].filter(Boolean).join(' ');
-function showQuests() {
-  const d = dq();
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('Nhiệm Vụ Ngày')}<div class="meta-list">${DAILY.map(q => {
-    const p = Math.min(q.need, d.p[q.id] || 0), done = p >= q.need, got = d.c[q.id];
-    return `<div class="meta-row"><div><b>${q.name}</b><small>${p}/${q.need}</small><div class="bar"><i style="width:${p / q.need * 100}%"></i></div></div>
-      <span class="rew">${rewTxt(q.rew)}</span><button class="btn small ${done && !got ? 'gold' : ''}" data-q="${q.id}" ${done && !got ? '' : 'disabled'}>${got ? 'Đã nhận' : done ? 'Nhận' : 'Chưa xong'}</button></div>`;
-  }).join('')}</div><div class="hint">Nhiệm vụ làm mới mỗi ngày.</div></div>`;
+let QTAB = 'day';
+function showQuests(tab) {   // Nhiệm vụ: tab Ngày / Tuần, nút "Nhận tất cả"
+  if (tab) QTAB = tab;
+  const d = dq(), w = wq(), L = QTAB === 'day' ? DAILY : WEEKLY, st = QTAB === 'day' ? d : w;
+  const rows = L.map(q => { const p = Math.min(q.need, st.p[q.id] || 0), done = p >= q.need, got = st.c[q.id]; return { q, p, done, got }; });
+  const ready = rows.filter(r => r.done && !r.got);
+  const dots = { day: DAILY.some(q => (d.p[q.id] || 0) >= q.need && !d.c[q.id]), week: WEEKLY.some(q => (w.p[q.id] || 0) >= q.need && !w.c[q.id]) };
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Nhiệm Vụ')}
+    <div class="hd-tabs q-tabs">${[['day', 'Hằng ngày'], ['week', 'Hằng tuần']].map(([k, n]) => `<button class="${QTAB === k ? 'on' : ''}" data-qt="${k}">${n}${dots[k] ? ' <i class="dot"></i>' : ''}</button>`).join('')}
+      <button class="q-all ${ready.length ? 'on' : ''}" id="qAll" ${ready.length ? '' : 'disabled'}>Nhận tất cả (${ready.length})</button></div>
+    <div class="q-list">${rows.map(({ q, p, done, got }) => `<div class="q-row ${got ? 'got' : done ? 'done' : ''}"><div class="q-main"><b>${q.name}</b><div class="bar"><i style="width:${p / q.need * 100}%"></i></div></div><small>${p}/${q.need}</small>
+      <span class="rew">${rewTxt(q.rew)}</span><button class="btn small ${done && !got ? 'gold' : ''}" data-q="${q.id}" ${done && !got ? '' : 'disabled'}>${got ? '✓' : done ? 'Nhận' : 'Chưa xong'}</button></div>`).join('')}</div>
+    <div class="hint">${QTAB === 'day' ? 'Làm mới mỗi ngày.' : 'Làm mới mỗi tuần (thứ Hai).'}</div></div>`;
   $('#bBack').onclick = showHome;
-  ui.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const q = DAILY.find(x => x.id === b.dataset.q); d.c[q.id] = 1; grant(q.rew); save(); showQuests(); });
+  ui.querySelectorAll('[data-qt]').forEach(b => b.onclick = () => showQuests(b.dataset.qt));
+  const claim = q => { st.c[q.id] = 1; grant(q.rew); };
+  ui.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { claim(L.find(x => x.id === b.dataset.q)); save(); showQuests(); });
+  $('#qAll').onclick = () => { ready.forEach(r => claim(r.q)); save(); toast('Đã nhận ' + ready.length + ' phần thưởng'); showQuests(); };
 }
 
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
@@ -4343,13 +4366,9 @@ function showEvents() {
     <h4 style="margin:6px 4px">Điểm danh tháng (${mo.n}/30)</h4>
     <div class="m30">${Array.from({ length: 30 }, (_, i) => `<div class="m30d ${i < mo.n ? 'got' : i === mo.n && canSign ? 'ok' : ''}"><b>${i + 1}</b><small>${rewTxt(MONTH_REW(i))}</small></div>`).join('')}</div>
     <div style="text-align:center;margin:6px"><button class="btn gold" id="evSign" ${canSign ? '' : 'disabled'}>${canSign ? 'Điểm danh hôm nay' : 'Đã điểm danh'}</button></div>
-    <h4 style="margin:6px 4px">Nhiệm vụ tuần</h4>
-    <div class="meta-list">${WEEKLY.map(q => { const p = Math.min(q.need, w.p[q.id] || 0), done = p >= q.need, got = w.c[q.id];
-      return `<div class="meta-row"><div><b>${q.name}</b><small>${p}/${q.need}</small><div class="bar"><i style="width:${p / q.need * 100}%"></i></div></div><span class="rew">${rewTxt(q.rew)}</span>
-        <button class="btn small ${done && !got ? 'gold' : ''}" data-wq="${q.id}" ${done && !got ? '' : 'disabled'}>${got ? 'Đã nhận' : done ? 'Nhận' : 'Chưa xong'}</button></div>`; }).join('')}</div></div>`;
+    <div class="hint">Nhiệm vụ tuần đã chuyển sang mục <b>Nhiệm Vụ</b>.</div></div></div>`;
   $('#bBack').onclick = showHome;
   $('#evSign').onclick = () => { grant(MONTH_REW(mo.n)); mo.n++; mo.last = today; save(); showEvents(); };
-  ui.querySelectorAll('[data-wq]').forEach(b => b.onclick = () => { const q = WEEKLY.find(x => x.id === b.dataset.wq); w.c[q.id] = 1; grant(q.rew); save(); showEvents(); });
 }
 
 // ------------------------------------------------------------------ BOOT
@@ -4434,6 +4453,7 @@ function route() {
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();
   else if (k === 'trials') showTrials();
+  else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); showHeroDetail(v || 'ngokhong'); }
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
   else if (k === 'settings') { showHome(); setTimeout(showSettings, 600); }
