@@ -104,6 +104,7 @@ function drawEnemyPose(u, alpha) {
     const q = u.atkAnim >= 0 ? Math.min(1, u.atkAnim) : 0.5;
     if (q < 0.35) { n = 'master'; const e = q / 0.35; ox = -6 * e; rot = -0.06 * e; sx = 1 + 0.03 * e; sy = 1 - 0.04 * e; }   // lấy đà
     else { n = 'attack'; const e = (q - 0.35) / 0.65, k2 = Math.sin(Math.min(1, e * 1.6) * Math.PI / 2); ox = 14 * k2 * (1 - e * 0.6); rot = 0.07 * (1 - e); sx = 1.05 - 0.05 * e; sy = 0.97 + 0.03 * e; }
+  } else if (u.flyH && u.d.wings) { n = (u.t * 6) % 1 < 0.5 ? 'walk1' : 'walk2'; oy = Math.sin(u.t * 12) * 3;   // vỗ cánh
   } else if (u.flyH) { rot = 0.08 + Math.sin(u.t * 3) * 0.02; sy = 1 + Math.sin(u.t * 3) * 0.012;   // cưỡi mây: đứng yên trên mây, nghiêng về trước
   } else if (u.walk) {
     n = ph < 0.25 ? 'walk1' : ph < 0.5 ? 'master' : ph < 0.75 ? 'walk2' : 'master';
@@ -364,6 +365,7 @@ function startBattleNow(si) {
   showHUD();
   { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; B.banner = { text: 'Đội trưởng: ' + cs.n, sub: cs.d, t: 0, small: true }; }
   if (st.hmods) addMods(st.hmods);
+  { const fm = fbMods(); const g = fm.goldPct || 0; delete fm.goldPct; addMods(fm); B.goldPct = g; }   // pháp bảo
   if (st.hhp) addMods({ hpPct: -(1 - st.hhp) });
   if (st.bookN) for (let i = 0; i < st.bookN; i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1200 + i * 300);
   nextWave();
@@ -1602,8 +1604,11 @@ function endBattle(win, reason) {
       if (P.items) { B.reward.items = []; for (let k = 0; k < P.items[d]; k++) { const it = rollEquip({ kind: d >= 2 ? 'boss' : 'elite', chap: PB_DIFF[d].ch }); (S.items = S.items || []).push(it); B.reward.items.push(it); } B.reward.item = B.reward.items[0]; } }
     const first = !S.cleared[B.st.id] && !B.st.pb;
     if (first && typeof B.si === 'number') B.chRew = chapterReward(B.st);
+    if (first && typeof B.si === 'number' && B.st.kind === 'boss') { const fid = fbRandom(); B.fbRew = { id: fid, r: fbGive(fid) }; }
+    if (B.st.pb === 'equip' && B.st.pbD >= 2 && Math.random() < 0.25) { const fid = fbRandom(); B.fbRew = { id: fid, r: fbGive(fid) }; }
     B.reward.ngoc = first || B.st.pb ? B.st.reward.ngoc : Math.round(B.st.reward.ngoc * 0.2);
     B.reward.vang = first || B.st.pb ? B.st.reward.vang : Math.round(B.st.reward.vang * 0.5);
+    if (B.goldPct) B.reward.vang = Math.round(B.reward.vang * (1 + B.goldPct));
     S.ngoc += B.reward.ngoc; S.vang += B.reward.vang;
     if (!B.st.pb) S.cleared[B.st.id] = Math.max(S.cleared[B.st.id] || 0, B.stars);
     const dropP = B.st.pb ? 0 : B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
@@ -1755,7 +1760,7 @@ function drawUnit(u) {
   if (u.side === 'h' && u.dead && hasSkel(u.id)) alpha = Math.max(0.35, 1 - (u.deathT || 0) * 0.8);
   if (u.side === 'e' && u.trait && !u.dead) {
     if (u.under) { ctx.save(); ctx.fillStyle = '#6a4a28'; ctx.beginPath(); ctx.ellipse(0, 0, 26, 9, 0, Math.PI, TAU); ctx.fill(); ctx.fillStyle = '#8a6a40'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(-14 + i * 9, -4 - Math.abs(Math.sin(u.t * 9 + i)) * 5, 3, 0, TAU); ctx.fill(); } ctx.restore(); ctx.restore(); return; }
-    if (u.flyH) { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 2, 26, 8, 0, 0, TAU); ctx.fill(); ctx.restore(); ctx.translate(0, -u.flyH + Math.sin(u.t * 4) * 5);
+    if (u.flyH) { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 2, 26, 8, 0, 0, TAU); ctx.fill(); ctx.restore(); ctx.translate(0, -u.flyH * (u.d.wings ? 1.3 : 1) + Math.sin(u.t * 4) * 5);
       if (Math.random() < 0.3) B.parts.push({ x: u.x - u.f * 30, y: u.y - u.flyH + 6, vx: -u.f * 30, vy: 0, life: 0.4, max: 0.4, color: u.d.flyTint ? '#ffb070' : '#fff6e0', size: 4 }); }
     if (u.hidden && !(u.revealT > 0)) alpha *= 0.14 + 0.06 * Math.sin(u.t * 10);
     if (u.trait === 'shield') { ctx.save(); ctx.translate(-22 * sizeOf(u), -30 * sizeOf(u)); ctx.globalAlpha = 0.8; ctx.fillStyle = '#c8d8f0'; ctx.strokeStyle = '#5a6a8a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, 9, 26, 0, 0, TAU); ctx.fill(); ctx.stroke();
@@ -1763,7 +1768,7 @@ function drawUnit(u) {
   }
   const img = SPR[u.id];
   if (u.side === 'e' && drawEnemyPose(u, alpha)) {   // quái vẽ bằng tư thế
-    if (u.flyH && !u.dead) { const cl = ucImg('cloud'); if (cl) { const cw = 110 * sizeOf(u), ch = cw * cl.height / cl.width; ctx.save(); ctx.globalAlpha *= alpha; if (u.d.flyTint) ctx.filter = u.d.flyTint; ctx.drawImage(cl, -cw / 2, -ch * 0.62, cw, ch); ctx.restore(); } }   // mây che chân
+    if (u.flyH && !u.dead && !u.d.wings) { const cl = ucImg('cloud'); if (cl) { const cw = 110 * sizeOf(u), ch = cw * cl.height / cl.width; ctx.save(); ctx.globalAlpha *= alpha; if (u.d.flyTint) ctx.filter = u.d.flyTint; ctx.drawImage(cl, -cw / 2, -ch * 0.62, cw, ch); ctx.restore(); } }   // mây che chân
   }
   else if (img) drawSprite(u, img, alpha);
   else Art.draw(ctx, u.look, { t: u.t, f: u.f, walk: u.walk && !u.dead, atk: u.dead ? -1 : u.atkAnim, cast: u.castT > 0, hurt: u.hurt, scale: s, alpha });
@@ -3464,6 +3469,32 @@ function showPB(t) {
         <button class="btn ${open && left > 0 ? 'gold' : ''}" data-pbd="${d}" ${open && left > 0 ? '' : 'disabled'}>Khiêu chiến</button></div>`; }).join('')}</div></div>`;
   $('#bBack').onclick = () => showPB(); ui.querySelectorAll('[data-pbd]').forEach(b => b.onclick = () => enterStage(pbStage(t, +b.dataset.pbd)));
 }
+
+// ---- PHÁP BẢO: kho + 3 ô trang bị cho cả đội
+function fbGive(id) { S.fabao = S.fabao || {}; if (S.fabao[id]) { S.fabao[id].lv = Math.min(FB_MAX, S.fabao[id].lv + 1); return 'up'; } S.fabao[id] = { lv: 1 }; return 'new'; }
+function fbRandom() { const all = Object.keys(FABAO), not = all.filter(k => !(S.fabao || {})[k]); return pick(not.length ? not : all); }
+function fbMods() { const o = {}; for (const id of (S.fbSlots || [])) { const f = FABAO[id], r = (S.fabao || {})[id]; if (!f || !r) continue; o[f.k] = (o[f.k] || 0) + fbVal(f, r.lv); if (f.k2) o[f.k2] = (o[f.k2] || 0) + fbVal({ v: f.v2 }, r.lv); } return o; }
+function fbTxt(f, lv) { const p = x => '+' + (x * 100).toFixed(1).replace('.0', '') + '%'; return `${f.d} ${p(fbVal(f, lv))}${f.k2 ? ' · ' + ({ kc: 'Giảm ST nhận', healPct: 'Hồi máu' }[f.k2] || f.k2) + ' ' + p(fbVal({ v: f.v2 }, lv)) : ''}`; }
+function showFabao(sel) {
+  S.fabao = S.fabao || {}; S.fbSlots = (S.fbSlots || []).filter(id => S.fabao[id]);
+  const own = Object.keys(FABAO).filter(k => S.fabao[k]), cur = sel || own[0];
+  const f = cur && FABAO[cur], r = cur && S.fabao[cur], q = r && fbQ(r.lv), cost = r && r.lv < FB_MAX ? FB_COST[r.lv - 1] : 0, on = cur && S.fbSlots.includes(cur);
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Pháp Bảo')}
+    <div class="fb-slots">${Array.from({ length: FB_SLOTS }, (_, i) => { const id = S.fbSlots[i], ff = id && FABAO[id];
+      return `<button class="fb-slot ${id ? 'on' : ''}" data-fs="${id || ''}">${ff ? `<img src="art/ui/${id}.webp" alt=""><b>${esc(ff.n)}</b><small>Cấp ${S.fabao[id].lv}</small>` : '<i>+</i><small>Ô trống</small>'}</button>`; }).join('')}
+      <p class="hint">3 pháp bảo đang trang bị cộng chỉ số cho <b>cả đội</b> trong mọi trận.</p></div>
+    <div class="fb-main"><div class="fb-grid">${Object.keys(FABAO).map(k => { const rr = S.fabao[k];
+        return `<button class="fb-it ${rr ? '' : 'locked'} ${k === cur ? 'sel' : ''} ${(S.fbSlots || []).includes(k) ? 'eq' : ''}" data-fb="${k}" style="--qc:${rr ? fbQ(rr.lv)[1] : '#888'}"><img src="art/ui/${k}.webp" alt="">${rr ? `<span>${rr.lv}</span>` : ''}</button>`; }).join('')}</div>
+      <div class="fb-info">${f && r ? `<img src="art/ui/${cur}.webp" alt=""><h3 style="color:${q[1]}">${esc(f.n)}</h3><small>Phẩm ${q[0]} · Cấp ${r.lv}/${FB_MAX}</small>
+        <p class="fb-eff">${fbTxt(f, r.lv)}</p>${r.lv < FB_MAX ? `<p class="fb-next">Cấp sau: ${fbTxt(f, r.lv + 1)}</p>` : '<p class="fb-next">Đã đạt cấp tối đa</p>'}
+        <div class="hu-btns"><button class="btn gold" id="fbUp" ${r.lv >= FB_MAX ? 'disabled' : ''}>Nâng phẩm ${icon('vang')}${fmt(cost)}</button><button class="btn" id="fbEq">${on ? 'Tháo' : 'Trang bị'}</button></div>`
+        : `<p class="hint">Chưa có pháp bảo. Nhận khi <b>qua boss chương lần đầu</b>, hoặc rơi ở <b>Thần Binh Khố</b> độ Khó / Ác Mộng.</p>`}</div></div></div>`;
+  $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => S.fabao[b.dataset.fb] ? showFabao(b.dataset.fb) : toast('Chưa sở hữu pháp bảo này'));
+  ui.querySelectorAll('[data-fs]').forEach(b => b.onclick = () => b.dataset.fs && showFabao(b.dataset.fs));
+  if ($('#fbUp')) $('#fbUp').onclick = () => { if (S.vang < cost) { toast('Không đủ vàng'); return; } S.vang -= cost; r.lv++; save(); showFabao(cur); };
+  if ($('#fbEq')) $('#fbEq').onclick = () => { if (on) S.fbSlots = S.fbSlots.filter(x => x !== cur); else { if (S.fbSlots.length >= FB_SLOTS) { toast('Đã đủ 3 ô, tháo bớt trước'); return; } S.fbSlots.push(cur); } save(); showFabao(cur); };
+}
 function showTrials() {
   const t = S.tower || 0, N = nanState(), rd = 3 - raidToday().n;
   const card = (id, ic, fb, bg, title, sub, note) => `<button class="tr-card" id="${id}" style="--bg:url('art/bg/${bg}.webp')"><span class="tr-ic">${IC2(ic, fb)}</span><b>${title}</b><small>${sub}</small>${note ? `<em>${note}</em>` : ''}</button>`;
@@ -3498,6 +3529,7 @@ function showHome() {
       <button class="hm-ic" id="hQuest"><img src="art/ui/ic_quest.webp" onerror="this.onerror=null;this.src='art/ui/ic_quest.webp'" alt="">${qDot ? '<i class="dot"></i>' : ''}<span>Nhiệm Vụ</span></button>
       <button class="hm-ic" id="hEv"><img src="art/ui/ic_event.webp" onerror="this.onerror=null;this.src='art/ui/ic_gift.webp'" alt="">${monthState().last !== dayKey() ? '<i class="dot"></i>' : ''}<span>Sự Kiện</span></button>
       ${giftLeft ? `<button class="hm-ic" id="hGift"><img src="art/ui/ic_gift.webp" onerror="this.onerror=null;this.src='art/ui/ic_gift.webp'" alt="">${giftDot ? '<i class="dot"></i>' : ''}<span>Tân Thủ</span></button>` : ''}
+      <button class="hm-ic" id="hFb"><img src="art/ui/fb_holo.webp" onerror="this.onerror=null;this.src='art/ui/ic_chest.webp'" alt=""><span>Pháp Bảo</span></button>
       <button class="hm-ic" id="hBt"><img src="art/ui/ic_tangkinh.webp" onerror="this.onerror=null;this.src='art/ui/ic_book.webp'" alt=""><span>Tàng Kinh</span></button>
     </div>
     <div class="hm-right">
@@ -3516,7 +3548,7 @@ function showHome() {
   const ah = $('#a2hs'); if (ah) ah.onclick = () => { S.a2hs = 1; save(); ah.remove(); };
   $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = showQuests; $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
-  if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hProf').onclick = showSettings;
+  if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hFb').onclick = () => showFabao(); $('#hProf').onclick = showSettings;
 }
 function topBar(title) {
   return `<div class="topbar-menu"><button class="btn small back" id="bBack">‹ Về</button><h2>${title}</h2>${resBar()}</div>`;
@@ -3928,6 +3960,7 @@ function showResult() {
     })()}
     ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
     <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.univ ? `<span>${icon('univ')}+${B.reward.univ}</span>` : ''}${B.reward.items && B.reward.items.length > 1 ? `<span>+${B.reward.items.length} trang bị</span>` : ''}${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
+    ${B.fbRew ? `<div class="res-hero"><img src="art/ui/${B.fbRew.id}.webp" alt="" style="height:64px"><div><small>Pháp bảo</small><b>${esc(FABAO[B.fbRew.id].n)}</b><em>${B.fbRew.r === 'new' ? 'Nhận mới!' : 'Trùng → +1 cấp'}</em></div></div>` : ''}
     ${B.chRew ? `<div class="res-hero"><img src="${fullImg(B.chRew.id, 160)}" alt=""><div><small>Thưởng qua chương</small><b>${esc(HEROES[B.chRew.id].name)}</b> ${rarTag(HEROES[B.chRew.id].rar)}${B.chRew.dup ? '<em>Đã có → +mảnh</em>' : '<em>Gia nhập đội!</em>'}</div></div>` : ''}
     <div class="res-btns">
       <button class="btn" id="rHome">Về sảnh</button>
@@ -4453,6 +4486,7 @@ function route() {
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();
   else if (k === 'trials') showTrials();
+  else if (k === 'fabao') { if (v === 'all') for (const k2 in FABAO) fbGive(k2); showFabao(); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); showHeroDetail(v || 'ngokhong'); }
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }

@@ -841,3 +841,31 @@ const starMul = (rar, st) => (STAR_MUL_R[rar] || STAR_MUL)[Math.max(0, Math.min(
 
 // KINH TẾ (rà soát 2026-11-22, đường cong kiểu VLĐMT): chi phí lên cấp tăng dốc
 const lvCostOf = lv => Math.round(120 * lv + 18 * lv * lv);
+
+// ===== PHÁP BẢO (giá nâng phẩm theo fabaonewupqualityconfig của VLĐMT ÷10) =====
+const FABAO = {
+  fb_cankhon: { n: 'Càn Khôn Đại', k: 'hpPct', v: 0.06, d: 'Máu cả đội' },
+  fb_holo: { n: 'Tử Kim Hồng Hồ Lô', k: 'skillPct', v: 0.08, d: 'Sát thương chiêu thức' },
+  fb_amduong: { n: 'Âm Dương Kính', k: 'crit', v: 0.04, d: 'Bạo kích cả đội' },
+  fb_honthien: { n: 'Hỗn Thiên Lăng', k: 'aspdPct', v: 0.05, d: 'Tốc đánh cả đội' },
+  fb_phienthien: { n: 'Phiên Thiên Ấn', k: 'atkPct', v: 0.06, d: 'Công cả đội' },
+  fb_tubao: { n: 'Tụ Bảo Bồn', k: 'goldPct', v: 0.10, d: 'Vàng nhận sau trận' },
+  fb_kimtien: { n: 'Lạc Bảo Kim Tiền', k: 'dmgPct', v: 0.05, d: 'Sát thương cuối' },
+  fb_haihoang: { n: 'Hạnh Hoàng Kỳ', k: 'kc', v: 0.04, d: 'Giảm sát thương nhận' },
+  fb_thatbao: { n: 'Thất Bảo Diệu Thụ', k: 'mpRegen', v: 0.08, d: 'Hồi nội công' },
+  fb_nhuy: { n: 'Ngọc Như Ý', k: 'healPct', v: 0.08, d: 'Hiệu quả hồi máu' },
+  fb_dinhphong: { n: 'Định Phong Châu', k: 'aspdPct', v: 0.04, d: 'Tốc đánh cả đội', k2: 'kc', v2: 0.02 },
+  fb_tinhbinh: { n: 'Dương Chi Tịnh Bình', k: 'hpPct', v: 0.04, d: 'Máu cả đội', k2: 'healPct', v2: 0.05 },
+};
+const FB_MAX = 12, FB_SLOTS = 3;
+const FB_COST = [3000, 4000, 5000, 6000, 7000, 9000, 11000, 13000, 15000, 17000, 21000];   // vàng để lên cấp 2…12
+const FB_Q = [['Lam', '#4f8cff'], ['Tử', '#9a5cff'], ['Kim', '#f2a218'], ['Hồng', '#e8473c']];   // phẩm theo cấp: 1-3 Lam, 4-6 Tử, 7-9 Kim, 10-12 Hồng
+const fbQ = lv => FB_Q[Math.min(3, Math.floor((lv - 1) / 3))];
+const fbVal = (f, lv) => f.v * (1 + 0.25 * (lv - 1));   // mỗi cấp +25% hiệu quả gốc → cấp 12 ×3.75
+// QUÁI CÓ CÁNH (bay thật, vỗ cánh): Kim Sí Điểu (tinh anh chương 8 Sư Đà/Ngũ Hành, chương 12), Độc Bức (dơi yêu chương 6, 10)
+ENEMIES.kimsidieu = { name: 'Kim Sí Điểu', hp: 2400, atk: 70, def: 60, aspd: 0.85, range: 46, move: 115, el: 'kim', elite: true, trait: 'fly', wings: true, look: { ...ENEMIES.philiem.look, size: 1.05 } };
+ENEMIES.docbuc = { name: 'Độc Bức', hp: 230, atk: 26, def: 14, aspd: 1.1, range: 34, move: 120, el: 'thuy', trait: 'fly', wings: true, look: { ...ENEMIES.oanhon.look, size: 0.8 } };
+(function addWinged() {
+  const add = (chId, type, n, from) => { for (const st of STAGES) if (CHAPTERS[st.chap].id === chId) st.waves.forEach((w, i) => { if (i >= from && i % 4 === 1 && !w.boss) w.list.push([type, n]); }); };
+  add(6, 'docbuc', 2, 2); add(10, 'docbuc', 3, 2); add(8, 'kimsidieu', 1, 5); add(12, 'kimsidieu', 1, 4);
+})();
