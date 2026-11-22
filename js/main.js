@@ -2873,12 +2873,15 @@ const SSR_FX = {
 };
 const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low'; }
-function drawSsrAura(u, h) {   // hào quang sau lưng: xoay chậm, đập nhịp, sáng hơn khi đầy nộ
+function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
   const im = sfImg('aura_' + u.id); if (!im) return; const full = u.mp >= 100 ? 1 : 0;
-  const S_ = h * (1.35 + 0.05 * Math.sin(u.t * 3)) * (1 + 0.15 * full);
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.42 + 0.12 * Math.sin(u.t * 2.2) + 0.25 * full;
-  ctx.translate(0, -h * 0.5); ctx.rotate(u.t * 0.35); ctx.drawImage(im, -S_ / 2, -S_ / 2, S_, S_); ctx.restore();
-  if (Math.random() < 0.05 + 0.1 * full) ssrPart(u.id, u.x + rand(-30, 30), u.y - h * rand(0.2, 0.9), rand(-20, 20), -rand(20, 60), 0.9);
+  const T = window.AURA_C0 && AURA_C0[u.id], tc = T && (T[u.pzN] || T.idle1); if (!tc) return;
+  u.auC = u.auC || tc.slice(); u.auC[0] += (tc[0] - u.auC[0]) * 0.25; u.auC[1] += (tc[1] - u.auC[1]) * 0.25;   // trượt mượt theo dáng
+  const hh = h * (HFIX[u.id] || 1), cx = u.auC[0] * hh * u.f * (FACE[u.id] || 1), cy = -u.auC[1] * hh;
+  const S_ = hh * (1.25 + 0.04 * Math.sin(u.t * 3)) * (1 + 0.12 * full);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45 + 0.1 * Math.sin(u.t * 2.2) + 0.25 * full;
+  ctx.drawImage(im, cx - S_ / 2, cy - S_ / 2, S_, S_); ctx.restore();
+  if (Math.random() < 0.05 + 0.1 * full) ssrPart(u.id, u.x + cx + rand(-30, 30), u.y + cy + rand(-40, 40), rand(-20, 20), -rand(20, 60), 0.9);
 }
 function ssrPart(id, x, y, vx, vy, life) { const F = SSR_FX[id]; if (!F || !B) return; B.parts.push({ x, y, vx, vy, life, max: life, color: F.col, size: 9 + Math.random() * 6, img: F.pt[0], rot: Math.random() * 6, vr: rand(-4, 4), nograv: 1 }); }
 function drawSsrProj(p) {   // đạn vẽ tay + quầng sáng (bloom giả bằng gradient cộng sáng)
