@@ -126,6 +126,7 @@ const POSE_NAMES = ['windup', 'strike', 'skill', 'ult', 'idle1', 'idle2', 'hit']
 const POSE_IDS = ['bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
 const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tướng, chỉ nạp khi tướng ra trận (tiết kiệm ~30 MB lúc khởi động)
 function ensureHeroAssets(ids) {
+  try { for (const c of COMBOS) if (ids.includes(c.a) && ids.includes(c.b)) cxArt(c.a + '+' + c.b); } catch (e) {}   // tranh mở màn hợp kích
   return Promise.all([...new Set(ids)].map(id => {
     if (_heroLoaded[id]) return _heroLoaded[id];
     try { if (sceneUnlocked(id) || SRX[id]) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ datky: ['fx_ninetails'], quanam: ['fx_halo'], tieubachlong: ['fx_waterpillar'] }[id] || []).forEach(scImg); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'], nata: ['firewheel'] }[id] || []).forEach(ucImg); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
@@ -212,7 +213,8 @@ function fullImg(id, size) {
 function heroStats(id) {
   const h = HEROES[id], o = S.owned[id] || newRec();
   const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star), bt = btBonus(h.role);
-  return { hp: h.hp * m * bt.hp, atk: h.atk * m * bt.atk, def: h.def * m * bt.def, aspd: h.aspd };
+  const aw = h.rar === 'R' && o.star >= 5 ? 1.15 : 1;   // tướng R thức tỉnh
+  return { hp: h.hp * m * bt.hp * aw, atk: h.atk * m * bt.atk * aw, def: h.def * m * bt.def * aw, aspd: h.aspd * (aw > 1 ? 1.1 : 1) };
 }
 function power(id) { const s = heroStats(id); return Math.round(s.hp * 0.25 + s.atk * 4 + s.def * 2); }
 function bondLv(b) {   // cấp duyên phận 0–10: mỗi sao trên 1 sao và mỗi 10 cấp của thành viên +1 (VLĐMT herofetterconfig)
@@ -2588,13 +2590,21 @@ function updateComboBtn() {
   if (!btn) { btn = document.createElement('button'); btn.id = 'cxBtn'; btn.className = 'cx-btn'; bar.appendChild(btn); btn.onclick = () => { const k = btn.dataset.k, cc = comboList().find(x => x.name === k); if (cc) castCombo(cc); }; }
   if (btn.dataset.k !== c.name) { btn.dataset.k = c.name; btn.innerHTML = `<span class="cx-faces"><img src="${porB(c.a, 64)}"><img src="${porB(c.b, 64)}"></span><b>HỢP KÍCH</b><small>${esc(c.name)}</small>`; }
 }
+const CXA = {}; function cxArt(key) { let i = CXA[key]; if (!i) { i = CXA[key] = new Image(); i.src = 'art/combo/' + key + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 const CXI = {}; function cxPor(id) { let i = CXI[id]; if (!i) { i = CXI[id] = new Image(); i.src = (ULTX[id] && ULTX[id].cut) ? 'art/ultx/' + ULTX[id].cut + '.webp' : porB(id, 256); } return i.complete && i.naturalWidth ? i : null; }
 function drawCX(f) {
   const X = CX[f.key];
   if (f.t < 0) {   // cut-in đôi: hai tướng trượt vào từ hai phía, tên hợp kích ở giữa
     const q = 1 + f.t / 0.95, a = q < 0.15 ? q / 0.15 : q > 0.85 ? (1 - q) / 0.15 : 1, s = ease3(Math.min(1, q * 3));
     ctx.save(); ctx.globalAlpha = a * 0.7; ctx.fillStyle = '#0a0614'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.globalAlpha = a;
-    const band = H * 0.56, y0 = H / 2 - band / 2;
+    const band = H * 0.56, y0 = H / 2 - band / 2, art = cxArt(f.key);
+    if (art) {   // tranh vẽ tay cả cặp: trượt chéo vào, zoom chậm, viền vàng
+      const bh = H * 0.72, by = H / 2 - bh / 2, sc = 1.04 + 0.06 * q, iw = W * sc, ih = iw * art.height / art.width, sl = (1 - s) * W * 0.35;
+      ctx.save(); ctx.beginPath(); ctx.moveTo(sl + 40, by); ctx.lineTo(W + sl, by); ctx.lineTo(W + sl - 40, by + bh); ctx.lineTo(sl, by + bh); ctx.closePath(); ctx.clip();
+      ctx.drawImage(art, W / 2 - iw / 2 + sl, H / 2 - ih / 2, iw, ih); ctx.restore();
+      ctx.strokeStyle = '#ffd34d'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(sl + 40, by); ctx.lineTo(W + sl, by); ctx.moveTo(sl, by + bh); ctx.lineTo(W + sl - 40, by + bh); ctx.stroke();
+      ctx.restore(); return;
+    }
     ctx.fillStyle = 'rgba(255,200,80,0.18)'; ctx.fillRect(0, y0, W, band);
     for (const [id, side] of [[f.c.a, -1], [f.c.b, 1]]) { const im = cxPor(id); if (!im) continue; const h = band * 1.05, w = h * im.width / im.height, cx = W / 2 + side * (W * 0.24 + (1 - s) * W * 0.5);
       ctx.save(); ctx.beginPath(); ctx.rect(side < 0 ? 0 : W / 2, y0, W / 2, band); ctx.clip(); ctx.translate(cx, H / 2); if (side > 0) ctx.scale(-1, 1); ctx.drawImage(im, -w / 2, -h / 2, w, h); ctx.restore(); }
@@ -2727,6 +2737,23 @@ const CX = {
     if (p > 0.5) { const q = fadeIO((p - 0.5) / 0.5, 0.2, 0.85); ucObj('furnace', cx, fy, 170 * q, Math.sin(p * 40) * 0.03, q, '#9fffd0', 0.7);
       if (p < 0.72) { const gx = f.b.x + 90, gy = f.b.y - 40; if (Math.random() < 0.7) B.parts.push({ x: gx, y: gy, vx: (cx - gx) * 2.4, vy: (fy - gy) * 2.4, life: 0.4, max: 0.4, color: '#e0b0ff', size: 6 }); }
       if (p > 0.78) for (const h of al) if (Math.random() < 0.2) B.parts.push({ x: cx, y: fy, vx: (h.x - cx) * 2.2, vy: (h.y - 60 - fy) * 2.2, life: 0.45, max: 0.45, color: '#ffe58a', size: 7 }); }
+  } },
+  // Hô Phong Hoán Vũ: mây giông kéo ngang trời, hai gương Điện Mẫu phóng sét xuống từng quái, mưa hồi máu rơi trên đội
+  'dienmau+longvuong': { dur: 3.0, hits: [0.45, 0.62, 0.8, 0.93], need: ['rain_cloud', 'thunder_mirror'], draw(f, p) {
+    const q = fadeIO(p, 0.15, 0.88), cxp = W * 0.15 + (VIEW_R() - W * 0.15) * Math.min(1, p * 1.6);
+    for (let k = 0; k < 3; k++) ucObj('rain_cloud', cxp - k * 260, 95 + (k % 2) * 25, 360, 0, q * (1 - k * 0.2), '#9ab0ff', 0.4);
+    ctx.save(); ctx.globalAlpha = 0.5 * q; ctx.strokeStyle = '#9fd8ff'; ctx.lineWidth = 2;
+    for (let i = 0; i < 70; i++) { const x = ((i * 97 + p * 900) % (cxp + 60)), y = ((i * 53 + p * 1400) % (H - 120)) + 120; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 22); ctx.stroke(); } ctx.restore();
+    cxL(f, 'm', 'a', p, 0.3, 1, T('bolt', { obj: 'thunder_mirror', col: '#d0a0ff' }));
+    if (p > 0.6) for (const h of alliesAlive()) if (Math.random() < 0.15) B.parts.push({ x: h.x + (Math.random() - 0.5) * 40, y: h.y - 90, vx: 0, vy: 160, life: 0.5, max: 0.5, color: '#9fffe0', size: 5 });
+  } },
+  // Địa Mạch Trường Sinh: tay áo Càn Khôn mở ra hút quái, địa mạch nứt dâng nén vàng lên dưới chân từng đồng đội
+  'tranguyentu+thodia': { dur: 3.0, hits: [0.4, 0.58, 0.85], need: ['big_sleeve', 'gold_ingot'], draw(f, p) {
+    cxL(f, 's', 'a', p, 0, 0.7, T('suck', { obj: 'big_sleeve', col: '#e8c080', size: 240 }));
+    if (p > 0.55) { const q = fadeIO((p - 0.55) / 0.45, 0.2, 0.85);
+      for (const [j, h] of alliesAlive().entries()) { const r = Math.min(1, (p - 0.55 - j * 0.03) / 0.2); if (r <= 0) continue;
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * q; ctx.strokeStyle = '#ffd890'; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(h.x, h.y + 4, 40 * r, 14 * r, 0, 0, TAU); ctx.stroke(); ctx.restore();
+        ucObj('gold_ingot', h.x, h.y - 40 - 70 * ease3(r), 70, Math.sin(p * 10 + j) * 0.15, q, '#ffe58a', 0.6); } }
   } },
   // Nguyệt Tinh Dao Trì: trăng tròn lên trên đội, mưa sao nhẹ rơi xuống từng đồng đội, hồi máu và hồi nội công
   'hangnga+thaibachkimtinh': { dur: 2.8, hits: [0.4, 0.7], need: ['moon', 'rabbit', 'star'], draw(f, p) {
@@ -3540,7 +3567,7 @@ function showFabao(sel) {
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-fb]').forEach(b => b.onclick = () => S.fabao[b.dataset.fb] ? showFabao(b.dataset.fb) : toast('Chưa sở hữu pháp bảo này'));
   ui.querySelectorAll('[data-fs]').forEach(b => b.onclick = () => b.dataset.fs && showFabao(b.dataset.fs));
-  if ($('#fbUp')) $('#fbUp').onclick = () => { if (S.vang < cost) { toast('Không đủ vàng'); return; } S.vang -= cost; r.lv++; save(); showFabao(cur); };
+  if ($('#fbUp')) $('#fbUp').onclick = () => { if (S.vang < cost) { toast('Không đủ vàng'); return; } S.vang -= cost; r.lv++; snd('magic'); save(); showFabao(cur); };
   if ($('#fbEq')) $('#fbEq').onclick = () => { if (on) S.fbSlots = S.fbSlots.filter(x => x !== cur); else { if (S.fbSlots.length >= FB_SLOTS) { toast('Đã đủ 3 ô, tháo bớt trước'); return; } S.fbSlots.push(cur); } save(); showFabao(cur); };
 }
 function showTrials() {
@@ -3604,7 +3631,7 @@ function topBar(title) {
 
 let curChap = -1;
 
-function giveRew(r) { for (const k in r) S[k] = (S[k] || 0) + r[k]; save(); }
+function giveRew(r) { for (const k in r) S[k] = (S[k] || 0) + r[k]; snd('gong'); save(); }
 function chapStars(c) { return STAGES.filter(st => st.chap === c).reduce((s, st) => s + (S.cleared[st.id] || 0), 0); }
 function chBoxHTML(c) {
   const got = (S.chBox || {})[c] || [], s = chapStars(c);
@@ -3752,6 +3779,7 @@ function showHeroDetail(id, tab) {
           <button class="btn" id="bLv5" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
         <div class="hu-row"><div><b>Sao ${starsHTML(o.star, 5)}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
           <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= 5 ? 'disabled' : ''}>Tăng sao</button>${o.star >= 5 && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh</button>` : ''}</div></div>
+        ${h.rar === 'R' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã thức tỉnh: +15% máu, công, thủ, +10% tốc đánh' : 'Đạt 5 sao: +15% máu, công, thủ, +10% tốc đánh'}</small></div></div>` : ''}
         ${h.rar === 'SR' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã mở cảnh tuyệt kỹ toàn màn hình' : 'Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR'}</small></div></div>` : ''}
         <div class="hu-row"><div><b>Truyện Ký</b><small>${(o.lore || []).length}/3 chương đã nhận thưởng</small></div><div class="hu-btns"><button class="btn" id="bLore">Đọc</button></div></div></div>` : '<p class="hint">Chưa sở hữu, nhận qua Chiêu Mộ hoặc qua chương.</p>',
     eq: o ? `<div class="hd-eq">${Object.keys(EQ_SLOT).map(sl => { const it = (S.items || []).find(x => x.id === (o.eq || {})[sl]), pl = (o.eqLv || {})[sl] || 0;
@@ -3776,15 +3804,16 @@ function showHeroDetail(id, tab) {
   if ($('#hdNext')) $('#hdNext').onclick = () => ix >= 0 && ix < list.length - 1 && showHeroDetail(list[ix + 1]);
   if (!o) return;
   const q = s => $(s);
-  if (q('#bLv')) q('#bLv').onclick = () => { if (S.vang < lvCost) { toast('Không đủ vàng'); return; } S.vang -= lvCost; o.lv++; qAdd('lv'); save(); showHeroDetail(id); };
-  if (q('#bLv5')) q('#bLv5').onclick = () => { let n = 0; while (o.lv < MAX_LV && S.vang >= lvCostOf(o.lv)) { S.vang -= lvCostOf(o.lv); o.lv++; n++; qAdd('lv'); } save(); toast(n ? `Đã nâng ${n} cấp` : 'Không đủ vàng'); showHeroDetail(id); };
+  if (q('#bLv')) q('#bLv').onclick = () => { if (S.vang < lvCost) { toast('Không đủ vàng'); return; } S.vang -= lvCost; o.lv++; qAdd('lv'); snd('pickup'); save(); showHeroDetail(id); };
+  if (q('#bLv5')) q('#bLv5').onclick = () => { let n = 0; while (o.lv < MAX_LV && S.vang >= lvCostOf(o.lv)) { S.vang -= lvCostOf(o.lv); o.lv++; n++; qAdd('lv'); } if (n) snd('magic'); save(); toast(n ? `Đã nâng ${n} cấp` : 'Không đủ vàng'); showHeroDetail(id); };
   if (q('#bEq')) q('#bEq').onclick = () => showEquip(id);
   if (q('#bLore')) q('#bLore').onclick = () => showLore(id);
   if (q('#bDis')) q('#bDis').onclick = () => { S.univ += o.shard; toast('Phân giải ' + o.shard + ' mảnh'); o.shard = 0; save(); showHeroDetail(id); };
   if (q('#bStar')) q('#bStar').onclick = () => {
     if (o.shard + S.univ < starNeed) { toast('Chưa đủ mảnh'); return; }
     const useOwn = Math.min(o.shard, starNeed); o.shard -= useOwn; S.univ -= starNeed - useOwn; o.star++; save(); showHeroDetail(id);
-    if (o.star >= 5 && h.rar === 'SR') toast('✦ THỨC TỈNH! ' + h.name + ' mở khoá cảnh tuyệt kỹ toàn màn hình');
+    snd('gong'); if (o.star >= 5 && h.rar === 'SR') toast('✦ THỨC TỈNH! ' + h.name + ' mở khoá cảnh tuyệt kỹ toàn màn hình');
+    if (o.star >= 5 && h.rar === 'R') toast('✦ THỨC TỈNH! ' + h.name + ' +15% chỉ số');
   };
 }
 
@@ -4008,7 +4037,7 @@ function showResult() {
     })()}
     ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
     <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.univ ? `<span>${icon('univ')}+${B.reward.univ}</span>` : ''}${B.reward.items && B.reward.items.length > 1 ? `<span>+${B.reward.items.length} trang bị</span>` : ''}${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
-    ${B.fbRew ? `<div class="res-hero"><img src="art/ui/${B.fbRew.id}.webp" alt="" style="height:64px"><div><small>Pháp bảo</small><b>${esc(FABAO[B.fbRew.id].n)}</b><em>${B.fbRew.r === 'new' ? 'Nhận mới!' : 'Trùng → +1 cấp'}</em></div></div>` : ''}
+    ${B.fbRew ? (setTimeout(() => snd('gong'), 400), '') : ''}${B.fbRew ? `<div class="res-hero"><img src="art/ui/${B.fbRew.id}.webp" alt="" style="height:64px"><div><small>Pháp bảo</small><b>${esc(FABAO[B.fbRew.id].n)}</b><em>${B.fbRew.r === 'new' ? 'Nhận mới!' : 'Trùng → +1 cấp'}</em></div></div>` : ''}
     ${B.chRew ? `<div class="res-hero"><img src="${fullImg(B.chRew.id, 160)}" alt=""><div><small>Thưởng qua chương</small><b>${esc(HEROES[B.chRew.id].name)}</b> ${rarTag(HEROES[B.chRew.id].rar)}${B.chRew.dup ? '<em>Đã có → +mảnh</em>' : '<em>Gia nhập đội!</em>'}</div></div>` : ''}
     <div class="res-btns">
       <button class="btn" id="rHome">Về sảnh</button>
@@ -4108,7 +4137,7 @@ function showQuests(tab) {   // Nhiệm vụ: tab Ngày / Tuần, nút "Nhận t
     <div class="hint">${QTAB === 'day' ? 'Làm mới mỗi ngày.' : 'Làm mới mỗi tuần (thứ Hai).'}</div></div>`;
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-qt]').forEach(b => b.onclick = () => showQuests(b.dataset.qt));
-  const claim = q => { st.c[q.id] = 1; grant(q.rew); };
+  const claim = q => { st.c[q.id] = 1; grant(q.rew); snd('pickup'); };
   ui.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { claim(L.find(x => x.id === b.dataset.q)); save(); showQuests(); });
   $('#qAll').onclick = () => { ready.forEach(r => claim(r.q)); save(); toast('Đã nhận ' + ready.length + ' phần thưởng'); showQuests(); };
 }

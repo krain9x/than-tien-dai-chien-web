@@ -748,7 +748,10 @@ const COMBOS_ALL = [   // hợp kích (kiểu Dual Tech): mỗi tướng tối �
   { a: 'thailaoquan', b: 'kimgiac', name: 'Luyện Ma Hồ Lô', mult: 3.5, execute: 0.3, heal: 3, col: '#9fffd0', desc: 'Hút quái thường dưới 30% máu vào hồ lô, luyện thành đan hồi máu cả đội.' },
   { a: 'hangnga', b: 'thaibachkimtinh', name: 'Nguyệt Tinh Dao Trì', mult: 0, heal: 4, mp: 40, col: '#e0e8ff', desc: 'Trăng sao giáng phúc: hồi máu và +40 nội công cả đội.' },
 ];
-const COMBOS = [];   // TẠM TẮT hợp kích (theo yêu cầu) — bật lại: const COMBOS = COMBOS_ALL;
+COMBOS_ALL.push(
+  { a: 'dienmau', b: 'longvuong', name: 'Hô Phong Hoán Vũ', mult: 4.2, all: 1, stun: 1.2, heal: 2.5, col: '#b8a0ff', desc: 'Mây giông phủ cả sân: sét giáng từng quái (choáng 1,2 giây), mưa hồi máu cả đội.' },
+  { a: 'tranguyentu', b: 'thodia', name: 'Địa Mạch Trường Sinh', mult: 5, r: 260, heal: 3, shield: 0.12, col: '#ffd890', desc: 'Tay áo Càn Khôn thu quái một vùng, địa mạch dâng vàng hồi máu và cho khiên cả đội.' });
+const COMBOS = COMBOS_ALL;   // hợp kích: chỉ hiện nút khi CẢ HAI tướng của cặp cùng trên sân và cùng đầy nộ
 // ĐỘI TRƯỞNG: mỗi tướng làm đội trưởng mang một hiệu ứng riêng (theo hệ, vài tướng có hiệu ứng đặc biệt)
 const CAP_ROLE = {
   the: { n: 'Kiên Thủ', d: 'Cả đội nhận ít hơn 15% sát thương', m: { kc: 0.15 } },
