@@ -720,3 +720,16 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .pick-grid2 .hc2 { align-self: start; }
 .hm-nav5 { grid-template-rows: 100%; overflow: visible; }
 .hm-nav5 button { height: auto; align-self: end; }
+
+/* thanh tiến độ ải */
+.hud-top.hud2 .h2-prog { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 160px; }
+.h2-ptrack { position: relative; height: 14px; border-radius: 8px; background: #1a0a06; border: 2px solid #e0b040; box-shadow: inset 0 2px 4px rgba(0,0,0,.6); }
+.h2-ptrack > i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #ffe58a, #ff9a2e); transition: width .3s linear; }
+.h2-ptrack .pm { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: #3a1a08; border: 2px solid #ffb02e; }
+.h2-ptrack .pm.horde { border-color: #ff6a3a; } .h2-ptrack .pm.boss { width: 26px; height: 26px; font-size: 14px; background: radial-gradient(#ff5a5a, #7a0a10); border-color: #ffd34d; }
+.h2-pcur { position: absolute; top: -5px; width: 4px; height: 20px; margin-left: -2px; background: #fff; border-radius: 2px; box-shadow: 0 0 6px #fff; transition: left .3s linear; }
+.h2-prog em { font-style: normal; font-size: 11px; font-weight: 800; color: #ffe9b0; text-shadow: 0 1px 0 #000; text-align: center; }
+.h2-prog em.warn { color: #ff8a6a; animation: hmPulse .6s infinite; }
+.h2-waves { display: none !important; }
+.hud-top.hud2 .h2-prog { align-items: stretch; justify-content: center; } .h2-ptrack { width: 100%; }
+.h2-ptrack .pm.done { filter: grayscale(1) brightness(.6); }

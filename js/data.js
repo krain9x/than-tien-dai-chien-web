@@ -769,7 +769,7 @@ const capSkill = id => CAP_SPECIAL[id] || CAP_ROLE[(HEROES[id] || {}).role] || C
 
 // KIỂU QUÁI ĐẶC BIỆT (tham khảo VLĐMT) — gắn cho quái có sẵn theo đúng tính chất
 const TRAIT_INFO = {
-  fly: { ico: '🪽', name: 'Bay', desc: 'Bay nhanh qua đầu tướng, lao thẳng vào cổng. Tướng cận chiến không đánh tới.' },
+  fly: { ico: '🪽', name: 'Bay', desc: 'Bay qua đầu hàng trước, lao thẳng vào tướng hàng sau. Tướng cận chiến không đánh tới.' },
   stealth: { ico: '👁', name: 'Tàng hình', desc: 'Ẩn thân, chỉ lộ khi tới gần tướng hoặc trúng chiêu diện rộng.' },
   bomb: { ico: '💥', name: 'Tự nổ', desc: 'Chạy rất nhanh, áp sát thì nổ gây sát thương lớn quanh mình.' },
   heal: { ico: '✚', name: 'Chữa trị', desc: 'Đứng sau hồi máu cho quái xung quanh. Nên diệt trước.' },

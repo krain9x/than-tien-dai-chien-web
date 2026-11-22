@@ -345,7 +345,7 @@ function startBattleNow(si) {
   showHUD();
   { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; B.banner = { text: 'Đội trưởng: ' + cs.n, sub: cs.d, t: 0, small: true }; }
   if (st.hmods) addMods(st.hmods);
-  if (st.gateK) { B.gate.hp *= st.gateK; B.gate.max *= st.gateK; }
+  if (st.hhp) addMods({ hpPct: -(1 - st.hhp) });
   if (st.bookN) for (let i = 0; i < st.bookN; i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1200 + i * 300);
   nextWave();
   { let extra = 0; for (const sy of Object.keys(SYS_NAME)) { const b = btBonus(sy); if (b.all && b.tot >= 15) extra++; }   // Hợp Nhất: thêm Thiên Thư đầu trận
@@ -971,7 +971,7 @@ function runFx(u, f, tgt, kind) {
     }
     case 'heal': {
       const bonus = 1 + ((u.d.passive && u.d.passive.healPct) || 0) + RM(u, 'healPct') + TG(u, 'heal') + (u.role === 'dan' ? coreBonus(u) : 0);
-      if (TG(u, 'gateHeal')) B.gate.hp = Math.min(B.gate.max, B.gate.hp + B.gate.max * TG(u, 'gateHeal'));
+      if (TG(u, 'gateHeal')) { const lo = alliesAlive().sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b))[0]; if (lo) healU(lo, maxHp(lo) * TG(u, 'gateHeal') * 1.5, true); }
       for (const a of alliesAlive()) {
         healAmD(u, a, getAtk(u) * f.mult * bonus);
         if (f.cleanse) { a.stun = 0; a.burn = 0; a.slow = 0; }
@@ -1267,7 +1267,7 @@ function updateHeroes(dt) {
   const gc = (B.mods['dan.gateCore'] || 0) * sysTang('dan');
   if (gc > 0) {
     B.gateT -= dt;
-    if (B.gateT <= 0) { B.gateT = 10; B.gate.hp = Math.min(B.gate.max, B.gate.hp + B.gate.max * gc); floater(60, H * 0.4, '+cổng', '#5dff8f', 14); }
+    if (B.gateT <= 0) { B.gateT = 10; for (const a of alliesAlive()) healU(a, maxHp(a) * gc * 0.5, true); }
   }
   updateField(dt);
   if (M('ad1')) {
@@ -1363,16 +1363,9 @@ function updateEnemies(dt) {
           }
         }
       }
-    } else if (e.x > GATE_X) {
-      moveTo(e, GATE_X - 2, clamp(e.y, LANE_Y0, LANE_Y1), sp * dt);
     } else {
-      e.walk = false;
-      if (e.cdA <= 0) {
-        e.cdA = 1 / getAspd(e); e.atkAnim = 0;
-        B.gate.hp -= getAtk(e) * 0.7 * (e.boss ? 3 : 1);
-        B.gateHurt = 0.15; snd('gate');
-        particles(e.x - 20, e.y - 20, '#d9c6a0', 4, 90, 3);
-      }
+      const hh = nearestHero(e, 5000);
+      if (hh) moveTo(e, hh.x, hh.y, sp * dt); else e.walk = false;
     }
   }
   separate(B.enemies.filter(e => !e.dead), 0);
@@ -1487,7 +1480,7 @@ function coach(key, o) {
 }
 function coachTick() {   // các bước theo thời điểm trong trận đầu
   if (!B || B.over || B.paused || (S.tut && S.tut.all)) return;
-  if (B.time > 1.2) coach('c_gate', { sel: '#hGateBox', title: 'Bảo vệ cổng thành', text: 'Quái kéo tới từ bên phải để phá <b>cổng thành</b>. Cổng hết máu là thua. Diệt hết các đợt quái để thắng.' });
+  if (B.time > 1.2) coach('c_prog', { sel: '#hProg', title: 'Tiến độ ải', text: 'Quái kéo tới <b>đánh thẳng vào tướng</b>. Cả đội ngã là thua. Thanh này cho biết đã qua bao nhiêu đợt: mốc <b>⚔</b> là địch mạnh, <b>👹</b> là quái đông, <b>☠</b> là boss. Diệt hết các đợt để thắng.' });
   if (B.time > 4) { const e = B.enemies.find(x => !x.dead && x.x < VIEW_R() - 40); if (e) coach('c_tap', { world: { x: e.x, y: e.y - 30, r: 55 }, img: 'art/ui/ic_battle.webp', title: 'Chạm để nhắm', text: 'Tướng tự đánh. <b>Chạm vào quái</b> để <b>đội trưởng</b> (có vương miện 👑) tập trung đánh con đó.' }); }
   const rd = document.querySelector('#teamBar .tm.ready'); if (rd) coach('c_ult', { sel: '#teamBar .tm.ready', img: rd.querySelector('img') && rd.querySelector('img').src, title: 'Tung tuyệt kỹ', text: 'Thẻ tướng <b>bốc lửa</b> là đã đầy nộ. <b>Chạm thẻ</b> (hoặc phím 1–5) để tung tuyệt kỹ.' });
   if (B.time > 40) coach('c_tools', { sel: '#bAuto', title: 'Tự động và Hiệu ứng', text: 'Bật <b>Tự động</b> để máy tự tung tuyệt kỹ. Bấm nút <b>★ Hiệu ứng</b> bên cạnh để xem mọi buff đội đang có.' });
@@ -1542,26 +1535,24 @@ function update(dt) {
   }
   if (B.nextT != null && B.time >= B.nextT && !B.over) nextWave();
   if (B.st.raid && !B.over && B.time >= B.st.raid) endBattle(true, 'Hết giờ');
-  if (B.gate.hp <= 0) { B.gate.hp = 0; if (!offerRevive('gate')) endBattle(false, 'Cổng thành đã vỡ'); }
-  else if (!B.heroes.some(h => !h.dead && !h.clone)) { if (!offerRevive('team')) endBattle(false, 'Cả đội đã trọng thương'); }
+  if (!B.heroes.some(h => !h.dead && !h.clone)) { if (!offerRevive('team')) endBattle(false, 'Cả đội đã trọng thương'); }
 }
 
 function offerRevive(why) {   // hồi sinh 1 lần/trận bằng ngọc (sau này có thể xem quảng cáo)
   if (B.revUsed || B.paused || B.over) return false;
   B.revUsed = true; B.paused = true;
   const w = document.createElement('div'); w.className = 'modal pause-modal';
-  w.innerHTML = `<h3>${why === 'gate' ? 'Cổng thành sắp vỡ!' : 'Cả đội trọng thương!'}</h3><p class="res-reason">Hồi sinh: cả đội hồi 60% máu, cổng hồi 40%, đẩy lùi quái gần.</p>
+  w.innerHTML = `<h3>Cả đội trọng thương!</h3><p class="res-reason">Hồi sinh: cả đội hồi 60% máu, bất tử 2 giây, đẩy lùi quái gần.</p>
     <button class="btn gold" id="rvY">Hồi sinh ${icon('ngoc')}100</button><button class="btn" id="rvN">Bỏ cuộc</button>`;
   ui.appendChild(w);
   $('#rvY').onclick = () => {
     if (S.ngoc < 100) { toast('Không đủ ngọc'); return; }
     S.ngoc -= 100; save(); w.remove(); B.paused = false; lastT = performance.now();
     for (const h of B.heroes) if (!h.clone) { h.dead = false; h.hp = Math.max(h.hp, maxHp(h) * 0.6); h.inv = 2; h.dk = 0; }
-    B.gate.hp = Math.max(B.gate.hp, B.gate.max * 0.4);
     for (const e of B.enemies) if (!e.dead && !e.boss && e.x < W * 0.5) e.x = Math.min(W - 20, e.x + 180);
     B.banner = { text: 'HỒI SINH!', sub: '', t: 0, boss: true }; fxBurst(W * 0.25, H * 0.55, 'burst_gold', 420); B.flash = 0.3; buildTeamBar();
   };
-  $('#rvN').onclick = () => { w.remove(); B.paused = false; endBattle(false, why === 'gate' ? 'Cổng thành đã vỡ' : 'Cả đội đã trọng thương'); };
+  $('#rvN').onclick = () => { w.remove(); B.paused = false; endBattle(false, 'Cả đội đã trọng thương'); };
   return true;
 }
 
@@ -1646,20 +1637,21 @@ function nearestHero(e, maxD) { let b = null, bd = maxD || 1e9; for (const h of 
 function traitTick(e, dt) {
   const t = e.trait;
   if (t === 'stealth') { if (e.revealT > 0) e.revealT -= dt; const h = nearestHero(e, 260); e.hidden = !h && !(e.revealT > 0); return false; }
-  if (t === 'fly') {   // bay thẳng vào cổng, không dừng đánh tướng
-    if (e.x > GATE_X) { e.walk = true; moveTo(e, GATE_X - 2, clamp(e.y, LANE_Y0, LANE_Y1), e.move * (e.slow > 0 ? 0.6 : 1) * dt); }
-    else { e.walk = false; if (e.cdA <= 0) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; B.gate.hp -= getAtk(e) * 0.8; B.gateHurt = 0.15; snd('gate'); } }
+  if (t === 'fly') {   // bay qua đầu hàng trước, nhắm tướng hàng sau
+    const L = heroesAlive(); if (!L.length) { e.walk = false; return true; }
+    const back = L.reduce((a, b) => (b.x < a.x ? b : a)), d = dist(e, back);
+    if (d > e.range + unitR(back)) { e.walk = true; moveTo(e, back.x + 20, back.y, e.move * (e.slow > 0 ? 0.6 : 1) * dt); }
+    else { e.walk = false; e.f = back.x >= e.x ? 1 : -1; if (e.cdA <= 0) { e.cdA = 1 / getAspd(e); e.atkAnim = 0; dealDmg(e, back, 1, 'atk'); } }
     return true;
   }
   if (t === 'bomb') {   // áp sát tướng/cổng thì nổ
-    const h = nearestHero(e, 46), atGate = e.x <= GATE_X + 6;
-    if (h || atGate) {
+    const h = nearestHero(e, 46);
+    if (h) {
       for (const o of B.heroes) if (!o.dead && dist(e, o) < 95) dealDmg(e, o, 3, 'atk');
-      if (atGate) { B.gate.hp -= getAtk(e) * 3; B.gateHurt = 0.3; }
       fxBurst(e.x, e.y - 20, 'fire', 200); particles(e.x, e.y - 20, '#ff8a2e', 24, 260, 5); B.shake = Math.max(B.shake, 0.5); sfx('boom');
       e.exploded = true; kill(e, null); return true;
     }
-    const tg = nearestHero(e, 260); if (tg) { e.walk = true; moveTo(e, tg.x, tg.y, e.move * dt); return true; }
+    const tg = nearestHero(e, 5000); if (tg) { e.walk = true; moveTo(e, tg.x, tg.y, e.move * dt); return true; }
     return false;
   }
   if (t === 'heal') {
@@ -1672,7 +1664,7 @@ function traitTick(e, dt) {
   }
   if (t === 'burrow' && e.under) {   // dưới đất: lao tới tướng gần nhất, trồi lên làm choáng
     const h = nearestHero(e, 2000);
-    if (!h) { moveTo(e, GATE_X - 2, e.y, e.move * dt); if (e.x <= GATE_X + 10) e.under = false; return true; }
+    if (!h) { e.under = false; return true; }
     moveTo(e, h.x + 40, h.y, e.move * dt); if (Math.random() < 0.5) particles(e.x, e.y, '#8a6a40', 1, 50, 4);
     if (dist(e, h) < 60) { e.under = false; h.stun = Math.max(h.stun || 0, 0.7); dealDmg(e, h, 1.5, 'atk'); uxSheet && B.fx.push({ k: 'ring', x: e.x, y: e.y, r: 120, color: '#c8a070', t: 0, dur: 0.5 }); particles(e.x, e.y - 10, '#a08060', 20, 220, 5); B.shake = Math.max(B.shake, 0.4); floater(h.x, h.y - 70, 'Choáng!', '#ffd34d', 14); }
     return true;
@@ -1800,15 +1792,16 @@ function poseFor(u) {
 const HFIX = { kimgiac: 1.1, hoangphongquai: 1.06 };   // bù dáng đứng khom / tai nhọn để cao ngang các tướng khác
 function drawPose(u, name, t, h, alpha) {
   h *= HFIX[u.id] || 1;
-  const img = POSES[u.id][name], D = (window.SKEL_DEFS && SKEL_DEFS[u.id]) || (window.HPOSE && HPOSE[u.id]); if (!img || !D) return false;
+  const img = POSES[u.id][name], D = (window.HPOSE && HPOSE[u.id]) || (window.SKEL_DEFS && SKEL_DEFS[u.id]); if (!img || !D) return false;
   const k = h / D.H / 0.5, gx = D.gnd[0] * 0.5 * k, gy = D.gnd[1] * 0.5 * k;   // ảnh tư thế = hình gốc giảm nửa, đặt chân tại gốc xương root
   let sx = 1, sy = 1, rot = 0, ox = 0;
-  if (name === 'windup') { sy = 1 - 0.04 * t; sx = 1 + 0.03 * t; ox = -6 * t; }
-  else if (name === 'strike') { sx = 1.07 - 0.05 * t; sy = 0.97 + 0.02 * t; ox = 10 * (1 - t); }
+  const eo = x => 1 - (1 - x) * (1 - x), ob = x => 1 + 2.2 * Math.pow(x - 1, 3) + 1.2 * Math.pow(x - 1, 2);   // ease-out, vượt quá rồi về
+  if (name === 'windup') { const e = eo(Math.min(1, t)); sy = 1 - 0.05 * e; sx = 1 + 0.04 * e; ox = -8 * e; rot = -0.03 * e; }
+  else if (name === 'strike') { const e = ob(Math.min(1, t)); sx = 1.08 - 0.06 * t; sy = 0.96 + 0.03 * t; ox = 14 * (1 - t) + 4 * Math.sin(e * Math.PI); rot = 0.035 * (1 - t); }
   else if (name === 'skill') { rot = Math.sin(t * Math.PI * 6) * 0.05; sy = 1 + 0.02 * Math.sin(t * Math.PI * 2); }
   else if (name === 'ult') { sy = 1 + 0.012 * Math.sin(t * 9); }
   else if (name.startsWith('idle')) { sy = 1 + 0.014 * Math.sin(t * 2.6); sx = 1 - 0.006 * Math.sin(t * 2.6); }   // thở
-  else if (name === 'hit') { ox = -9 * (1 - t); rot = -0.05 * (1 - t); }
+  else if (name === 'hit') { const e = 1 - eo(Math.min(1, t)); ox = -11 * e; rot = -0.06 * e; sy = 1 - 0.03 * e; }
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(ox, 0); ctx.rotate(rot); ctx.scale(sx, sy);
   if (u.hurt > 0) ctx.filter = 'brightness(1.8) saturate(0.7)';
   ctx.drawImage(img, -gx, -gy, img.width * k, img.height * k);
@@ -1819,9 +1812,14 @@ function drawRigUnit(u, h, alpha) {
   const pz = poseFor(u) || (window.HPOSE && HPOSE[u.id] && !hasSkel(u.id) ? ['idle1', 0] : null);   // tướng chỉ có tư thế (không rig): thắng/chết dùng dáng đứng
   if (pz) {
     ctx.save(); ctx.scale(u.f * (FACE[u.id] || 1), 1); let ok;
-    if (pz[0] === 'idle') {   // xen kẽ idle1 ↔ idle2 bằng chuyển mờ
-      ok = drawPose(u, pz[2] ? 'idle2' : 'idle1', pz[1], h, alpha);
-    } else ok = drawPose(u, pz[0], pz[1], h, alpha);
+    const nm = pz[0] === 'idle' ? (pz[2] ? 'idle2' : 'idle1') : pz[0];
+    if (u.pzN !== nm) { u.pzPrev = u.pzN ? { n: u.pzN, t: u.pzT || 0, at: u.t } : null; u.pzN = nm; u.pzAt = u.t; }
+    u.pzT = pz[1];
+    const fade = u.pzPrev ? Math.max(0, 1 - (u.t - u.pzPrev.at) / 0.07) : 0;   // chuyển dáng chồng mờ 70 ms cho mượt
+    if (fade > 0) drawPose(u, u.pzPrev.n, u.pzPrev.t, h, alpha * fade);
+    const pop = Math.max(0, 1 - (u.t - u.pzAt) / 0.12);   // nảy nhẹ khi đổi dáng
+    if (pop > 0 && nm !== 'idle1' && nm !== 'idle2') { ctx.translate(0, -3 * pop); ctx.scale(1 + 0.02 * pop, 1 - 0.02 * pop); }
+    ok = drawPose(u, nm, pz[1], h, alpha * (fade > 0 ? 1 - fade * 0.35 : 1));
     ctx.restore(); if (ok) return;
   }
   if (!u.rphys) u.rphys = Rig.newPhys();
@@ -1853,13 +1851,14 @@ function drawRigUnit(u, h, alpha) {
 }
 const hasLayered = id => typeof Layered !== 'undefined' && Layered.has(id);
 const hasMesh = id => typeof MeshRig !== 'undefined' && MeshRig.has(id);
-const hasSkel = id => typeof Skel !== 'undefined' && Skel.has(id) && !window.__noSkel;
+const POSE_ONLY = new Set(['khuongtanha', 'trieucongminh', 'bachcot']);   // đã vẽ lại theo đúng pháp bảo: chỉ dùng tư thế, bỏ rig cũ
+const hasSkel = id => typeof Skel !== 'undefined' && Skel.has(id) && !window.__noSkel && !POSE_ONLY.has(id);
 const hasRig = id => !!(window.HPOSE && HPOSE[id]) || hasSkel(id) || hasMesh(id) || hasLayered(id) || (typeof Rig !== 'undefined' && Rig.has(id));
 // ưu tiên nhân vật tách lớp (Live2D) → rig bộ phận
 // &chibi trên đường dẫn: nhân vật nào có bản chibi (art/mesh/<id>_chibi.js) thì dùng bản đó để so sánh
 const meshId = id => (window.__chibi && typeof MeshRig !== 'undefined' && MeshRig.has(id + '_chibi')) ? id + '_chibi' : id;
 function rigDraw(c, id, st, h, opt) {
-  if (typeof Skel !== 'undefined' && Skel.has(id) && !window.__noSkel) return Skel.draw(c, id, st, h, opt);
+  if (hasSkel(id)) return Skel.draw(c, id, st, h, opt);
   if (hasMesh(meshId(id))) return MeshRig.draw(c, meshId(id), st, h, opt);
   return hasLayered(id) ? Layered.draw(c, id, st, h) : Rig.draw(c, id, st, h);
 }
@@ -3155,7 +3154,6 @@ function render() {
     for (let i = 0; i < 7; i++) { const an = i * 0.9 + d.x * 0.01; ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + Math.cos(an) * d.r * 0.8, d.y + Math.sin(an) * d.r * 0.33); ctx.stroke(); }
     ctx.restore();
   }
-  drawGateDamage();
   for (const z of B.zones) {
     ctx.save(); ctx.globalAlpha = Math.min(1, z.t) * 0.45;
     const g = ctx.createRadialGradient(z.x, z.y, 0, z.x, z.y, z.r);
@@ -3291,7 +3289,7 @@ function renderShowcase() {
 // Màn hình chính: đội hình đứng trên bãi cỏ
 let homeBg = null, homeT = 0;
 function drawHomeHero(id, i, h, t) {
-  const P = POSES[id], D = (window.SKEL_DEFS && SKEL_DEFS[id]) || (window.HPOSE && HPOSE[id]), fake = { id, hurt: 0 };   // mọi tướng có dáng (kể cả đợt 2) vẽ cùng một cách → cùng cỡ
+  const P = POSES[id], D = (window.HPOSE && HPOSE[id]) || (window.SKEL_DEFS && SKEL_DEFS[id]), fake = { id, hurt: 0 };   // mọi tướng có dáng (kể cả đợt 2) vẽ cùng một cách → cùng cỡ
   if (P && P.idle1 && P.idle2 && D) {
     const T = 3.6, ph = (t + i * 0.83) % T, a = ph < 1.8 ? 0 : 1;   // đổi dáng dứt khoát (chuyển mờ làm 2 vũ khí chồng lên nhau trông như bị gãy/cong)
     drawPose(fake, a ? 'idle2' : 'idle1', ph, h, 1); return true;
@@ -3702,7 +3700,7 @@ function showHUD() {
       <button class="hud-round" id="bPause" title="Tạm dừng (P)">❚❚</button>
       <div class="h2-stage"><div class="h2-name"><b>${B.st.id}</b> ${esc(B.st.name)} <span class="ht-wave" id="hWave"></span></div>
         <div class="h2-waves" id="hWaves">${B.st.waves.map(w => `<i class="${w.boss ? 'boss' : ''}"></i>`).join('')}</div></div>
-      <div class="h2-gate" id="hGateBox"><span class="h2-gico">⛩</span><div class="h2-gbar"><i id="hGate"></i><em id="hGateTxt"></em></div></div>
+      <div class="h2-prog" id="hProg"><div class="h2-ptrack"><i id="hPfill"></i>${(() => { const n = B.st.waves.length; return B.st.waves.map((w, k) => (w.boss || w.strong || w.horde) ? `<span data-w="${k}" class="pm ${w.boss ? 'boss' : w.horde ? 'horde' : 'strong'}" style="left:${(k + 0.5) / n * 100}%">${w.boss ? '☠' : w.horde ? '👹' : '⚔'}</span>` : '').join(''); })()}<b class="h2-pcur" id="hPcur"></b></div><em id="hPnext"></em></div>
       <div class="h2-mini"><span class="ht-time" id="hTime">0:00</span><span class="h2-lv"><b id="hLv">Cấp 1</b><span class="bar"><i id="hXp"></i></span></span></div>
       <button class="ic-btn" id="bBuff" title="Hiệu ứng đang có"><svg viewBox="0 0 24 24"><path d="M12 2l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 15.6 6.6 18.5l1.2-6L3.3 8.3l6.1-.7z" fill="currentColor"/></svg><small>Hiệu ứng</small></button>
       <button class="ic-btn" id="bAuto" title="Tự động"><svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 0 1 7.4 5H17l3.5 4 3.5-4h-2.1A10 10 0 0 0 2 12h2a8 8 0 0 1 8-8zm0 16a8 8 0 0 1-7.4-5H7l-3.5-4L0 15h2.1A10 10 0 0 0 22 12h-2a8 8 0 0 1-8 8z" fill="currentColor"/></svg><small>Tự động</small></button>
@@ -3747,11 +3745,14 @@ function updateHUD() {
   if (!B || !$('#hWave')) return;
   $('#hWave').textContent = `Đợt ${Math.min(B.wave + 1, B.st.waves.length)}/${B.st.waves.length}`;
   document.querySelectorAll('#hWaves i').forEach((el, i) => { el.className = (B.st.waves[i] && B.st.waves[i].boss ? 'boss ' : '') + (i < B.wave ? 'done' : i === B.wave ? 'cur' : ''); });
-  { const gp = B.gate.hp / B.gate.max, gb = $('#hGateBox'); if (gb) gb.classList.toggle('danger', gp < 0.3); const gt = $('#hGateTxt'); if (gt) gt.textContent = Math.ceil(gp * 100) + '%'; }
+  { const n = B.st.waves.length, w = Math.max(0, B.wave), gap = (B.waveDef && B.waveDef.gap) || 4, fr = B.wave < 0 ? 0 : Math.min(1, (B.time - (B.waveStart || 0)) / gap);
+    document.querySelectorAll('#hProg .pm').forEach(el => el.classList.toggle('done', +el.dataset.w < B.wave));
+    const pr = Math.min(1, (w + (B.wave >= n - 1 ? 1 : fr)) / n), pf = $('#hPfill'), pc = $('#hPcur'); if (pf) pf.style.width = pr * 100 + '%'; if (pc) pc.style.left = pr * 100 + '%';
+    const nx = B.st.waves.findIndex((x, k) => k > B.wave && (x.boss || x.strong || x.horde)), np = $('#hPnext');
+    if (np) { if (nx < 0) np.textContent = B.st.waves[n - 1] && B.st.waves[n - 1].boss && B.wave >= n - 1 ? 'BOSS!' : 'Đợt cuối'; else { const x = B.st.waves[nx], d = nx - B.wave; np.textContent = (x.boss ? '☠ Boss' : x.horde ? '👹 Quái đông' : '⚔ Địch mạnh') + (d <= 1 ? ' sắp tới!' : ` sau ${d} đợt`); np.className = d <= 1 ? 'warn' : ''; } } }
   const t = Math.floor(B.time);
   $('#hTime').textContent = Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
   $('#hTime').classList.toggle('over', B.time > B.st.par);
-  $('#hGate').style.width = (B.gate.hp / B.gate.max * 100) + '%';
   $('#hLv').textContent = 'Cấp ' + B.lv; $('#hXp').style.width = (B.xp / xpNeed() * 100) + '%';
   const ht = $('#hintTap'); if (ht && B.time > 8) ht.remove();
   const els = document.querySelectorAll('#teamBar .tm');
@@ -4106,7 +4107,7 @@ const BOON = [   // lợi cho đội
   { t: 'Thần Tướng công +30%', m: { atkPct: 0.30 } }, { t: 'Tốc đánh +25%', m: { aspdPct: 0.25 } }, { t: 'Bạo kích +15%', m: { crit: 0.15 } },
   { t: 'ST chiêu thức +40%', m: { skillPct: 0.40 } }, { t: 'Nhận thêm 2 Thiên Thư đầu trận', book: 2 }, { t: 'ST cuối +20%', m: { dmgPct: 0.20 } }];
 const BANE = [   // hại (quái mạnh lên)
-  { t: 'Quái máu +40%', ehp: 1.4 }, { t: 'Quái công +40%', eatk: 1.4 }, { t: 'Quái chạy nhanh +30%', espd: 1.3 }, { t: 'Cổng thành −30% máu', gate: 0.7 },
+  { t: 'Quái máu +40%', ehp: 1.4 }, { t: 'Quái công +40%', eatk: 1.4 }, { t: 'Quái chạy nhanh +30%', espd: 1.3 }, { t: 'Thần Tướng −25% máu', hhp: 0.75 },
   { t: 'Quái máu +25%, công +25%', ehp: 1.25, eatk: 1.25 }];
 const TOWER_MECH = [null, 'traps', 'speed', 'fire', 'fog', 'summon'];
 function towerStage(f, pair) {
@@ -4115,7 +4116,7 @@ function towerStage(f, pair) {
   const st = { ...base, id: 'T' + f, tower: true, floor: f, kind: boss ? 'boss' : 'normal', lvl: 2 + Math.floor(f * 0.6), name: 'Tháp Thập Tuyệt · Tầng ' + f,
     reward: { ngoc: 40 + f * 4 + (boss ? 150 : 0), vang: 500 + f * 80 }, mech: TOWER_MECH[(f / 10 | 0) % TOWER_MECH.length], gate: 3000 + f * 60, par: 150 };
   st.waves = base.waves.slice(0, boss ? base.waves.length : 10);
-  st.ehp = (pair.bane.ehp || 1) * (1 + f * 0.02); st.eatk = (pair.bane.eatk || 1) * (1 + f * 0.015); st.espd = pair.bane.espd || 1; st.gateK = pair.bane.gate || 1;
+  st.ehp = (pair.bane.ehp || 1) * (1 + f * 0.02); st.eatk = (pair.bane.eatk || 1) * (1 + f * 0.015); st.espd = pair.bane.espd || 1; st.hhp = pair.bane.hhp || 0;
   st.hmods = pair.boon.m || null; st.bookN = pair.boon.book || 0;
   return st;
 }
@@ -4142,7 +4143,7 @@ function nanStage(n, run) {
   const st = { ...base, id: 'N' + n, nan: true, nanN: n, kind: boss ? 'boss' : 'normal', lvl: 2 + Math.floor(n * 0.55), name: 'Nạn ' + n + ' · ' + NAN[n - 1],
     reward: { ngoc: 15 + n * 2 + (boss ? 60 : 0), vang: 300 + n * 50 }, mech: TOWER_MECH[(n / 9 | 0) % TOWER_MECH.length], gate: 3000 + n * 50, par: 120 };
   st.waves = base.waves.slice(0, boss ? base.waves.length : 6);
-  st.ehp = (bane.ehp || 1) * (1 + n * 0.025); st.eatk = (bane.eatk || 1) * (1 + n * 0.018); st.espd = bane.espd || 1; st.gateK = bane.gate || 1;
+  st.ehp = (bane.ehp || 1) * (1 + n * 0.025); st.eatk = (bane.eatk || 1) * (1 + n * 0.018); st.espd = bane.espd || 1; st.hhp = bane.hhp || 0;
   const hm = {}; let bk = 0; for (const bi of run.boons) { const b = NAN_BOON[bi]; for (const k in (b.m || {})) hm[k] = (hm[k] || 0) + b.m[k]; bk += b.book || 0; }
   st.hmods = hm; st.bookN = bk; st.baneT = bane.t; return st;
 }
@@ -4269,6 +4270,8 @@ function route() {
     Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(STAGES[clamp((+v || 1) - 1, 0, STAGES.length - 1)]))]).then(() => {
     startBattleNow(clamp((+v || 1) - 1, 0, STAGES.length - 1));
     if (B) {
+      if (/notut/.test(h)) S.tut = { all: 1 };
+      if (/dbgprog/.test(h)) setTimeout(() => { const q = s => { const e = document.querySelector(s); if (!e) return s + ':none'; const r = e.getBoundingClientRect(), c = getComputedStyle(e); return s + ':' + [r.x, r.y, r.width, r.height].map(Math.round) + ' d=' + c.display + ' pos=' + c.position + ' bg=' + c.backgroundImage.slice(0, 40); }; const pre = document.createElement('pre'); pre.id = 'dbg'; pre.textContent = ['#hProg', '.h2-ptrack', '#hPfill', '.pm.boss', '#hPcur'].map(q).join(' | '); document.body.appendChild(pre); }, 500);
       B.auto = true; const b = $('#bAuto'); if (b) b.classList.add('on');
       // &sim=20: tua nhanh 20 giây (dùng để chụp ảnh thử)
       const secs = simPart && simPart.startsWith('sim=') ? +simPart.slice(4) : 0;
