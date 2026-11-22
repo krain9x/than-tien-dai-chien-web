@@ -24,7 +24,7 @@ const ROLES = {
 
 const FACTIONS = {
   xien: 'Xiển giáo', triet: 'Triệt giáo', thien: 'Thiên đình',
-  phat: 'Phật môn', yeu: 'Yêu giới', nhan: 'Nhân gian',
+  phat: 'Phật môn', yeu: 'Yêu giới', nhan: 'Nhân Giới',
   dao: 'Đạo môn', nguyet: 'Nguyệt cung', quy: 'Quỷ giới',
 };
 // Cộng hưởng phe: [số người, % chỉ số]
@@ -840,7 +840,7 @@ const PULL_BOX = [[10, { univ: 3 }], [30, { ngoc: 160 }], [50, { univ: 8 }], [10
 const CH_ROLE = { 1: ['phap', 'the'], 2: ['sat', 'tran'], 3: ['tran', 'phap'], 4: ['the', 'sat'], 5: ['sat', 'phap'], 6: ['dan', 'sat'], 7: ['phap', 'sat'], 8: ['the', 'tran'], 9: ['tran', 'phap'], 10: ['dan', 'the'], 11: ['sat', 'tran'], 12: ['dan', 'phap'] };
 // SAO THEO PHẨM CHẤT (VLĐMT herostargrowupconfig: mọi tướng cùng chỉ số gốc, phẩm cao hơn được cộng nhiều hơn mỗi sao)
 const STAR_MUL_R = { R: [1, 1.12, 1.25, 1.4, 1.56], SR: [1, 1.15, 1.32, 1.59, 1.98], SSR: [1, 1.2, 1.45, 1.8, 2.35] };
-const starMul = (rar, st) => (STAR_MUL_R[rar] || STAR_MUL)[Math.max(0, Math.min(4, st - 1))];
+const starMul = (rar, st) => { const a = STAR_MUL_R[rar] || STAR_MUL; return a[Math.max(0, Math.min(a.length - 1, st - 1))]; };
 
 // KINH TẾ (rà soát 2026-11-22, đường cong kiểu VLĐMT): chi phí lên cấp tăng dốc
 const lvCostOf = lv => Math.round(120 * lv + 18 * lv * lv);
@@ -1081,3 +1081,16 @@ const tierCls = t => 't-' + String(t).replace('+', 'P');
   for (const id in HEROES) { if (!HEROES[id].tier) HEROES[id].tier = HEROES[id].rar; HEROES[id].rar = TIER_CLASS[HEROES[id].tier]; }
   for (const [P, r] of [[SSR_POOL, 'SSR'], [SR_POOL, 'SR'], [R_POOL, 'R']]) { P.length = 0; for (const id in HEROES) if (HEROES[id].rar === r) P.push(id); }
 })();
+
+// ===== UR =====
+GACHA_TIER_W.UR = 0; GACHA_TIER_W['SSR+'] = 0.36; GACHA_TIER_W.SSR = 0.64;   // UR không ra từ chiêu mộ thường -> Thánh Nhân Điện
+STAR_MUL_R.UR.push(3.2); STAR_COST.UR.push(100);                               // 6★ Thành Thánh
+const maxStar = id => (HEROES[id] && HEROES[id].tier === 'UR') ? 6 : 5;
+const UR_COST = { unlock: 300, shard: 8 };                                     // Thánh Ấn
+const TAM_THANH = ['thailaoquan', 'nguyenthuy', 'giaochu'];
+// Thánh Vực: hiệu ứng cho cả đội khi UR đó đang giữ sân (chỉ một vực tại một lúc)
+const DOMAIN = {
+  giaochu: { n: 'Tru Tiên Kiếm Vực', d: 'Cả đội +20% sát thương chiêu, +5% bạo kích', m: { skillPct: 0.2, crit: 0.05 }, col: '#ff4a5a' },
+  thailaoquan: { n: 'Thái Cực Vực', d: 'Cả đội hồi nội công nhanh hơn 25%, hồi 1% máu mỗi giây', m: { mpRegen: 0.25 }, regen: 0.01, col: '#9fffd0' },
+  tamthanh: { n: 'Tam Thanh Hợp Vực', d: 'Gộp hiệu ứng của cả Tam Thanh, thêm +15% công cả đội', m: { skillPct: 0.2, crit: 0.05, mpRegen: 0.25, atkPct: 0.15 }, regen: 0.01, col: '#ffe58a' },
+};
