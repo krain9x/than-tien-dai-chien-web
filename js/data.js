@@ -799,3 +799,25 @@ for (const k in TANG2) if (HEROES[k]) HEROES[k].tang = TANG2[k];
 // ĐỘ KHÓ RIÊNG theo chương (đo bằng #balance — máy tự đánh với đội người chơi có ở thời điểm đó)
 const CH_DIFF = { 3: { boss: 0.9 }, 4: { boss: 0.9 }, 6: { all: 0.85 }, 7: { all: 0.85 }, 8: { all: 0.85, boss: 0.68 }, 12: { boss: 0.62 } };
 for (const st of STAGES) { const d = CH_DIFF[CHAPTERS[st.chap].id]; if (!d) continue; const k = (st.kind === 'boss' && d.boss) || d.all || 0; if (k) { st.ehp = k; st.eatk = k; } }
+// ===== RÀ SOÁT ĐẠN / CHIÊU (2026-11-22): mỗi tướng một kiểu đạn đúng pháp bảo; chiêu nhỏ không lặp lại đòn thường,
+// không còn chiêu nhỏ "bắn 5 tia" gây nhầm là lỗi — chiêu nhỏ chuyển thành hiệu ứng vùng / một đòn riêng.
+(function fixSkills() {
+  const S = (id, name, desc, fx) => { if (HEROES[id]) HEROES[id].small = { ...HEROES[id].small, name, desc, fx }; };
+  S('bachcot', 'Bạch Cốt Ma Hoả', 'Thả lửa ma tím xuống chỗ quái đông nhất: 120% công rồi cháy 3 giây (45%/giây).', [{ t: 'aoe', at: 'cluster', r: 90, mult: 1.2, color: '#b06aff' }, { t: 'zone', at: 'cluster', r: 90, dps: 0.45, dur: 3, color: '#9a5cff' }]);
+  S('thietphien', 'Phiến Phong', 'Quạt một luồng cuồng phong vào chỗ quái đông nhất: 170% công, hất lùi.', [{ t: 'aoe', at: 'cluster', r: 110, mult: 1.7, knock: 70, color: '#7fe8a0' }]);
+  S('duongtien', 'Tam Tiêm Đao', 'Phóng một mũi Tam Tiêm Đao lớn xuyên thẳng hàng quái, 220% công.', [{ t: 'proj', n: 1, spread: 0, mult: 2.2, pierce: true, type: 'spear' }]);
+  S('loichantu', 'Lôi Côn', 'Giáng côn sấm xuống chỗ quái đông nhất: 180% công, choáng 0,6 giây.', [{ t: 'aoe', at: 'cluster', r: 95, mult: 1.8, stun: 0.6, color: '#9fd0ff' }]);
+  S('hoangphongquai', 'Hoàng Sa Phong', 'Nổi gió cát ở chỗ quái đông nhất: cuốn 3 giây, mỗi giây 55% công.', [{ t: 'zone', at: 'cluster', r: 100, dps: 0.55, dur: 3, color: '#e8c060' }]);
+  S('kimgiac', 'Hồ Lô Hấp Hồn', 'Mở hồ lô hút chỗ quái đông nhất: 170% công.', [{ t: 'aoe', at: 'cluster', r: 100, mult: 1.7, color: '#b88aff' }]);
+  S('vantieu', 'Hoàng Hà Quang', 'Rót dòng Hoàng Hà xuống chỗ quái đông nhất: 3 giây, mỗi giây 60% công.', [{ t: 'zone', at: 'cluster', r: 100, dps: 0.6, dur: 3, color: '#ffd34d' }]);
+  S('datky', 'Hồ Hỏa', 'Bắn 3 ngọn hồ hỏa đuổi theo quái, mỗi ngọn 170% công.', [{ t: 'proj', n: 3, spread: 0.3, mult: 1.7, type: 'foxfire' }]);
+  S('thaiatchannhan', 'Thần Hoả Châu', 'Ném hoả châu nổ chỗ quái đông nhất: 150% công rồi cháy 3 giây.', [{ t: 'aoe', at: 'cluster', r: 95, mult: 1.5, color: '#ff7a2e' }, { t: 'zone', at: 'cluster', r: 90, dps: 0.4, dur: 3, color: '#ff6a2a' }]);
+  S('trieucongminh', 'Thiết Tiên', 'Quất Thiết Tiên vào chỗ quái đông nhất 170% công, đẩy lùi.', HEROES.trieucongminh.small.fx);
+  // đạn đòn thường đúng pháp bảo
+  if (ATK_STYLE.thancongbao) Object.assign(ATK_STYLE.thancongbao, { proj: 'crescent', name: 'Kiếm Khí', desc: 'Kiếm khí xanh nảy lan 4 quái.' });
+  if (ATK_STYLE.bachcot) Object.assign(ATK_STYLE.bachcot, { name: 'Cốt Trảo', desc: 'Bắn 3 móng vuốt lửa ma hình quạt, mỗi móng xuyên 2 quái.' });
+  if (ATK_STYLE.trieucongminh) Object.assign(ATK_STYLE.trieucongminh, { name: 'Định Hải Châu', desc: 'Ném Định Hải Châu nảy lan sang 3 quái.' });
+})();
+if (ATK_STYLE.hoangphongquai) ATK_STYLE.hoangphongquai.proj = 'sand';
+if (ATK_STYLE.culinhthan) Object.assign(ATK_STYLE.culinhthan, { proj: 'axe', name: 'Phi Phủ', desc: 'Ném rìu xoay nổ lan vùng rộng.' });
+if (ATK_STYLE.thietphien) Object.assign(ATK_STYLE.thietphien, { proj: 'wind', name: 'Phong Nhận', desc: 'Quạt ra lưỡi gió nảy lan sang 4 quái gần nhau, mỗi lần giảm 12% sát thương.' });

@@ -893,7 +893,7 @@ function cast(u, w) {
   if (!canCast(u, w)) return false;
   const sk = u.d[w];
   u.mp -= w === 'ult' ? 60 : 30;
-  if (w === 'ult') u.cdU = 12; else u.cdS = 4;
+  if (w === 'ult') u.cdU = 12; else u.cdS = 6;   // chiêu nhỏ 6 giây/lần
   const sk_ = typeof Skel !== 'undefined' && Skel.has(u.id);
   u.castDur = sk_ ? (w === 'ult' ? 1.0 : 0.6) : 0.35; u.castT = u.castDur; u.castUlt = w === 'ult'; u.atkAnim = sk_ ? -1 : 0;
   const tgt = findTarget(u) || nearestEnemy(u, 400);
@@ -2005,7 +2005,7 @@ const PFX = {
   moon: { core: 'orb', glow: 'ring', burst: 'burst_blue', trail: '#dfe8ff', spin: 1 },
   drop: { core: 'orb', glow: 'petal', burst: 'burst_blue', trail: '#9fe8ff' },
   foxfire: { core: 'petal', glow: 'smoke', burst: 'burst_gold', trail: '#ff7ad9' },
-  bone: { core: 'flare', glow: 'smoke', burst: 'burst_blue', trail: '#c8a0ff', line: 1 },
+  bone: { core: 'orb', glow: 'smoke', burst: 'burst_blue', trail: '#b06aff', line: 1 },
   fire: { core: 'fire', glow: 'orb', burst: 'burst_gold', trail: '#ff7a2e' },
   pill: { core: 'orb', glow: 'smoke', burst: 'burst_gold', trail: '#ffb347' },
   pagoda: { core: 'flare', glow: 'ring', burst: 'burst_gold', trail: '#ffd34d' },
@@ -2014,6 +2014,9 @@ const PFX = {
   staffwave: { core: 'slash', glow: 'flare', burst: 'burst_gold', trail: '#ffd34d' },
   rakewave: { core: 'slash', glow: 'flare', burst: 'burst_blue', trail: '#bfe0ff' },
   palm: { core: 'orb', glow: 'flare', burst: 'burst_gold', trail: '#ffe58a' },
+  sand: { core: 'smoke', glow: 'orb', burst: 'burst_gold', trail: '#e8c060', spin: 1 },
+  wind: { core: 'slash', glow: 'flare', burst: 'burst_blue', trail: '#7fe8a0' },
+  axe: { core: 'orb', glow: 'ring', burst: 'burst_gold', trail: '#ffd34d', spin: 1 },
 };
 // vẽ lớp sáng của đạn: dải đuôi uốn theo đường bay + quầng + lõi
 function drawProjFX(p) {
@@ -2920,10 +2923,26 @@ function drawProj(p) {
       ctx.rotate(p.rot * 0.9); const g = ctx.createRadialGradient(0, 0, 3, 0, 0, 15); g.addColorStop(0, '#ffffff'); g.addColorStop(0.7, '#dfe8ff'); g.addColorStop(1, 'rgba(180,200,255,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 15, 0, TAU); ctx.fill(); ctx.strokeStyle = '#9fb0e0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 11, 0.3, 4.2); ctx.stroke(); break;
     }
-    case 'bone': { // móng xương
-      ctx.rotate(a); ctx.fillStyle = '#f4ecd8'; ctx.strokeStyle = '#6a5a4a'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(0, -5); ctx.lineTo(-14, -3); ctx.lineTo(-14, 3); ctx.lineTo(0, 5); ctx.closePath(); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.arc(-15, -4, 3.5, 0, TAU); ctx.arc(-15, 4, 3.5, 0, TAU); ctx.fill(); break;
+    case 'wind': { // lưỡi gió quạt Ba Tiêu (Thiết Phiến)
+      ctx.rotate(a); ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      for (const [lw, al, c] of [[9, 0.25, '#7fe8a0'], [4, 0.7, '#bfffd0'], [1.6, 1, '#ffffff']]) { ctx.globalAlpha = al; ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(-8, 0, 16, -1.15, 1.15); ctx.stroke(); }
+      ctx.globalAlpha = 0.5; ctx.strokeStyle = '#9fffc0'; ctx.lineWidth = 1.5; for (const dy of [-7, 0, 7]) { ctx.beginPath(); ctx.moveTo(-26, dy); ctx.lineTo(-12, dy * 0.8); ctx.stroke(); }
+      ctx.restore(); break;
+    }
+    case 'sand': { // lốc cát (Hoàng Phong Quái)
+      ctx.rotate(p.rot * 1.4); for (let k = 0; k < 3; k++) { ctx.strokeStyle = k ? '#e8c060' : '#a07830'; ctx.lineWidth = 3 - k * 0.6; ctx.beginPath(); ctx.arc(0, 0, 13 - k * 4, k, k + 4.6); ctx.stroke(); }
+      ctx.fillStyle = '#c8a050'; for (let k = 0; k < 5; k++) { const an = k * 1.26 + p.rot; ctx.beginPath(); ctx.arc(Math.cos(an) * 15, Math.sin(an) * 15, 1.8, 0, TAU); ctx.fill(); } break;
+    }
+    case 'axe': { // rìu xoay (Cự Linh Thần)
+      ctx.rotate(p.rot * 1.2); ctx.fillStyle = '#8a5a2a'; ctx.fillRect(-2, -16, 4, 32);
+      ctx.fillStyle = '#ffd34d'; ctx.strokeStyle = '#7a4a10'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(2, -14); ctx.quadraticCurveTo(18, -12, 16, 2); ctx.quadraticCurveTo(10, -4, 2, -2); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2, -14); ctx.quadraticCurveTo(-18, -12, -16, 2); ctx.quadraticCurveTo(-10, -4, -2, -2); ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+    }
+    case 'bone': { // móng vuốt lửa ma (Bạch Cốt)
+      ctx.rotate(a); ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 16); g.addColorStop(0, 'rgba(230,190,255,0.9)'); g.addColorStop(1, 'rgba(140,60,255,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 16, 0, TAU); ctx.fill(); ctx.restore();
+      ctx.fillStyle = '#efe6ff'; ctx.strokeStyle = '#5a2a8a'; ctx.lineWidth = 1.5;
+      for (const dy of [-6, 0, 6]) { ctx.beginPath(); ctx.moveTo(-10, dy); ctx.quadraticCurveTo(6, dy - 4, 16, dy * 0.4 - 2); ctx.quadraticCurveTo(6, dy + 1, -10, dy + 3); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      break;
     }
     case 'palm': { // chưởng lực mặc định
       ctx.rotate(a); const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 14);
