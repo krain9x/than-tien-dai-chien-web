@@ -212,7 +212,7 @@ function fullImg(id, size) {
 // ------------------------------------------------------------------ HERO STATS (menu)
 function heroStats(id) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star), bt = btBonus(h.role);
+  const m = (1 + 0.06 * (o.lv - 1)) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1), bt = btBonus(h.role);
   const aw = h.rar === 'R' && o.star >= 5 ? 1.15 : 1;   // tướng R thức tỉnh
   return { hp: h.hp * m * bt.hp * aw, atk: h.atk * m * bt.atk * aw, def: h.def * m * bt.def * aw, aspd: h.aspd * (aw > 1 ? 1.1 : 1) };
 }
@@ -1629,7 +1629,7 @@ const CH_HERO = { 1: 'batgioi', 2: 'nata', 3: 'litinh', 4: 'duongtang', 5: 'hong
 function chapterReward(st) {   // gọi khi thắng lần đầu ải boss cuối chương
   const ch = CHAPTERS[st.chap]; if (!ch || st.kind !== 'boss' || st !== STAGES.filter(x => x.chap === st.chap).pop()) return null;
   const id = CH_HERO[ch.id]; if (!id || !HEROES[id]) return null;
-  if (S.owned[id]) { S.owned[id].shard += DUP_SHARDS[HEROES[id].rar] * 2; return { id, dup: true }; }
+  if (S.owned[id]) { S.owned[id].shard += DUP_SHARDS[tierOf(id)] * 2; return { id, dup: true }; }
   S.owned[id] = newRec(); if (S.lineup.length < 5) S.lineup.push(id); return { id, dup: false };
 }
 function endBattle(win, reason) {
@@ -3541,7 +3541,7 @@ function toast(msg) {
 function starsHTML(n, max) {
   return `<span class="stars">${'<b>★</b>'.repeat(n)}${'<b class="off">★</b>'.repeat(Math.max(0, max - n))}</span>`;
 }
-function rarTag(r) { return `<span class="rar rar-${r}">${r}</span>`; }
+function rarTag(r) { if (HEROES[r]) r = tierOf(r); return `<span class="rar rar-${String(r).replace('+', 'P')}">${r}</span>`; }
 const sysIco = (k, cls) => `<img class="sys-ico ${cls || ''}" src="art/ui/${k}.webp" alt="" onerror="this.style.display='none'">`;
 function roleTag(r) { return `<span class="tag" style="--c:${ROLES[r].color}">${sysIco('role_' + r)}${ROLES[r].name}</span>`; }
 function facTag(f) { return `<span class="tag" style="--c:#8a6a4a">${sysIco('fac_' + f)}${FACTIONS[f]}</span>`; }
@@ -3653,7 +3653,7 @@ function showHome() {
   const cap = S.lineup.find(id => S.owned[id]), nf = STAGES.findIndex(st => !S.cleared[st.id]), nx = STAGES[nf < 0 ? STAGES.length - 1 : nf];
   const dq0 = dq(), qDot = DAILY.some(q => (dq0.p[q.id] || 0) >= q.need && !dq0.c[q.id]) || WEEKLY.some(q => (wq().p[q.id] || 0) >= q.need && !wq().c[q.id]), ir = idleReward();
   const L7 = loginState(), giftLeft = LOGIN7.some((r, i2) => !L7.got.includes(i2)), giftDot = LOGIN7.some((r, i2) => i2 < L7.d && !L7.got.includes(i2));
-  const heroDot = Object.keys(S.owned).some(id => { const o = S.owned[id], h = HEROES[id]; return h && o.star < 5 && o.shard + S.univ >= STAR_COST[h.rar][o.star - 1]; });
+  const heroDot = Object.keys(S.owned).some(id => { const o = S.owned[id], h = HEROES[id]; return h && o.star < 5 && o.shard + S.univ >= STAR_COST[tierOf(id)][o.star - 1]; });
   const nanRun = S.nan && S.nan.run, rdLeft = 3 - raidToday().n;
   const cloudSt = !window.Cloud || !Cloud.ok ? 'off' : Cloud.user ? 'ok' : 'warn';
   ui.innerHTML = `<div class="screen home2 home3">
@@ -3723,7 +3723,7 @@ function showStages() {
       return tr.size ? `<div class="chap-traits">${[...tr].map(k => `<span class="ct" title="${esc(TRAIT_INFO[k].desc)}"><i>${TRAIT_INFO[k].ico}</i><b>${TRAIT_INFO[k].name}</b><small>${esc(TRAIT_INFO[k].desc)}</small></span>`).join('')}</div>` : ''; })()}
     </div><div class="ci-col"><b class="ci-h">Phần thưởng chương</b>
     ${chBoxHTML(curChap)}
-    ${(() => { const id = CH_HERO[CHAPTERS[curChap].id]; return id && HEROES[id] ? `<div class="ch-rew"><img src="${por(id, 48)}" alt=""><span>Qua boss chương nhận <b>${esc(HEROES[id].name)}</b> ${rarTag(HEROES[id].rar)}${S.owned[id] ? ' <small>(đã có)</small>' : ''}</span></div>` : ''; })()}
+    ${(() => { const id = CH_HERO[CHAPTERS[curChap].id]; return id && HEROES[id] ? `<div class="ch-rew"><img src="${por(id, 48)}" alt=""><span>Qua boss chương nhận <b>${esc(HEROES[id].name)}</b> ${rarTag(id)}${S.owned[id] ? ' <small>(đã có)</small>' : ''}</span></div>` : ''; })()}
     </div></div>
     <div class="stage-list">${STAGES.map((st, i) => {
       if (st.chap !== curChap) return '';
@@ -3776,8 +3776,8 @@ function showLineup() {
     <p class="hint">Đội trưởng ra trận đầu tiên, được <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và kích hoạt <b>kỹ năng đội trưởng</b> cho cả đội. Các tướng khác ra trận theo thứ tự khi nhặt Linh Phù. · Lực chiến đội: <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b></p>
     <div class="lineup-body">
       <div class="pick-grid2">${owned.sort((a, b) => power(b) - power(a)).map(id => `
-        <button class="hc2 r-${HEROES[id].rar} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}"><span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
-          <span class="hc2-rar">${HEROES[id].rar}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}${sysIco('fac_' + HEROES[id].fac)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
+        <button class="hc2 r-${HEROES[id].rar} ${tierCls(tierOf(id))} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}"><span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
+          <span class="hc2-rar">${HEROES[id].tier}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}${sysIco('fac_' + HEROES[id].fac)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
           <b>${esc(HEROES[id].name)}</b><small>${ROLES[HEROES[id].role].name} · ⚔${fmt(power(id))}</small></button>`).join('')}</div>
       <div class="synergy">${synergyHTML(lu)}</div>
     </div>
@@ -3799,21 +3799,21 @@ function showLineup() {
 
 // ---------------- Heroes
 const HF = { rar: 'all', role: 'all', fac: 'all', sort: 'power' };
-function canStarUp(id) { const o = S.owned[id], h = HEROES[id]; return !!(o && h && o.star < 5 && o.shard + S.univ >= STAR_COST[h.rar][o.star - 1]); }
+function canStarUp(id) { const o = S.owned[id], h = HEROES[id]; return !!(o && h && o.star < 5 && o.shard + S.univ >= STAR_COST[tierOf(id)][o.star - 1]); }
 function showHeroes() {
   const RK = { SSR: 3, SR: 2, R: 1 }, all = Object.keys(HEROES), own = all.filter(id => S.owned[id]);
-  let ids = all.filter(id => (HF.rar === 'all' || HEROES[id].rar === HF.rar) && (HF.role === 'all' || HEROES[id].role === HF.role) && (HF.fac === 'all' || HEROES[id].fac === HF.fac));
-  const key = id => HF.sort === 'power' ? (S.owned[id] ? power(id) : -1) : HF.sort === 'lv' ? (S.owned[id] ? S.owned[id].lv * 10 + S.owned[id].star : -1) : RK[HEROES[id].rar] * 100 + (S.owned[id] ? 50 : 0);
+  let ids = all.filter(id => (HF.rar === 'all' || HEROES[id].tier === HF.rar) && (HF.role === 'all' || HEROES[id].role === HF.role) && (HF.fac === 'all' || HEROES[id].fac === HF.fac));
+  const key = id => HF.sort === 'power' ? (S.owned[id] ? power(id) : -1) : HF.sort === 'lv' ? (S.owned[id] ? S.owned[id].lv * 10 + S.owned[id].star : -1) : TIER_RANK[HEROES[id].tier] * 100 + (S.owned[id] ? 50 : 0);
   ids.sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || key(b) - key(a));
   const chip = (grp, v, label) => `<button class="chip ${HF[grp] === v ? 'on' : ''}" data-f="${grp}:${v}">${label}</button>`;
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
-    <div class="hf-bar"><div class="hf-chips">${chip('rar', 'all', 'Tất cả')}${chip('rar', 'SSR', 'SSR')}${chip('rar', 'SR', 'SR')}${chip('rar', 'R', 'R')}</div>
+    <div class="hf-bar"><div class="hf-chips">${chip('rar', 'all', 'Tất cả')}${TIER_ORDER.map(t => chip('rar', t, t)).join('')}</div>
       <div class="hf-chips">${chip('role', 'all', 'Mọi hệ')}${Object.keys(ROLES).map(r => chip('role', r, sysIco('role_' + r) + ROLES[r].name)).join('')}</div>
       <div class="hf-chips">${chip('fac', 'all', 'Mọi phe')}${Object.keys(FACTIONS).filter(f => Object.values(HEROES).some(h => h.fac === f)).map(f => chip('fac', f, sysIco('fac_' + f) + FACTIONS[f])).join('')}</div>
       <div class="hf-chips">${chip('sort', 'power', 'Lực chiến')}${chip('sort', 'rar', 'Phẩm chất')}${chip('sort', 'lv', 'Cấp')}<span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div></div>
     <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
-      return `<button class="hc2 r-${h.rar} ${o ? '' : 'locked'}" data-h="${id}"><span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
-        <span class="hc2-rar">${h.rar}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
+      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} ${o ? '' : 'locked'}" data-h="${id}"><span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
+        <span class="hc2-rar">${h.tier}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
         <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(5 - o.star)}</i></span>` : ROLES[h.role].name}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
@@ -3823,7 +3823,7 @@ let HD_TAB = 'info';
 function showHeroDetail(id, tab) {
   if (tab) HD_TAB = tab;
   const h = HEROES[id], o = S.owned[id], st = heroStats(id);
-  const lvCost = o ? lvCostOf(o.lv) : 0, starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
+  const lvCost = o ? lvCostOf(o.lv) : 0, starNeed = o && o.star < 5 ? STAR_COST[tierOf(id)][o.star - 1] : 0;
   const bonds = BONDS.filter(b => b.members.includes(id));
   const list = Object.keys(HEROES).filter(k => S.owned[k]).sort((a, b) => power(b) - power(a)), ix = list.indexOf(id);
   const next = o && o.lv < MAX_LV ? (() => { const sv = o.lv; o.lv++; const n2 = heroStats(id); o.lv = sv; return n2; })() : null;
@@ -3854,10 +3854,10 @@ function showHeroDetail(id, tab) {
           <p>${esc(b.desc)}${lv ? ` · Thêm +${Math.round(BOND_LV[lv] * 100)}% công, máu` : ''}</p><div class="hb-bar"><i style="width:${lv * 10}%"></i></div></div>`; }).join('') + '<small>Cấp duyên phận tăng theo tổng sao và cấp của các thành viên.</small>' : '<p class="hint">Tướng này chưa có duyên phận.</p>',
   };
   ui.innerHTML = `<div class="screen panel-screen hd2">${topBar('Thần Tướng')}
-    <div class="hd-wrap r-${h.rar}">
+    <div class="hd-wrap r-${h.rar} ${tierCls(h.tier)}">
       <div class="hd-left"><button class="hd-nav" id="hdPrev" ${ix <= 0 ? 'disabled' : ''}>‹</button><button class="hd-nav r" id="hdNext" ${ix < 0 || ix >= list.length - 1 ? 'disabled' : ''}>›</button>
         <div class="hd-art"><img src="${fullImg(id, 240)}"></div>
-        <div class="hd-name">${rarTag(h.rar)}<h3>${esc(h.name)}</h3></div><small>${esc(h.title)} · ${esc(h.src)}</small>
+        <div class="hd-name">${rarTag(id)}<h3>${esc(h.name)}</h3></div><small>${esc(h.title)} · ${esc(h.src)}</small>
         <div class="tags">${roleTag(h.role)}${elTag(h.el)}${facTag(h.fac)}</div>
         ${o ? `<div class="hd-pw">Lv ${o.lv} · ${starsHTML(o.star, 5)} · ⚔ ${fmt(power(id))}</div>` : '<div class="hd-pw">Chưa sở hữu</div>'}</div>
       <div class="hd-right"><div class="hd-tabs">${tabs.map(([k, n]) => `<button class="${HD_TAB === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div><div class="hd-body">${body[HD_TAB] || body.info}</div></div>
@@ -3895,8 +3895,9 @@ function pullOne() {
   if (rar === 'SSR') { S.pity = 0; S.pity10 = 0; }
   if (rar === 'SR') S.pity10 = 0;
   const bn = BANNERS[S.gb || 0], feat = rar === 'SSR' && bn.feat.length && Math.random() < 0.5;
-  const id = feat ? pick(bn.feat) : pick(rar === 'SSR' ? SSR_POOL : rar === 'SR' ? SR_POOL : R_POOL);
-  if (S.owned[id]) { S.owned[id].shard += DUP_SHARDS[rar]; return { rar, id, dup: DUP_SHARDS[rar] }; }
+  const pickSSR = () => { const r2 = Math.random(); let acc = 0; for (const t of ['UR', 'SSR+', 'SSR']) { acc += GACHA_TIER_W[t]; const L = SSR_POOL.filter(x => HEROES[x].tier === t); if (r2 < acc && L.length) return pick(L); } return pick(SSR_POOL); };
+  const id = feat ? pick(bn.feat) : rar === 'SSR' ? pickSSR() : pick(rar === 'SR' ? SR_POOL : R_POOL);
+  if (S.owned[id]) { S.owned[id].shard += DUP_SHARDS[tierOf(id)]; return { rar, id, dup: DUP_SHARDS[tierOf(id)] }; }
   S.owned[id] = newRec();
   if (S.lineup.length < 5) S.lineup.push(id);
   return { rar, id, isNew: true };
@@ -3913,7 +3914,7 @@ function showGacha() {
       ${pullBoxHTML()}
       <small>Từ lượt ${GACHA.softFrom} mỗi lượt +5% tỉ lệ SSR. Mỗi 10 lượt chắc chắn có SR trở lên. Ra tướng đã có thì đổi thành mảnh tướng.</small>
     </div>
-    <div class="pool">${[...SSR_POOL, ...SR_POOL, ...R_POOL].map(id => `<div class="pool-i ${S.owned[id] ? 'own' : ''}"><img src="${por(id, 60)}">${rarTag(HEROES[id].rar)}</div>`).join('')}</div>
+    <div class="pool">${[...SSR_POOL, ...SR_POOL, ...R_POOL].map(id => `<div class="pool-i ${S.owned[id] ? 'own' : ''}"><img src="${por(id, 60)}">${rarTag(id)}</div>`).join('')}</div>
     <div class="gacha-btns">
       <button class="btn" id="g1">Quay 1<small>${icon('ngoc')}${GACHA.cost1}</small></button>
       <button class="btn gold" id="g10">Quay 10<small>${icon('ngoc')}${fmt(GACHA.cost10)}</small></button>
@@ -3946,10 +3947,10 @@ function doPull(n) {
   const wrap = document.createElement('div');
   wrap.className = 'modal pull-modal best-' + best;
   wrap.innerHTML = `<div class="pull-glow"></div><div class="pull-grid n${n}">${res.map((r, i) => `
-    <div class="pcard r-${r.rar}" style="animation-delay:${0.25 + i * 0.12}s">
+    <div class="pcard r-${r.rar} ${r.id ? tierCls(tierOf(r.id)) : ''}" style="animation-delay:${0.25 + i * 0.12}s">
       <div class="pc-inner">
         ${r.id ? `<img src="${por(r.id, 90)}"><b>${esc(HEROES[r.id].name)}</b>` : `<i class="ic ic-univ big"></i><b>Mảnh vạn năng ×2</b>`}
-        ${rarTag(r.rar)}
+        ${rarTag(r.id || r.rar)}
         ${r.isNew ? '<em class="new">MỚI</em>' : r.dup ? `<em>+${r.dup} mảnh</em>` : ''}
       </div></div>`).join('')}</div>
     <button class="btn gold" id="pullOk" style="animation-delay:${0.4 + n * 0.12}s">Xác nhận</button>`;
@@ -4023,7 +4024,7 @@ function buildTeamBar() {
   if (!bar || !B) return;
   const deployed = B.heroes.filter(h => !h.clone);
   const list = [...deployed, ...B.deploy];
-  bar.innerHTML = list.map((u, i) => `<button class="tm r-${(HEROES[u.id] && HEROES[u.id].rar) || 'R'}" data-tm="${i}" title="${esc(u.d.ult.name)} (phím ${i + 1})">
+  bar.innerHTML = list.map((u, i) => `<button class="tm r-${(HEROES[u.id] && HEROES[u.id].rar) || 'R'} ${tierCls(tierOf(u.id))}" data-tm="${i}" title="${esc(u.d.ult.name)} (phím ${i + 1})">
       <span class="tm-ring"></span><span class="tm-fire"></span>${sysIco('role_' + u.role, 'tm-role')}<img src="${porB(u.id, 64)}"><span class="tm-key">${i + 1}</span><span class="tm-trong"></span><span class="tm-ammo"></span><span class="tm-hp"><i></i></span><span class="tm-mp"><i></i></span>
       <span class="tm-state"></span><span class="tm-ult">${esc(u.d.ult.name)}</span></button>`).join('');
   B.teamList = list;

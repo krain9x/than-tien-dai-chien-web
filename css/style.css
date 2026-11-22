@@ -835,3 +835,17 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 @keyframes ssrRim { to { --ang: 360deg; } }
 .ssr-rv.burst .rv-rays { opacity: .22; }
 .chip .sys-ico { width: 16px; height: 16px; margin: -2px 3px 0 -2px; } .hc2-sys .sys-ico { width: 20px; height: 20px; }
+
+/* ===== phẩm 6 bậc ===== */
+.rar-UR { background: linear-gradient(90deg, #ff3a3a, #ff9a2e, #ffe14d, #ff3a3a); background-size: 300% 100%; animation: urShift 3s linear infinite; color: #fff; text-shadow: 0 1px 0 #7a0a0a; }
+.rar-SSRP { background: linear-gradient(135deg, #ff8a1a, #ffcf3f); color: #fff; }
+.rar-A { background: #7a8590; }
+@keyframes urShift { to { background-position: 300% 0; } }
+.hc2.t-UR { background: linear-gradient(160deg, #fff3e0, #ffb3a0); border-color: #e8323c; box-shadow: 0 0 12px rgba(232,50,60,.55); }
+.hc2.t-UR::after { background: conic-gradient(from var(--ang), transparent 0 55%, #fff 65%, #ff4a4a 75%, #ffcf3f 85%, transparent 95%) !important; animation-duration: 1.6s !important; }
+.hc2.t-SSRP { background: linear-gradient(160deg, #fff8e0, #ffd890); border-color: #ff9a1a; }
+.hc2.t-A { background: linear-gradient(160deg, #f4f4f4, #cfd5da); border-color: #8a949c; }
+.hd-wrap.t-UR .hd-left { background: radial-gradient(circle at 50% 40%, #fff, #ffc0a8 55%, #e8323c); box-shadow: 0 0 24px rgba(232,50,60,.5); }
+.hd-wrap.t-SSRP .hd-left { background: radial-gradient(circle at 50% 40%, #fff, #ffe0a0 55%, #ff9a1a); }
+.hd-wrap.t-A .hd-left { background: radial-gradient(circle at 50% 40%, #fff, #e4e8eb 60%, #9aa4ab); }
+.hc2.t-UR .hc2-rar { color: #fff; background: linear-gradient(90deg, #e8323c, #ff9a2e); } .hc2.t-SSRP .hc2-rar { color: #ffd34d; } .hc2.t-A .hc2-rar { color: #d0d6da; }

@@ -1057,3 +1057,27 @@ const RAR_TABLE = {
   for (const id in HEROES) HEROES[id].rar = RAR_TABLE.SSR.includes(id) ? 'SSR' : RAR_TABLE.R.includes(id) ? 'R' : 'SR';
   for (const [P, r] of [[SSR_POOL, 'SSR'], [SR_POOL, 'SR'], [R_POOL, 'R']]) { P.length = 0; for (const id in HEROES) if (HEROES[id].rar === r) P.push(id); }
 })();
+
+// ===== PHẨM 6 BẬC (theo Bảng Thần Tiên, docs/bang_than_tien.html) =====
+const TIER_TABLE = {
+  UR: ['giaochu', 'thailaoquan'],
+  'SSR+': ['ngokhong', 'duongtien', 'nata', 'quanam', 'nhiendang', 'khongtuyen', 'tranguyentu', 'bodetosu'],
+  SSR: ['khuongtanha', 'vantieu', 'trieucongminh', 'vanthu', 'thaiatchannhan', 'thaisu', 'ngumavuong', 'thanhnguutinh'],
+  SR: ['litinh', 'batgioi', 'satang', 'tieubachlong', 'duongtang', 'honghainhi', 'thietphien', 'kimgiac', 'datky', 'bachcot', 'hoangmi', 'hoangphongquai', 'loichantu', 'hoangphiho', 'quynhtieu', 'longvuong', 'dienmau', 'viho'],
+  R: ['hangnga', 'kimtra', 'thohanhton', 'dangthienngoc', 'hoangthienhoa', 'thancongbao', 'thachco', 'culinhthan', 'longnu', 'thaibachkimtinh', 'hachhung'],
+  A: ['thodia'],
+};
+const TIER_ORDER = ['UR', 'SSR+', 'SSR', 'SR', 'R', 'A'], TIER_RANK = { UR: 6, 'SSR+': 5, SSR: 4, SR: 3, R: 2, A: 1 };
+const TIER_CLASS = { UR: 'SSR', 'SSR+': 'SSR', SSR: 'SSR', SR: 'SR', R: 'R', A: 'R' };   // lớp gốc cho chiêu mộ / cảnh cắt / thức tỉnh
+const TIER_BASE = { UR: 1.2, 'SSR+': 1.08, SSR: 1, SR: 1, R: 1, A: 0.92 };              // hệ số chỉ số gốc
+Object.assign(STAR_MUL_R, { UR: [1, 1.25, 1.55, 1.95, 2.65], 'SSR+': [1, 1.22, 1.5, 1.88, 2.5], A: [1, 1.1, 1.2, 1.32, 1.45] });
+Object.assign(STAR_COST, { UR: [15, 30, 45, 70], 'SSR+': [12, 25, 35, 60], A: [2, 4, 8, 16] });
+Object.assign(DUP_SHARDS, { UR: 15, 'SSR+': 12, A: 1 });
+const GACHA_TIER_W = { UR: 0.12, 'SSR+': 0.32, SSR: 0.56 };   // trong 2,5% ra lớp SSR: UR 0,3% · SSR+ 0,8% · SSR 1,4%
+const tierOf = id => (HEROES[id] && HEROES[id].tier) || (HEROES[id] && HEROES[id].rar) || 'R';
+const tierCls = t => 't-' + String(t).replace('+', 'P');
+(function applyTier() {
+  for (const t of TIER_ORDER) for (const id of TIER_TABLE[t]) if (HEROES[id]) HEROES[id].tier = t;
+  for (const id in HEROES) { if (!HEROES[id].tier) HEROES[id].tier = HEROES[id].rar; HEROES[id].rar = TIER_CLASS[HEROES[id].tier]; }
+  for (const [P, r] of [[SSR_POOL, 'SSR'], [SR_POOL, 'SR'], [R_POOL, 'R']]) { P.length = 0; for (const id in HEROES) if (HEROES[id].rar === r) P.push(id); }
+})();
