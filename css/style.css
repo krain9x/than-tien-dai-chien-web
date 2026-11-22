@@ -834,3 +834,4 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
   background: conic-gradient(from var(--ang), transparent 0 70%, #fff6c0 80%, #ffcf3f 88%, transparent 96%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: ssrRim 2.4s linear infinite; }
 @keyframes ssrRim { to { --ang: 360deg; } }
 .ssr-rv.burst .rv-rays { opacity: .22; }
+.chip .sys-ico { width: 16px; height: 16px; margin: -2px 3px 0 -2px; } .hc2-sys .sys-ico { width: 20px; height: 20px; }

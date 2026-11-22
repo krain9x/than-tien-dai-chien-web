@@ -123,7 +123,7 @@ function drawEnemyPose(u, alpha) {
   ctx.filter = 'none'; ctx.restore(); return true;
 }
 const POSE_NAMES = ['windup', 'strike', 'skill', 'ult', 'idle1', 'idle2', 'hit'];
-const POSE_IDS = ['bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
+const POSE_IDS = ['giaochu','khongtuyen','nhiendang','thaisu','hoangmi','vanthu','quynhtieu','hoangthienhoa','viho','thachco','bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
 const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tướng, chỉ nạp khi tướng ra trận (tiết kiệm ~30 MB lúc khởi động)
 function ensureHeroAssets(ids) {
   try { for (const c of COMBOS) if (ids.includes(c.a) && ids.includes(c.b)) cxArt(c.a + '+' + c.b); } catch (e) {}   // tranh mở màn hợp kích
@@ -1075,6 +1075,9 @@ const SSR_ATK = {
   ngumavuong: { blood: 0.02, refill: 0.12, dmg: 0.3 },   // mỗi đòn tốn 2% máu, điều khí hồi 12%, +30% sát thương
   bodetosu: { talis: 3 },                   // loạt đầu sau điều khí phóng thêm 3 lá bùa
   tranguyentu: { pull: 50 },                // quả nhân sâm hút quái lại gần
+  vantieu: { vortex: 5 },                   // cứ 5 đòn: Kim Đấu xoáy hút quái quanh mục tiêu
+  giaochu: { swords: 4 },                   // cứ 4 đòn: bốn kiếm Tru Tiên giáng quanh mục tiêu
+  khongtuyen: { seal: 0.18 },               // 18% thần quang thu binh: quái thường đứng hình
 };
 function ssrAtk(u, tgt, base) {
   const A = SSR_ATK[u.id]; if (!A || u.clone) return;
@@ -1086,6 +1089,11 @@ function ssrAtk(u, tgt, base) {
   if (A.zone) B.later.push({ t: 0.45, fn: () => { if (!B || B.over) return; B.zones.push({ x: tx, y: ty, r: A.zone.r, mult: A.zone.dps, t: A.zone.dur, dur: A.zone.dur, src: u, tick: 0, color: A.zone.col, tag: 'ssr' + u.id + Math.random() }); } });
   if (A.blood) { u.hp = Math.max(1, u.hp - maxHp(u) * A.blood); }
   if (A.talis && u.talisReady) { u.talisReady = false; for (let k = 0; k < A.talis; k++) fireProj(u, tgt, { kind: 'atk', type: 'light', angle: base + (k - 1) * 0.22, homing: true, mult: 0.5, r: 9, life: 1.6, speed: 600 }); }
+  if (A.vortex) { u.vxN = (u.vxN || 0) + 1; if (u.vxN >= A.vortex) { u.vxN = 0; B.later.push({ t: 0.4, fn: () => { if (!B || B.over) return; B.fx.push({ k: 'ring', x: tx, y: ty, r: 220, color: '#ffd34d', t: 0, dur: 0.6 });
+      for (const e of enemiesIn({ x: tx, y: ty }, 130)) { if (!e.boss && !e.dead) { e.x += (tx - e.x) * 0.6; e.y += (ty - e.y) * 0.6; } dealDmg(u, e, 0.9, 'skill'); } fxBurst(tx, ty - 30, 'fire', 160); } }); } }
+  if (A.swords) { u.swN = (u.swN || 0) + 1; if (u.swN >= A.swords) { u.swN = 0; [[-50, -20], [50, -20], [-30, 30], [30, 30]].forEach(([ox, oy], i) => B.later.push({ t: 0.25 + i * 0.1, fn: () => { if (!B || B.over) return;
+      const x = tx + ox, y = ty + oy; fxBurst(x, y - 40, 'fire', 120); B.fx.push({ k: 'ring', x, y, r: 90, color: '#ff7a5a', t: 0, dur: 0.35 }); B.shake = Math.max(B.shake, 0.2); for (const e of enemiesIn({ x, y }, 60)) dealDmg(u, e, 0.6, 'skill'); } })); } }
+  if (A.seal && Math.random() < A.seal && !tgt.boss) B.later.push({ t: 0.3, fn: () => { if (!B || B.over || tgt.dead) return; tgt.stun = Math.max(tgt.stun || 0, 1.2); floater(tgt.x, tgt.y - 70, 'Thu binh!', '#9fffc0', 13); } });
   if (A.pull) B.later.push({ t: 0.5, fn: () => { if (!B || B.over) return; for (const e of enemiesIn({ x: tx, y: ty }, 110)) if (!e.boss && !e.dead) { e.x += (tx - e.x) * 0.5; e.y += (ty - e.y) * 0.5; } } });
 }
 function ssrReload(u) {   // gọi khi điều khí xong
@@ -2510,6 +2518,16 @@ const UCFG = {
   kimgiac: { t: 'suck', obj: 'gourd', col: '#b88aff' },
   thaibachkimtinh: { t: 'heal', obj: 'star', size: 150, col: '#ffe58a' },
   culinhthan: { t: 'smash', obj: 'axe', col: '#ffd34d', len: 480 },
+  giaochu: { t: 'rain', obj: 'tru_sword', n: 8, size: 110, col: '#ff5a3a' },
+  khongtuyen: { t: 'wind', obj: 'peacock_fan', size: 220, col: '#9fffc0' },
+  nhiendang: { t: 'heal', obj: 'holy_lamp', size: 200, col: '#ffe58a' },
+  thaisu: { t: 'smash', obj: 'gold_whip', col: '#ffd34d', len: 420 },
+  hoangmi: { t: 'drop', obj: 'cymbal', size: 220, col: '#ffd34d' },
+  vanthu: { t: 'smash', obj: 'wisdom_sword', col: '#bfe0ff', len: 460 },
+  quynhtieu: { t: 'throw', obj: 'dragon_scissors', n: 1, size: 170, col: '#ffd34d' },
+  hoangthienhoa: { t: 'rain', obj: 'heart_nail', n: 10, size: 70, col: '#ffb060' },
+  viho: { t: 'drop', obj: 'vajra', size: 180, col: '#ffd34d', beam: 1 },
+  thachco: { t: 'rain', obj: 'flying_stone', n: 10, size: 70, col: '#c8a0ff' },
   bodetosu: { t: 'smash', obj: 'jade_ruler', col: '#bfffd0', len: 480, wk: 1.6 },
   tranguyentu: { t: 'suck', obj: 'big_sleeve', col: '#e8c080', size: 220 },
   hoangphiho: { t: 'beast', run: 'ox_run', atk: 'ox_ram', size: 220, col: '#ffb060', sheet: 'sheet_boom_gold' },
@@ -2769,7 +2787,7 @@ const CX = {
 
 // ===================== ĐIỆN ẢNH CHO TUYỆT KỸ =====================
 const ULT_THEME = { ngokhong: ['#ffb02e', '#4a1400'], nata: ['#ff5a2a', '#3a0800'], ngumavuong: ['#ff3a1a', '#2a0505'], quanam: ['#bfffe8', '#06262a'], datky: ['#ff6ad0', '#2a0828'],
-  duongtien: ['#9fc8ff', '#06102a'], vantieu: ['#ffd34d', '#2a1a00'], thailaoquan: ['#9fffd0', '#04201a'], loichantu: ['#7fb3ff', '#040a2a'], thaiatchannhan: ['#ff7a2e', '#2a0a00'], tieubachlong: ['#7fe0ff', '#021a2a'], khuongtanha: ['#ffe58a', '#1a1404'], bodetosu: ['#bfffd0', '#04201a'], tranguyentu: ['#e8c080', '#1a1004'] };
+  duongtien: ['#9fc8ff', '#06102a'], vantieu: ['#ffd34d', '#2a1a00'], thailaoquan: ['#9fffd0', '#04201a'], loichantu: ['#7fb3ff', '#040a2a'], thaiatchannhan: ['#ff7a2e', '#2a0a00'], tieubachlong: ['#7fe0ff', '#021a2a'], khuongtanha: ['#ffe58a', '#1a1404'], bodetosu: ['#bfffd0', '#04201a'], tranguyentu: ['#e8c080', '#1a1004'], giaochu: ['#ff7a5a', '#200404'], khongtuyen: ['#9fffc0', '#021a10'] };
 const cineTheme = id => ULT_THEME[id] || [(UCFG[id] && UCFG[id].col) || '#ffe58a', '#0a0612'];
 const isSSR = id => (window.SSR_POOL || SSR_POOL).includes(id);
 function drawCineSky(f, p) {   // trời đổi màu theo hệ (lớp thế giới, trước vật thể)
@@ -2843,6 +2861,8 @@ const SSRX = {
     ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; for (const [lw, a, c] of [[26, 0.25, '#ffcf3f'], [10, 0.6, '#ffe58a'], [3, 1, '#ffffff']]) { ctx.globalAlpha = a * k; ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(f.tx, f.ty - 40); ctx.stroke(); } ctx.restore();
     scTex('duongtien_fx', f.tx, f.ty - 40, 200, p * 3, k * 0.8);
   },
+  giaochu(f, p) { const [tx, ty] = tgtXY(f); if (p > 0.25) scTex('giaochu_fx', tx, ty - 20, 560, p * 1.2, fadeIO((p - 0.25) / 0.75, 0.2, 0.8), 0.5); },
+  khongtuyen(f, p) { if (p > 0.1 && p < 0.92) scTex('khongtuyen_fx', f.x + 200, f.y - 50, 520, 0, fadeIO((p - 0.1) / 0.82, 0.2, 0.8)); },
   bodetosu(f, p) { const [tx, ty] = tgtXY(f); if (p > 0.25) scTex('bodetosu_fx', tx, ty - 20, 520, p * 1.5, fadeIO((p - 0.25) / 0.75, 0.2, 0.8), 0.5); },
   tranguyentu(f, p) { if (p > 0.1 && p < 0.9) scTex('tranguyentu_fx', f.x + 160, f.y - 60, 460 + 120 * p, -p * 3, fadeIO((p - 0.1) / 0.8, 0.2, 0.8)); },
   khuongtanha(f, p) { const [tx] = tgtXY(f); if (p > 0.15) scTex('khuongtanha_fx', tx, 150, 520 + 100 * p, 0, fadeIO((p - 0.15) / 0.85, 0.2, 0.8) * 0.9); },   // bảng Phong Thần toả kim quang trên trời
@@ -2869,10 +2889,11 @@ const SSRX = {
 const SSR_FX = {
   ngokhong: { col: '#ffcf3f', pt: [1, 3], spin: 1 }, duongtien: { col: '#9fd0ff', pt: [5, 3] }, nata: { col: '#ff7a2e', pt: [2, 3] },
   quanam: { col: '#ffd0e8', pt: [0, 3] }, thailaoquan: { col: '#9fffd0', pt: [4, 3] }, ngumavuong: { col: '#ff5a2a', pt: [2, 2] },
+  vantieu: { col: '#ffd34d', pt: [3, 3] }, giaochu: { col: '#ff7a5a', pt: [5, 3] }, khongtuyen: { col: '#9fffc0', pt: [1, 3] },
   khuongtanha: { col: '#ffe58a', pt: [5, 3] }, bodetosu: { col: '#bfffd0', pt: [4, 3] }, tranguyentu: { col: '#d0a0ff', pt: [3, 3] },
 };
 const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
-function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low'; }
+function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low' && (HEROES[u.id].rar === 'SSR' || ((S.owned[u.id] || {}).star || 0) >= 5); }   // SR có bộ VFX (Ngưu Ma) giữ khi thức tỉnh
 function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
   const im = sfImg('aura_' + u.id); if (!im) return; const full = u.mp >= 100 ? 1 : 0;
   const T = window.AURA_C0 && AURA_C0[u.id], tc = T && (T[u.pzN] || T.idle1); if (!tc) return;
@@ -3523,6 +3544,7 @@ function starsHTML(n, max) {
 function rarTag(r) { return `<span class="rar rar-${r}">${r}</span>`; }
 const sysIco = (k, cls) => `<img class="sys-ico ${cls || ''}" src="art/ui/${k}.webp" alt="" onerror="this.style.display='none'">`;
 function roleTag(r) { return `<span class="tag" style="--c:${ROLES[r].color}">${sysIco('role_' + r)}${ROLES[r].name}</span>`; }
+function facTag(f) { return `<span class="tag" style="--c:#8a6a4a">${sysIco('fac_' + f)}${FACTIONS[f]}</span>`; }
 function elTag(e) { return `<span class="tag" style="--c:${ELEMENTS[e].color}">${sysIco('el_' + e)}${ELEMENTS[e].name}</span>`; }
 
 function totalPower() { return Object.keys(S.owned).reduce((s, id) => s + power(id), 0); }
@@ -3729,7 +3751,7 @@ function showStages() {
 // ---------------- Lineup
 function synergyHTML(ids) {
   const info = teamInfo(ids);
-  const facs = info.facs.map(f => `<div class="syn ${f.pct ? 'on' : ''}"><b>${FACTIONS[f.f]}</b> ${f.n} người ${f.pct ? `<em>+${Math.round(f.pct * 100)}% máu, công</em>` : '<small>cần 3 người</small>'}</div>`).join('');
+  const facs = info.facs.map(f => `<div class="syn ${f.pct ? 'on' : ''}">${sysIco('fac_' + f.f)}<b>${FACTIONS[f.f]}</b> ${f.n} người ${f.pct ? `<em>+${Math.round(f.pct * 100)}% máu, công</em>` : '<small>cần 3 người</small>'}</div>`).join('');
   const bonds = BONDS.map(b => {
     const on = info.bonds.includes(b);
     return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <small>${b.members.map(m => HEROES[m].name).join(' + ')}</small>${on ? `<em>${b.desc}${bondLv(b) ? ` · Cấp ${bondLv(b)}: +${Math.round(BOND_LV[bondLv(b)] * 100)}% công, máu` : ''}</em>` : ''}</div>`;
@@ -3755,7 +3777,7 @@ function showLineup() {
     <div class="lineup-body">
       <div class="pick-grid2">${owned.sort((a, b) => power(b) - power(a)).map(id => `
         <button class="hc2 r-${HEROES[id].rar} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}"><span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
-          <span class="hc2-rar">${HEROES[id].rar}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
+          <span class="hc2-rar">${HEROES[id].rar}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}${sysIco('fac_' + HEROES[id].fac)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
           <b>${esc(HEROES[id].name)}</b><small>${ROLES[HEROES[id].role].name} · ⚔${fmt(power(id))}</small></button>`).join('')}</div>
       <div class="synergy">${synergyHTML(lu)}</div>
     </div>
@@ -3776,21 +3798,22 @@ function showLineup() {
 }
 
 // ---------------- Heroes
-const HF = { rar: 'all', role: 'all', sort: 'power' };
+const HF = { rar: 'all', role: 'all', fac: 'all', sort: 'power' };
 function canStarUp(id) { const o = S.owned[id], h = HEROES[id]; return !!(o && h && o.star < 5 && o.shard + S.univ >= STAR_COST[h.rar][o.star - 1]); }
 function showHeroes() {
   const RK = { SSR: 3, SR: 2, R: 1 }, all = Object.keys(HEROES), own = all.filter(id => S.owned[id]);
-  let ids = all.filter(id => (HF.rar === 'all' || HEROES[id].rar === HF.rar) && (HF.role === 'all' || HEROES[id].role === HF.role));
+  let ids = all.filter(id => (HF.rar === 'all' || HEROES[id].rar === HF.rar) && (HF.role === 'all' || HEROES[id].role === HF.role) && (HF.fac === 'all' || HEROES[id].fac === HF.fac));
   const key = id => HF.sort === 'power' ? (S.owned[id] ? power(id) : -1) : HF.sort === 'lv' ? (S.owned[id] ? S.owned[id].lv * 10 + S.owned[id].star : -1) : RK[HEROES[id].rar] * 100 + (S.owned[id] ? 50 : 0);
   ids.sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || key(b) - key(a));
   const chip = (grp, v, label) => `<button class="chip ${HF[grp] === v ? 'on' : ''}" data-f="${grp}:${v}">${label}</button>`;
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
     <div class="hf-bar"><div class="hf-chips">${chip('rar', 'all', 'Tất cả')}${chip('rar', 'SSR', 'SSR')}${chip('rar', 'SR', 'SR')}${chip('rar', 'R', 'R')}</div>
-      <div class="hf-chips">${chip('role', 'all', 'Mọi hệ')}${Object.keys(ROLES).map(r => chip('role', r, ROLES[r].name)).join('')}</div>
+      <div class="hf-chips">${chip('role', 'all', 'Mọi hệ')}${Object.keys(ROLES).map(r => chip('role', r, sysIco('role_' + r) + ROLES[r].name)).join('')}</div>
+      <div class="hf-chips">${chip('fac', 'all', 'Mọi phe')}${Object.keys(FACTIONS).filter(f => Object.values(HEROES).some(h => h.fac === f)).map(f => chip('fac', f, sysIco('fac_' + f) + FACTIONS[f])).join('')}</div>
       <div class="hf-chips">${chip('sort', 'power', 'Lực chiến')}${chip('sort', 'rar', 'Phẩm chất')}${chip('sort', 'lv', 'Cấp')}<span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div></div>
     <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
       return `<button class="hc2 r-${h.rar} ${o ? '' : 'locked'}" data-h="${id}"><span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
-        <span class="hc2-rar">${h.rar}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
+        <span class="hc2-rar">${h.rar}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
         <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(5 - o.star)}</i></span>` : ROLES[h.role].name}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
@@ -3835,7 +3858,7 @@ function showHeroDetail(id, tab) {
       <div class="hd-left"><button class="hd-nav" id="hdPrev" ${ix <= 0 ? 'disabled' : ''}>‹</button><button class="hd-nav r" id="hdNext" ${ix < 0 || ix >= list.length - 1 ? 'disabled' : ''}>›</button>
         <div class="hd-art"><img src="${fullImg(id, 240)}"></div>
         <div class="hd-name">${rarTag(h.rar)}<h3>${esc(h.name)}</h3></div><small>${esc(h.title)} · ${esc(h.src)}</small>
-        <div class="tags">${roleTag(h.role)}${elTag(h.el)}<span class="tag" style="--c:#8a6a4a">${FACTIONS[h.fac]}</span></div>
+        <div class="tags">${roleTag(h.role)}${elTag(h.el)}${facTag(h.fac)}</div>
         ${o ? `<div class="hd-pw">Lv ${o.lv} · ${starsHTML(o.star, 5)} · ⚔ ${fmt(power(id))}</div>` : '<div class="hd-pw">Chưa sở hữu</div>'}</div>
       <div class="hd-right"><div class="hd-tabs">${tabs.map(([k, n]) => `<button class="${HD_TAB === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div><div class="hd-body">${body[HD_TAB] || body.info}</div></div>
     </div></div>`;

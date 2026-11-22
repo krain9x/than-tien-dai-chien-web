@@ -957,3 +957,103 @@ ENEMIES.docbuc = { name: 'Độc Bức', hp: 230, atk: 26, def: 14, aspd: 1.1, r
              { id: 'kimtrana', name: 'Huynh Đệ Lý Gia', members: ['kimtra', 'nata'], g: { atkPct: 0.10, hpPct: 0.10 }, desc: 'Kim Tra và Na Tra: +10% công, +10% máu.' },
              { id: 'nhansam', name: 'Nhân Sâm Quả Kiếp', members: ['tranguyentu', 'ngokhong'], g: { hpPct: 0.15 }, desc: 'Trấn Nguyên Tử và Ngộ Không: +15% máu.' });
 })();
+
+// ===== ĐỢT 4: 10 THẦN TƯỚNG =====
+(function heroes4() {
+  const L = (o) => ({ style: 'buns', skin: '#ffe0c8', hair: '#2a1a10', outfit: '#c9a227', outfit2: '#8a3a2a', belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d', ...o });
+  const T = (a, b, c, e) => [{ d: a[0], m: a[1] }, { d: b[0], m: b[1] }, { d: c[0], m: c[1] }, { d: e[0], m: e[1] }];
+  const aoe = (r, mult, col, x) => ({ t: 'aoe', at: 'cluster', r, mult, color: col, ...(x || {}) });
+  Object.assign(HEROES, {
+    giaochu: { name: 'Thông Thiên Giáo Chủ', title: 'Triệt Giáo Chi Chủ', src: 'Phong Thần Diễn Nghĩa', role: 'phap', el: 'kim', fac: 'triet', rar: 'SSR',
+      hp: 1350, atk: 182, def: 54, aspd: 0.9, range: 210, move: 150, ranged: true, proj: 'light', look: L({ outfit: '#5a2a7a' }),
+      tang: T(['Đòn thường +25%', { atk: 0.25 }], ['Tru Tiên Kiếm Khí +40%', { skill: 0.4 }], ['Đòn thường xuyên thấu', { pierce: 1 }], ['Tru Tiên Kiếm Trận +60%', { ult: 0.6 }]),
+      passive: { name: 'Thánh Nhân', desc: '+15% sát thương chiêu thức.', skillPct: 0.15 },
+      small: { name: 'Tru Tiên Kiếm Khí', desc: 'Kiếm khí chém chỗ quái đông nhất 190% công.', fx: [aoe(110, 1.9, '#ff5a3a')] },
+      ult: { name: 'Tru Tiên Kiếm Trận', desc: 'Bốn thanh Tru Tiên Kiếm giáng xuống thành trận 520% công vùng rộng.', fx: [aoe(200, 5.2, '#ff7a5a')] } },
+    khongtuyen: { name: 'Khổng Tuyên', title: 'Ngũ Sắc Thần Quang', src: 'Phong Thần Diễn Nghĩa', role: 'tran', el: 'moc', fac: 'triet', rar: 'SSR',
+      hp: 1650, atk: 128, def: 76, aspd: 0.95, range: 200, move: 155, ranged: true, proj: 'light', look: L({ outfit: '#2a8a5a' }),
+      tang: T(['Đòn thường 15% làm choáng', { stunHit: 0.15 }], ['Thần Quang Thu Binh choáng thêm 0,5 giây', { stunPlus: 0.5 }], ['Đòn thường nảy thêm 1 quái', { bounce: 1 }], ['Ngũ Sắc Thần Quang +60%', { ult: 0.6 }]),
+      passive: { name: 'Khổng Tước', desc: '+10% sát thương chiêu thức.', skillPct: 0.1 },
+      small: { name: 'Thần Quang Thu Binh', desc: 'Quét thần quang chỗ quái đông nhất 150% công, choáng 1,2 giây.', fx: [aoe(120, 1.5, '#9fffc0', { stun: 1.2 })] },
+      ult: { name: 'Ngũ Sắc Thần Quang', desc: 'Năm luồng thần quang cuốn cả vùng 400% công, choáng 2 giây; cả đội +20% công 6 giây.', fx: [aoe(200, 4.0, '#c8ffd0', { stun: 2.0 }), { t: 'buff', k: 'atk', v: 0.2, dur: 6 }] } },
+    nhiendang: { name: 'Nhiên Đăng Đạo Nhân', title: 'Linh Thứu Sơn Chủ', src: 'Phong Thần Diễn Nghĩa', role: 'dan', el: 'hoa', fac: 'xien', rar: 'SR',
+      hp: 1700, atk: 118, def: 66, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'light', look: L({ outfit: '#e8a040' }),
+      tang: T(['Hồi máu +25%', { heal: 0.25 }], ['Đăng Hoả Hồi Xuân +40%', { heal: 0.4 }], ['Đòn thường hồi 2% máu đồng đội yếu nhất', { hitHeal: 0.02 }], ['Linh Cữu Cung Đăng +60%', { ult: 0.6, heal: 0.2 }]),
+      passive: { name: 'Cổ Phật', desc: 'Hiệu quả hồi máu +15%.', healPct: 0.15 },
+      small: { name: 'Đăng Hoả Hồi Xuân', desc: 'Đèn thiêng hồi máu cả đội 190% công.', fx: [{ t: 'heal', mult: 1.9 }] },
+      ult: { name: 'Linh Cữu Cung Đăng', desc: 'Ngọn đèn nở thành sen lửa, hồi máu cả đội 450% công và cho khiên 12%.', fx: [{ t: 'heal', mult: 4.5 }, { t: 'shield', who: 'team', pct: 0.12, dur: 6 }] } },
+    thaisu: { name: 'Văn Thái Sư', title: 'Văn Trọng', src: 'Phong Thần Diễn Nghĩa', role: 'sat', el: 'kim', fac: 'triet', rar: 'SR',
+      hp: 1550, atk: 162, def: 62, aspd: 1.0, range: 200, move: 160, ranged: true, proj: 'bolt', look: L({ outfit: '#2a2a2a' }),
+      tang: T(['Đòn thường nảy thêm 1 quái', { bounce: 1 }], ['Thư Hùng Kim Tiên +40%', { skill: 0.4 }], ['Đòn thường +25%', { atk: 0.25 }], ['Tam Nhãn Lôi Tiên +60%', { ult: 0.6 }]),
+      passive: { name: 'Thiên Nhãn', desc: '+10% bạo kích.', crit: 0.1 },
+      small: { name: 'Thư Hùng Kim Tiên', desc: 'Đôi roi vàng quật chỗ quái đông nhất 180% công.', fx: [aoe(100, 1.8, '#ffd34d')] },
+      ult: { name: 'Tam Nhãn Lôi Tiên', desc: 'Mắt thứ ba mở, roi sét giáng 450% công, choáng 1 giây.', fx: [aoe(170, 4.5, '#ffe58a', { stun: 1.0 })] } },
+    hoangmi: { name: 'Hoàng Mi Đại Vương', title: 'Tiểu Lôi Âm Chủ', src: 'Tây Du Ký', role: 'tran', el: 'tho', fac: 'yeu', rar: 'SR',
+      hp: 1600, atk: 108, def: 72, aspd: 0.9, range: 190, move: 150, ranged: true, proj: 'ring', look: L({ outfit: '#e8a040' }),
+      tang: T(['Đòn thường 15% làm choáng', { stunHit: 0.15 }], ['Kim Nạo khoá lâu hơn 0,6 giây', { stunPlus: 0.6 }], ['Đòn thường xuyên thấu', { pierce: 1 }], ['Kim Nạo Hợp Bích +60%', { ult: 0.6 }]),
+      passive: { name: 'Giả Phật', desc: '+10% sát thương chiêu thức.', skillPct: 0.1 },
+      small: { name: 'Nhân Chủng Đại', desc: 'Túi vải thu quái chỗ đông nhất 130% công, choáng 1,2 giây.', fx: [aoe(110, 1.3, '#ffd34d', { stun: 1.2 })] },
+      ult: { name: 'Kim Nạo Hợp Bích', desc: 'Đôi Kim Nạo khép lại nhốt cả vùng 280% công, choáng 2,2 giây.', fx: [aoe(180, 2.8, '#ffe58a', { stun: 2.2 })] } },
+    vanthu: { name: 'Văn Thù Bồ Tát', title: 'Đại Trí Bồ Tát', src: 'Tây Du Ký', role: 'phap', el: 'thuy', fac: 'phat', rar: 'SR',
+      hp: 1320, atk: 168, def: 52, aspd: 0.9, range: 210, move: 150, ranged: true, proj: 'light', look: L({ outfit: '#2a6ab0' }),
+      tang: T(['Đòn thường xuyên thấu', { pierce: 1 }], ['Trí Tuệ Kiếm +40%', { skill: 0.4 }], ['Đòn thường +25%', { atk: 0.25 }], ['Sư Tử Hống +60%', { ult: 0.6 }]),
+      passive: { name: 'Đại Trí', desc: '+12% sát thương chiêu thức.', skillPct: 0.12 },
+      small: { name: 'Trí Tuệ Kiếm', desc: 'Kiếm trí tuệ chém chỗ quái đông nhất 180% công.', fx: [aoe(100, 1.8, '#bfe0ff')] },
+      ult: { name: 'Sư Tử Hống', desc: 'Kiếm quang và tiếng sư tử gầm 440% công, choáng 0,8 giây.', fx: [aoe(180, 4.4, '#dff0ff', { stun: 0.8 })] } },
+    quynhtieu: { name: 'Quỳnh Tiêu', title: 'Tam Tiêu Nương Nương', src: 'Phong Thần Diễn Nghĩa', role: 'sat', el: 'moc', fac: 'triet', rar: 'SR',
+      hp: 1450, atk: 164, def: 58, aspd: 1.05, range: 200, move: 165, ranged: true, proj: 'pearl', look: L({ outfit: '#2a8a5a' }),
+      tang: T(['Đòn thường +25%', { atk: 0.25 }], ['Kim Giao Tiễn +40%', { skill: 0.4 }], ['Đòn thường xuyên thấu', { pierce: 1 }], ['Song Long Tiễn +60%', { ult: 0.6 }]),
+      passive: { name: 'Tam Tiêu', desc: '+8% bạo kích.', crit: 0.08 },
+      small: { name: 'Kim Giao Tiễn', desc: 'Kéo rồng cắt chỗ quái đông nhất 180% công.', fx: [aoe(100, 1.8, '#ffd34d')] },
+      ult: { name: 'Song Long Tiễn', desc: 'Hai con rồng vàng hoá lưỡi kéo cắt 470% công.', fx: [aoe(170, 4.7, '#ffe58a')] } },
+    hoangthienhoa: { name: 'Hoàng Thiên Hoá', title: 'Bỉnh Linh Công', src: 'Phong Thần Diễn Nghĩa', role: 'sat', el: 'hoa', fac: 'xien', rar: 'R',
+      hp: 1400, atk: 148, def: 56, aspd: 1.05, range: 200, move: 165, ranged: true, proj: 'spear', look: L({ outfit: '#e8e8f0' }),
+      tang: T(['Đòn thường xuyên thấu', { pierce: 1 }], ['Toản Tâm Đinh +40%', { skill: 0.4 }], ['Đòn thường +25%', { atk: 0.25 }], ['Vạn Đinh Xuyên Tâm +60%', { ult: 0.6 }]),
+      passive: { name: 'Thiếu Niên', desc: '+8% bạo kích.', crit: 0.08 },
+      small: { name: 'Toản Tâm Đinh', desc: 'Phóng đinh vàng chỗ quái đông nhất 160% công.', fx: [aoe(90, 1.6, '#ffb060')] },
+      ult: { name: 'Vạn Đinh Xuyên Tâm', desc: 'Mưa đinh vàng 380% công vùng rộng.', fx: [aoe(170, 3.8, '#ffd0a0')] } },
+    viho: { name: 'Vi Hộ', title: 'Hộ Pháp Vi Đà', src: 'Phong Thần Diễn Nghĩa', role: 'the', el: 'kim', fac: 'xien', rar: 'R',
+      hp: 3000, atk: 96, def: 116, aspd: 0.85, range: 140, move: 140, ranged: true, proj: 'boulder', look: L({ outfit: '#c9a227' }),
+      tang: T(['Máu tối đa +30%', { hp: 0.3 }], ['Hàng Ma Xử +40%', { skill: 0.4 }], ['Đòn thường nổ lan', { splash: 60 }], ['Kim Cương Trấn Ma +60%', { ult: 0.6 }]),
+      passive: { name: 'Hộ Pháp', desc: 'Nhận ít hơn 10% sát thương.', dr: 0.1 },
+      small: { name: 'Hàng Ma Xử', desc: 'Nện chày chỗ quái đông nhất 140% công, khiêu khích 3 giây, khiên 20%.', fx: [aoe(100, 1.4, '#ffd34d'), { t: 'taunt', r: 220, dur: 3 }, { t: 'shield', who: 'self', pct: 0.2, dur: 5 }] },
+      ult: { name: 'Kim Cương Trấn Ma', desc: 'Chày Kim Cương khổng lồ giáng 340% công, choáng 1,2 giây, khiên cả đội 10%.', fx: [aoe(170, 3.4, '#ffe58a', { stun: 1.2 }), { t: 'shield', who: 'team', pct: 0.1, dur: 6 }] } },
+    thachco: { name: 'Thạch Cơ Nương Nương', title: 'Khô Lâu Sơn Chủ', src: 'Phong Thần Diễn Nghĩa', role: 'phap', el: 'tho', fac: 'yeu', rar: 'R',
+      hp: 1300, atk: 158, def: 50, aspd: 0.9, range: 210, move: 150, ranged: true, proj: 'boulder', look: L({ outfit: '#6a5a8a' }),
+      tang: T(['Đòn thường nổ lan', { splash: 60 }], ['Bát Quái Long Tu Khăn +40%', { skill: 0.4 }], ['Đòn thường +25%', { atk: 0.25 }], ['Phi Thạch Vũ +60%', { ult: 0.6 }]),
+      passive: { name: 'Thạch Linh', desc: '+10% sát thương chiêu thức.', skillPct: 0.1 },
+      small: { name: 'Bát Quái Long Tu Khăn', desc: 'Khăn bát quái cuốn chỗ quái đông nhất 170% công, choáng 0,6 giây.', fx: [aoe(100, 1.7, '#c8a0ff', { stun: 0.6 })] },
+      ult: { name: 'Phi Thạch Vũ', desc: 'Mưa đá phép 400% công vùng rộng.', fx: [aoe(180, 4.0, '#d8c0ff')] } },
+  });
+  Object.assign(ATK_STYLE, {
+    giaochu: { pat: 'fan', proj: 'light', name: 'Tru Tiên Kiếm', desc: 'Toả 3 kiếm khí hình quạt; cứ 4 đòn, bốn kiếm Tru Tiên giáng quanh mục tiêu.', n: 3 },
+    khongtuyen: { pat: 'bounce', proj: 'light', name: 'Ngũ Sắc Quang', desc: 'Tia thần quang nảy 4 quái; 18% thu binh khí làm quái đứng hình.', bounces: 4 },
+    nhiendang: { pat: 'lob', proj: 'pill', name: 'Đăng Hoả', desc: 'Ném đốm lửa thiêng nổ lan; cứ 3 đòn hồi máu 1 đồng đội.', boom: 70, heal: 3 },
+    thaisu: { pat: 'bounce', proj: 'bolt', name: 'Kim Tiên Lôi', desc: 'Roi sét nảy lan 3 quái.', bounces: 3, speed: 900 },
+    hoangmi: { pat: 'boomerang', proj: 'ring', name: 'Kim Nạo', desc: 'Ném chũm chọe vàng xuyên quái rồi quay về.' },
+    vanthu: { pat: 'pierce', proj: 'light', name: 'Trí Tuệ Kiếm Quang', desc: 'Kiếm quang xuyên 3 quái.', pierceN: 3 },
+    quynhtieu: { pat: 'split', proj: 'pearl', name: 'Giao Tiễn', desc: 'Lưỡi kéo tách 2 khi trúng.', n: 2 },
+    hoangthienhoa: { pat: 'pierce', proj: 'spear', name: 'Phi Đinh', desc: 'Phóng đinh vàng xuyên 2 quái.', pierceN: 2 },
+    viho: { pat: 'lob', proj: 'boulder', name: 'Chày Hàng Ma', desc: 'Nện sóng đất nổ lan.', boom: 90 },
+    thachco: { pat: 'lob', proj: 'boulder', name: 'Phi Thạch', desc: 'Ném đá phép nổ lan rộng.', boom: 100 },
+  });
+  Object.assign(CAP_SPECIAL, {
+    giaochu: { n: 'Vạn Tiên Lai Triều', d: 'Sát thương chiêu thức cả đội +28%', m: { skillPct: 0.28 } },
+    khongtuyen: { n: 'Ngũ Sắc Hộ Thể', d: 'Cả đội nhận ít hơn 12%, nội công hồi nhanh hơn 20%', m: { kc: 0.12, mpRegen: 0.2 } },
+  });
+  BONDS.push(
+    { id: 'trietgiao', name: 'Triệt Giáo Môn Đồ', members: ['giaochu', 'vantieu', 'quynhtieu'], g: { atkPct: 0.12, skillPct: 0.08 }, desc: 'Thông Thiên và Tam Tiêu: +12% công, +8% sát thương chiêu.' },
+    { id: 'thaisu', name: 'Văn Thái Sư Mời Bạn', members: ['thaisu', 'trieucongminh'], g: { crit: 0.08 }, desc: 'Văn Trọng và Triệu Công Minh: +8% bạo kích.' },
+    { id: 'linhthuu', name: 'Linh Thứu Đoạt Châu', members: ['nhiendang', 'trieucongminh'], g: { hpPct: 0.12 }, desc: 'Nhiên Đăng và Triệu Công Minh: +12% máu.' });
+})();
+
+// ===== XẾP LẠI PHẨM CHẤT (2026-11-22): điểm = pháp lực trong truyện ×2 + độ nổi tiếng (thang 10 mỗi mục), cân thêm vai trò ===
+// SSR ≥ 25 điểm (11 tướng), R: pháp lực ≤ 4 hoặc tướng khởi đầu (14 tướng), còn lại SR (23 tướng). Bảng điểm ở HANDOFF.md.
+const RAR_TABLE = {
+  SSR: ['ngokhong', 'duongtien', 'nata', 'quanam', 'thailaoquan', 'khuongtanha', 'bodetosu', 'tranguyentu', 'vantieu', 'giaochu', 'khongtuyen'],
+  R: ['thohanhton', 'culinhthan', 'hoangphongquai', 'thancongbao', 'longnu', 'hangnga', 'thaibachkimtinh', 'dangthienngoc', 'kimtra', 'hachhung', 'thodia', 'hoangthienhoa', 'viho', 'thachco'],
+};
+(function applyRarity() {
+  for (const id in HEROES) HEROES[id].rar = RAR_TABLE.SSR.includes(id) ? 'SSR' : RAR_TABLE.R.includes(id) ? 'R' : 'SR';
+  for (const [P, r] of [[SSR_POOL, 'SSR'], [SR_POOL, 'SR'], [R_POOL, 'R']]) { P.length = 0; for (const id in HEROES) if (HEROES[id].rar === r) P.push(id); }
+})();
