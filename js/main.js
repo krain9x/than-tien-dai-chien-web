@@ -313,7 +313,7 @@ function applyBonuses(u, info) {
   if (pa.dr) u.bonus.dmgTaken += pa.dr;
 }
 
-function chBg(st) { const c = CHAPTERS[st.chap]; if (!c || st.raid) return null; const k = 'ch' + c.id; let i = BGIMG[k]; if (!i) { i = BGIMG[k] = new Image(); i.src = 'art/bg/' + k + '.webp'; } return i; }
+function chBg(st) { const c = CHAPTERS[st.raid ? 6 : st.chap]; if (!c) return null; const k = 'ch' + c.id; let i = BGIMG[k]; if (!i) { i = BGIMG[k] = new Image(); i.src = 'art/bg/' + k + '.webp'; } return i; }
 function startBattle(si) {   // nạp rig + tư thế của đội trước khi vào trận
   const need = S.lineup.filter(id => S.owned[id]);
   const en = stageEnemyIds(typeof si === 'object' ? si : STAGES[si]);
