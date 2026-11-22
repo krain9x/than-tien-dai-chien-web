@@ -245,7 +245,7 @@ function rebuildTang(u) {
 }
 function sysTang(sys) { let n = 0; if (B) for (const h of B.heroes) if (!h.dead && !h.clone && h.role === sys) n += trongOf(h) - 1; return n; }
 const coreBonus = u => RM(u, 'core') ? 0.20 * Math.min(5, sysTang(u.role)) : 0;   // Bản Mệnh: +20%/lần bồi dưỡng, tối đa 5
-const AMMO = 8;
+const AMMO = 5;   // VLĐMT: loạt đánh ngắn rồi điều khí lâu
 const ammoMax = u => AMMO + M('ammo');
 
 function makeHero(id, isCap) {
@@ -304,7 +304,7 @@ function getAtk(u) {
   return u.base.atk * (1 + p) * (u.clone ? 0.5 : 1);
 }
 function getDef(u) { return u.base.def * (1 + (u.side === 'h' ? M('defPct') : 0) + buffSum(u, 'def')) * (1 - (u.defDown || 0)); }
-function getAspd(u) { return u.aspd * (1 + (u.side === 'h' ? M('aspdPct') + RM(u, 'aspdPct') + (u.isCap ? 0.20 : 0) + (M('tpAspd') ? (u.tp || 0) * M('tpAspd') : 0) - (M('vn') ? (u.vn || 0) * M('vnSlow') * 1 : 0) : 0) + buffSum(u, 'aspd')); }
+function getAspd(u) { return u.aspd * (u.side === 'h' ? 1.35 : 1) * (1 + (u.side === 'h' ? M('aspdPct') + RM(u, 'aspdPct') + (u.isCap ? 0.20 : 0) + (M('tpAspd') ? (u.tp || 0) * M('tpAspd') : 0) - (M('vn') ? (u.vn || 0) * M('vnSlow') * 1 : 0) : 0) + buffSum(u, 'aspd')); }
 function getCrit(u) { return 0.05 + u.bonus.crit + (u.side === 'h' ? M('crit') + RM(u, 'crit') : 0); }
 function getCritDmg(u) { return 0.5 + (u.side === 'h' ? M('critDmg') + RM(u, 'critDmg') : 0); }
 function moveSpeed(u) { return u.move * (1 + (u.side === 'h' ? M('movePct') : 0)) * (u.slow > 0 ? 0.6 : 1); }
@@ -1239,7 +1239,7 @@ function tryAttack(u, tgt) {
     if (M('vn')) u.vn = (u.vn || 0) >= 5 + M('vnMax') ? 1 : (u.vn || 0) + 1;
     u.qnHit = 1;
     if (u.ammo <= 0) {   // hết chưởng → điều khí; Phong Thế / Kiếm Ý mất hết
-      let t = 2.0 / (u.isCap ? 1.2 : 1);
+      let t = 3.5 / (u.isCap ? 1.2 : 1);
       if (RM(u, 'coreEvo')) t *= 1 - Math.min(0.175, 0.035 * sysTang(u.role));   // [VLĐMT] −3,5%/cấp, tối đa −17,5%
       if (M('tuthanEvo') && trongOf(u) >= 5) t *= 0.95;   // [VLĐMT] −5%
       u.dk = t; u.tp = 0; u.vn = 0;

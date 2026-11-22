@@ -797,7 +797,7 @@ const TANG2 = {
 };
 for (const k in TANG2) if (HEROES[k]) HEROES[k].tang = TANG2[k];
 // ĐỘ KHÓ RIÊNG theo chương (đo bằng #balance — máy tự đánh với đội người chơi có ở thời điểm đó)
-const CH_DIFF = { 3: { boss: 0.9 }, 4: { boss: 0.9 }, 6: { all: 0.85 }, 7: { all: 0.85 }, 8: { all: 0.85, boss: 0.58 }, 12: { boss: 0.62 } };
+const CH_DIFF = { 3: { boss: 0.9 }, 4: { boss: 0.9 }, 6: { all: 0.85, boss: 0.72 }, 7: { all: 0.85 }, 8: { all: 0.85, boss: 0.5 }, 12: { boss: 0.62 } };
 for (const st of STAGES) { const d = CH_DIFF[CHAPTERS[st.chap].id]; if (!d) continue; const k = (st.kind === 'boss' && d.boss) || d.all || 0; if (k) { st.ehp = k; st.eatk = k; } }
 // ===== RÀ SOÁT ĐẠN / CHIÊU (2026-11-22): mỗi tướng một kiểu đạn đúng pháp bảo; chiêu nhỏ không lặp lại đòn thường,
 // không còn chiêu nhỏ "bắn 5 tia" gây nhầm là lỗi — chiêu nhỏ chuyển thành hiệu ứng vùng / một đòn riêng.
