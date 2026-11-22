@@ -5,7 +5,7 @@
 // =====================================================================
 const W = 960, H = 540, TAU = Math.PI * 2;   // màn NGANG (kiểu Võ Lâm Đại Minh Tinh)
 const GATE_X = 112;
-const EGROW = 0.20;   // quái mạnh thêm mỗi cấp ải (cân bằng bằng #balance)
+const EGROW = 0.22;   // quái mạnh thêm mỗi cấp ải (cân bằng bằng #balance)
 const VIEW_Z = 0.9, VIEW_PY = 0.6, VIEW_R = () => GATE_X + (W - GATE_X) / VIEW_Z;   // mép phải khung nhìn (toạ độ thế giới)   // khung trận thu nhỏ 10% (neo ở cổng thành, giữa làn)          // quái tới cột này thì đánh cổng thành (tường thành dọc bên trái)
 const LANE_Y0 = 150, LANE_Y1 = 440;   // dải đường quái đi (toạ độ chân)
 // 5 ô đứng cố định: 3 ô hàng sau (đánh xa / hồi máu) sát tường, 2 ô hàng trước (cận chiến / đỡ đòn)
@@ -210,7 +210,7 @@ function fullImg(id, size) {
 // ------------------------------------------------------------------ HERO STATS (menu)
 function heroStats(id) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * STAR_MUL[o.star - 1], bt = btBonus(h.role);
+  const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star), bt = btBonus(h.role);
   return { hp: h.hp * m * bt.hp, atk: h.atk * m * bt.atk, def: h.def * m * bt.def, aspd: h.aspd };
 }
 function power(id) { const s = heroStats(id); return Math.round(s.hp * 0.25 + s.atk * 4 + s.def * 2); }
@@ -249,7 +249,7 @@ const ammoMax = u => AMMO + M('ammo');
 
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * STAR_MUL[o.star - 1];
+  const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star);
   return {
     side: 'h', id, d: h, look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
     base: { hp: h.hp * m * btBonus(h.role).hp, atk: h.atk * m * btBonus(h.role).atk, def: h.def * m * btBonus(h.role).def },

@@ -797,7 +797,7 @@ const TANG2 = {
 };
 for (const k in TANG2) if (HEROES[k]) HEROES[k].tang = TANG2[k];
 // ĐỘ KHÓ RIÊNG theo chương (đo bằng #balance — máy tự đánh với đội người chơi có ở thời điểm đó)
-const CH_DIFF = { 3: { boss: 0.9 }, 4: { boss: 0.9 }, 6: { all: 0.85 }, 7: { all: 0.85 }, 8: { all: 0.85, boss: 0.68 }, 12: { boss: 0.62 } };
+const CH_DIFF = { 3: { boss: 0.9 }, 4: { boss: 0.9 }, 6: { all: 0.85 }, 7: { all: 0.85 }, 8: { all: 0.85, boss: 0.58 }, 12: { boss: 0.62 } };
 for (const st of STAGES) { const d = CH_DIFF[CHAPTERS[st.chap].id]; if (!d) continue; const k = (st.kind === 'boss' && d.boss) || d.all || 0; if (k) { st.ehp = k; st.eatk = k; } }
 // ===== RÀ SOÁT ĐẠN / CHIÊU (2026-11-22): mỗi tướng một kiểu đạn đúng pháp bảo; chiêu nhỏ không lặp lại đòn thường,
 // không còn chiêu nhỏ "bắn 5 tia" gây nhầm là lỗi — chiêu nhỏ chuyển thành hiệu ứng vùng / một đòn riêng.
@@ -835,3 +835,6 @@ const CH_BOX = [[10, { vang: 3000, ngoc: 60 }], [20, { vang: 6000, ngoc: 120, un
 const PULL_BOX = [[10, { univ: 3 }], [30, { ngoc: 160 }], [50, { univ: 8 }], [100, { ngoc: 400 }], [150, { univ: 15 }], [200, { ngoc: 800 }], [300, { univ: 30 }], [500, { ngoc: 1500 }], [700, { univ: 50 }], [1000, { ngoc: 3000 }]];   // choukaaccumulativeawardconfig
 // khắc hệ phái theo chương (chapterattrrestraintcfg + chỉ số Diệt/Kháng): yếu trước 1 hệ (+25% ST), kháng 1 hệ (−15% ST)
 const CH_ROLE = { 1: ['phap', 'the'], 2: ['sat', 'tran'], 3: ['tran', 'phap'], 4: ['the', 'sat'], 5: ['sat', 'phap'], 6: ['dan', 'sat'], 7: ['phap', 'sat'], 8: ['the', 'tran'], 9: ['tran', 'phap'], 10: ['dan', 'the'], 11: ['sat', 'tran'], 12: ['dan', 'phap'] };
+// SAO THEO PHẨM CHẤT (VLĐMT herostargrowupconfig: mọi tướng cùng chỉ số gốc, phẩm cao hơn được cộng nhiều hơn mỗi sao)
+const STAR_MUL_R = { R: [1, 1.12, 1.25, 1.4, 1.56], SR: [1, 1.15, 1.32, 1.59, 1.98], SSR: [1, 1.2, 1.45, 1.8, 2.35] };
+const starMul = (rar, st) => (STAR_MUL_R[rar] || STAR_MUL)[Math.max(0, Math.min(4, st - 1))];
