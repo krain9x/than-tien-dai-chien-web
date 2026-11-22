@@ -3652,7 +3652,7 @@ let HD_TAB = 'info';
 function showHeroDetail(id, tab) {
   if (tab) HD_TAB = tab;
   const h = HEROES[id], o = S.owned[id], st = heroStats(id);
-  const lvCost = o ? 150 * o.lv : 0, starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
+  const lvCost = o ? lvCostOf(o.lv) : 0, starNeed = o && o.star < 5 ? STAR_COST[h.rar][o.star - 1] : 0;
   const bonds = BONDS.filter(b => b.members.includes(id));
   const list = Object.keys(HEROES).filter(k => S.owned[k]).sort((a, b) => power(b) - power(a)), ix = list.indexOf(id);
   const next = o && o.lv < MAX_LV ? (() => { const sv = o.lv; o.lv++; const n2 = heroStats(id); o.lv = sv; return n2; })() : null;
@@ -3697,7 +3697,7 @@ function showHeroDetail(id, tab) {
   if (!o) return;
   const q = s => $(s);
   if (q('#bLv')) q('#bLv').onclick = () => { if (S.vang < lvCost) { toast('Không đủ vàng'); return; } S.vang -= lvCost; o.lv++; qAdd('lv'); save(); showHeroDetail(id); };
-  if (q('#bLv5')) q('#bLv5').onclick = () => { let n = 0; while (o.lv < MAX_LV && S.vang >= 150 * o.lv) { S.vang -= 150 * o.lv; o.lv++; n++; qAdd('lv'); } save(); toast(n ? `Đã nâng ${n} cấp` : 'Không đủ vàng'); showHeroDetail(id); };
+  if (q('#bLv5')) q('#bLv5').onclick = () => { let n = 0; while (o.lv < MAX_LV && S.vang >= lvCostOf(o.lv)) { S.vang -= lvCostOf(o.lv); o.lv++; n++; qAdd('lv'); } save(); toast(n ? `Đã nâng ${n} cấp` : 'Không đủ vàng'); showHeroDetail(id); };
   if (q('#bEq')) q('#bEq').onclick = () => showEquip(id);
   if (q('#bLore')) q('#bLore').onclick = () => showLore(id);
   if (q('#bDis')) q('#bDis').onclick = () => { S.univ += o.shard; toast('Phân giải ' + o.shard + ' mảnh'); o.shard = 0; save(); showHeroDetail(id); };
@@ -4033,7 +4033,7 @@ function showQuests(tab) {   // Nhiệm vụ: tab Ngày / Tuần, nút "Nhận t
 }
 
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
-function idleRate() { const n = STAGES.filter(st => S.cleared[st.id]).length; return { vang: 30 + 6 * n, ngoc: 1 + Math.floor(n / 5) }; }   // mỗi phút / mỗi giờ
+function idleRate() { const n = STAGES.filter(st => S.cleared[st.id]).length; return { vang: 8 + n, ngoc: 1 + Math.floor(n / 10) }; }   // mỗi phút / mỗi giờ
 function idleMins() { if (!S.idle) S.idle = nowS(); return Math.min(720, Math.floor((nowS() - S.idle) / 60)); }
 function idleReward() { const m = idleMins(), r = idleRate(); return { vang: m * r.vang, ngoc: Math.floor(m / 60) * r.ngoc, m }; }
 function claimIdle() { const r = idleReward(); if (r.m < 1) { toast('Chưa có gì để nhận'); return; } grant(r); S.idle = nowS(); save(); toast('Treo máy: +' + fmt(r.vang) + ' vàng' + (r.ngoc ? ' +' + r.ngoc + ' ngọc' : '')); showHome(); }

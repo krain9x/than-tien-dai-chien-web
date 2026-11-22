@@ -630,7 +630,7 @@ const STAGES = [];
         id: ch.id + '-' + k, chap: c, kind, name: ch.region + ' · ' + STAGE_PHASE[k - 1] + (k === 10 ? '' : ' ' + k), lvl, par, gate: 2500 + idx * 45, theme: ch.theme, seed: 7 + idx * 13,
         bossName: kind === 'boss' ? ch.boss : null,
         desc: kind === 'boss' ? 'BOSS cuối chương: ' + ch.boss + '. Boss nhiều giai đoạn — hạ boss để qua chương.' : kind === 'elite' ? 'Ải tinh anh: nhiều quái tinh anh, rơi nhiều Linh Phù.' : (k === 1 ? ch.story : ch.region + ' — tiến sâu vào trong, giữ vững cổng!'),
-        reward: { ngoc: 300 + idx * 8 + (kind === 'boss' ? 250 : kind === 'elite' ? 100 : 0), vang: 800 + idx * 40 + (kind === 'boss' ? 800 : kind === 'elite' ? 300 : 0) }, waves,
+        reward: { ngoc: 60 + idx * 2 + (kind === 'boss' ? 150 : kind === 'elite' ? 50 : 0), vang: 800 + idx * 40 + (kind === 'boss' ? 800 : kind === 'elite' ? 300 : 0) }, waves,
       });
     }
   });
@@ -838,3 +838,6 @@ const CH_ROLE = { 1: ['phap', 'the'], 2: ['sat', 'tran'], 3: ['tran', 'phap'], 4
 // SAO THEO PHẨM CHẤT (VLĐMT herostargrowupconfig: mọi tướng cùng chỉ số gốc, phẩm cao hơn được cộng nhiều hơn mỗi sao)
 const STAR_MUL_R = { R: [1, 1.12, 1.25, 1.4, 1.56], SR: [1, 1.15, 1.32, 1.59, 1.98], SSR: [1, 1.2, 1.45, 1.8, 2.35] };
 const starMul = (rar, st) => (STAR_MUL_R[rar] || STAR_MUL)[Math.max(0, Math.min(4, st - 1))];
+
+// KINH TẾ (rà soát 2026-11-22, đường cong kiểu VLĐMT): chi phí lên cấp tăng dốc
+const lvCostOf = lv => Math.round(120 * lv + 18 * lv * lv);
