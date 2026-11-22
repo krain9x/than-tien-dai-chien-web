@@ -214,6 +214,10 @@ function heroStats(id) {
   return { hp: h.hp * m * bt.hp, atk: h.atk * m * bt.atk, def: h.def * m * bt.def, aspd: h.aspd };
 }
 function power(id) { const s = heroStats(id); return Math.round(s.hp * 0.25 + s.atk * 4 + s.def * 2); }
+function bondLv(b) {   // cấp duyên phận 0–10: mỗi sao trên 1 sao và mỗi 10 cấp của thành viên +1 (VLĐMT herofetterconfig)
+  let n = 0; for (const id of b.members) { const o = S.owned[id]; if (!o) return 0; n += (o.star - 1) + Math.floor(o.lv / 10); }
+  return Math.min(10, n);
+}
 function teamInfo(ids) {
   const cnt = {};
   ids.forEach(id => { const f = HEROES[id].fac; cnt[f] = (cnt[f] || 0) + 1; });
@@ -315,6 +319,7 @@ function applyBonuses(u, info) {
   for (const b of info.bonds) {
     if (b.id === 'ketnghia' && b.members.includes(u.id)) u.bonus.atkPct += 0.10;
     if (b.g && b.members.includes(u.id)) for (const k in b.g) u.bonus[k] = (u.bonus[k] || 0) + b.g[k];
+    if (b.members.includes(u.id)) { const bl = BOND_LV[bondLv(b)] || 0; u.bonus.atkPct += bl; u.bonus.hpPct += bl; }
     if (b.id === 'phutu') {
       if (u.id === 'ngumavuong') u.bonus.hpPct += 0.20;
       if (u.id === 'honghainhi') u.bonus.dmgTaken += 0.15;
@@ -454,6 +459,7 @@ function dealDmg(src, tgt, mult, kind) {
   }
   const K = 500 + 50 * (tgt.level || 1);
   a *= K / (K + getDef(tgt) * (src.side === 'h' && M('vnSee') ? 1 - Math.min(5, src.vn || 0) * M('vnSee') : 1));   // Lạc Anh: Thấu Thị bỏ qua phòng thủ
+  if (src.side === 'h' && tgt.side === 'e' && B.st && CHAPTERS[B.st.chap]) { const cr = CH_ROLE[CHAPTERS[B.st.chap].id]; if (cr) { if (src.role === cr[0]) a *= 1.25; else if (src.role === cr[1]) a *= 0.85; } }
   if (BEATS[src.el] === tgt.el) { a *= 1.3; if (src.side === 'h' && kind !== 'dot' && Math.random() < 0.35) floater(tgt.x + 14, tgt.y - 62 * sizeOf(tgt), 'Khắc!', ELEMENTS[src.el].color, 15, false, src.el); }
   else if (BEATS[tgt.el] === src.el) a *= 0.8;
   let crit = false;
@@ -601,7 +607,7 @@ function updateDrops(dt) {
   }
   B.drops = B.drops.filter(d => !d.done);
 }
-function xpNeed() { return 8 + 5 * B.lv; }
+function xpNeed() { return 2 * Math.min(15, 4 + B.lv); }   // VLĐMT battlelvupconfig: tăng đều tới mốc rồi giữ nguyên
 // các khung chọn (Thiên Thư, Linh Phù) xếp hàng, không mở chồng lên nhau
 
 // Công pháp đủ chiều sâu (VLĐMT): bậc 3 có cấp 1–6 (giới hạn cấp = 3 + sao Bí Tịch/3), bậc 3.1 khi đạt cấp 3, bậc 4 cần Bí Tịch ≥5★ và đã có 3.1
@@ -3482,6 +3488,20 @@ function topBar(title) {
 }
 
 let curChap = -1;
+
+function giveRew(r) { for (const k in r) S[k] = (S[k] || 0) + r[k]; save(); }
+function chapStars(c) { return STAGES.filter(st => st.chap === c).reduce((s, st) => s + (S.cleared[st.id] || 0), 0); }
+function chBoxHTML(c) {
+  const got = (S.chBox || {})[c] || [], s = chapStars(c);
+  return `<div class="ch-box"><span>⭐ ${s}/30</span>${CH_BOX.map(([need, r], k) => { const ok = s >= need, done = got.includes(k);
+    return `<button class="cb ${done ? 'done' : ok ? 'ready' : ''}" data-cb="${k}" ${ok && !done ? '' : 'disabled'} title="${need} sao: ${Object.keys(r).map(x => x + ' ' + r[x]).join(', ')}">🎁<b>${need}</b><small>${done ? 'Đã nhận' : rewTxt(r)}</small></button>`; }).join('')}</div>`;
+}
+function bindChBox(c) { ui.querySelectorAll('[data-cb]').forEach(b => b.onclick = () => { S.chBox = S.chBox || {}; S.chBox[c] = S.chBox[c] || []; const k = +b.dataset.cb; if (S.chBox[c].includes(k)) return; S.chBox[c].push(k); giveRew(CH_BOX[k][1]); toast('Nhận rương ' + CH_BOX[k][0] + ' sao'); showStages(); }); }
+function pullBoxHTML() {
+  const got = S.pullBox || [], p = S.pulls || 0;
+  return `<div class="pull-box"><b>Quà tích luỹ chiêu mộ · đã quay ${p} lượt</b><div>${PULL_BOX.map(([need, r], k) => { const ok = p >= need, done = got.includes(k);
+    return `<button class="pb ${done ? 'done' : ok ? 'ready' : ''}" data-pb="${k}" ${ok && !done ? '' : 'disabled'}><b>${need}</b><small>${done ? '✓' : rewTxt(r)}</small></button>`; }).join('')}</div></div>`;
+}
 function showStages() {
   if (curChap < 0) { const f = STAGES.findIndex(st => !S.cleared[st.id]); curChap = f < 0 ? CHAPTERS.length - 1 : STAGES[f].chap; }
   const done = c => STAGES.filter(st => st.chap === c && S.cleared[st.id]).length;
@@ -3494,6 +3514,8 @@ function showStages() {
       return `<p class="chap-el">Quái chủ yếu hệ <b style="color:${ELEMENTS[el].color}">${ELEMENTS[el].name}</b> → nên dùng tướng hệ <b style="color:${ELEMENTS[good].color}">${ELEMENTS[good].name}</b> (+30% sát thương), tránh hệ <b style="color:${ELEMENTS[bad].color}">${ELEMENTS[bad].name}</b> (−20%).</p>`; })()}
     ${(() => { const tr = new Set(); for (const st of STAGES) if (st.chap === curChap) for (const w of st.waves) for (const [t] of w.list) if (ENEMIES[t] && ENEMIES[t].trait) tr.add(ENEMIES[t].trait);
       return tr.size ? `<div class="chap-traits">${[...tr].map(k => `<span class="ct" title="${esc(TRAIT_INFO[k].desc)}"><i>${TRAIT_INFO[k].ico}</i><b>${TRAIT_INFO[k].name}</b><small>${esc(TRAIT_INFO[k].desc)}</small></span>`).join('')}</div>` : ''; })()}
+    ${chBoxHTML(curChap)}
+    ${(() => { const cr = CH_ROLE[CHAPTERS[curChap].id]; return cr ? `<p class="chap-el">Khắc hệ phái: quái chương này <b style="color:#2a9a4a">yếu trước ${ROLES[cr[0]].name}</b> (+25% sát thương), <b style="color:#c0392b">kháng ${ROLES[cr[1]].name}</b> (−15%).</p>` : ''; })()}
     ${(() => { const id = CH_HERO[CHAPTERS[curChap].id]; return id && HEROES[id] ? `<div class="ch-rew"><img src="${por(id, 48)}" alt=""><span>Qua boss chương nhận <b>${esc(HEROES[id].name)}</b> ${rarTag(HEROES[id].rar)}${S.owned[id] ? ' <small>(đã có)</small>' : ''}</span></div>` : ''; })()}
     <div class="stage-list">${STAGES.map((st, i) => {
       if (st.chap !== curChap) return '';
@@ -3511,6 +3533,7 @@ function showStages() {
       </div>`;
     }).join('')}</div>
   </div>`;
+  bindChBox(curChap);
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => { curChap = +b.dataset.ch; showStages(); });
   ui.querySelectorAll('[data-si]').forEach(b => b.onclick = () => enterStage(+b.dataset.si));
@@ -3523,7 +3546,7 @@ function synergyHTML(ids) {
   const facs = info.facs.map(f => `<div class="syn ${f.pct ? 'on' : ''}"><b>${FACTIONS[f.f]}</b> ${f.n} người ${f.pct ? `<em>+${Math.round(f.pct * 100)}% máu, công</em>` : '<small>cần 3 người</small>'}</div>`).join('');
   const bonds = BONDS.map(b => {
     const on = info.bonds.includes(b);
-    return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <small>${b.members.map(m => HEROES[m].name).join(' + ')}</small>${on ? `<em>${b.desc}</em>` : ''}</div>`;
+    return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <small>${b.members.map(m => HEROES[m].name).join(' + ')}</small>${on ? `<em>${b.desc}${bondLv(b) ? ` · Cấp ${bondLv(b)}: +${Math.round(BOND_LV[bondLv(b)] * 100)}% công, máu` : ''}</em>` : ''}</div>`;
   }).join('');
   const cs = ids[0] ? capSkill(ids[0]) : null;
   const cb = COMBOS.filter(c => ids.includes(c.a) && ids.includes(c.b)).map(c => `<div class="syn on"><b>${esc(c.name)}</b> <small>${HEROES[c.a].name} + ${HEROES[c.b].name}</small><em>Hai người tung tuyệt kỹ cách nhau ≤3 giây → hợp kích</em></div>`).join('');
@@ -3665,6 +3688,7 @@ function showGacha() {
     <div class="pity">
       <div>Đã quay <b>${S.pity}</b>/${GACHA.hard} lượt kể từ SSR gần nhất${S.pity >= GACHA.softFrom ? ' · <em>tỉ lệ đang tăng</em>' : ''}</div>
       <div class="bar"><i style="width:${S.pity / GACHA.hard * 100}%"></i></div>
+      ${pullBoxHTML()}
       <small>Từ lượt ${GACHA.softFrom} mỗi lượt +5% tỉ lệ SSR. Mỗi 10 lượt chắc chắn có SR trở lên. Ra tướng đã có thì đổi thành mảnh tướng.</small>
     </div>
     <div class="pool">${[...SSR_POOL, ...SR_POOL, ...R_POOL].map(id => `<div class="pool-i ${S.owned[id] ? 'own' : ''}"><img src="${por(id, 60)}">${rarTag(HEROES[id].rar)}</div>`).join('')}</div>
@@ -3679,6 +3703,7 @@ function showGacha() {
   $('#g1').onclick = () => doPull(1);
   $('#g10').onclick = () => doPull(10);
   $('#gFree').onclick = () => { S.ngoc += 1500; save(); showGacha(); };
+  ui.querySelectorAll('[data-pb]').forEach(b => b.onclick = () => { S.pullBox = S.pullBox || []; const k = +b.dataset.pb; if (S.pullBox.includes(k)) return; S.pullBox.push(k); giveRew(PULL_BOX[k][1]); toast('Đã nhận quà ' + PULL_BOX[k][0] + ' lượt'); showGacha(); });
 }
 function doPull(n) {
   const cost = n === 10 ? GACHA.cost10 : GACHA.cost1 * n;
@@ -4098,10 +4123,12 @@ function rollEquip(st) {
 }
 function eqBonus(id) {
   const o = { atkPct: 0, hpPct: 0, crit: 0 }, e = (S.owned[id] || {}).eq || {};
-  for (const sl in e) { const it = (S.items || []).find(x => x.id === e[sl]); if (it) o[EQ_SLOT[sl].stat] += EQ_SLOT[sl].stat === 'crit' ? it.v * 0.5 : it.v; }
+  const pl = (S.owned[id] || {}).eqLv || {};
+  for (const sl in e) { const it = (S.items || []).find(x => x.id === e[sl]); if (it) o[EQ_SLOT[sl].stat] += eqVal(it) * (1 + EQ_POS_PCT * (pl[sl] || 0)); }
   return o;
 }
-function eqTxt(it) { return `${esc(it.n)} (${EQ_RAR[it.r].name}) +${Math.round((EQ_SLOT[it.s].stat === 'crit' ? it.v * 0.5 : it.v) * 100)}% ${EQ_SLOT[it.s].label}`; }
+function eqVal(it) { return (EQ_SLOT[it.s].stat === 'crit' ? it.v * 0.5 : it.v) * (1 + EQ_STAR_PCT * (it.st || 0)); }
+function eqTxt(it) { return `${esc(it.n)}${it.st ? ' ' + '★'.repeat(it.st) : ''} (${EQ_RAR[it.r].name}) +${(eqVal(it) * 100).toFixed(1).replace('.0', '')}% ${EQ_SLOT[it.s].label}`; }
 function showEquip(hid) {
   const o = S.owned[hid]; o.eq = o.eq || {};
   const used = new Set(); for (const k in S.owned) for (const s2 in (S.owned[k].eq || {})) used.add(S.owned[k].eq[s2]);
@@ -4109,12 +4136,16 @@ function showEquip(hid) {
   w.innerHTML = `<div class="xfer"><h3>Trang bị · ${esc(HEROES[hid].name)}</h3>${Object.keys(EQ_SLOT).map(sl => {
       const cur = (S.items || []).find(x => x.id === o.eq[sl]);
       const cand = (S.items || []).filter(x => x.s === sl && !used.has(x.id)).sort((a, b) => b.v - a.v).slice(0, 6);
-      return `<div class="eq-row"><b>${EQ_SLOT[sl].name}:</b> <span>${cur ? eqTxt(cur) : '<i>Trống</i>'}</span>${cur ? `<button class="btn small" data-un="${sl}">Tháo</button>` : ''}
+      const pl = (o.eqLv || {})[sl] || 0;
+      return `<div class="eq-row"><b>${EQ_SLOT[sl].name} <em class="eq-pl">+${pl}</em>:</b> <span>${cur ? eqTxt(cur) + (pl ? ` <small>(ô +${pl * 5}%)</small>` : '') : '<i>Trống</i>'}</span>${cur ? `<button class="btn small" data-un="${sl}">Tháo</button>` : ''}
+        <div class="eq-up"><button class="btn small gold" data-pl="${sl}" ${pl >= EQ_POS_MAX ? 'disabled' : ''}>Cường hoá ô +${pl + 1} ${icon('vang')}${fmt(eqPosCost(pl))}</button>${cur ? `<button class="btn small" data-st="${cur.id}" ${(cur.st || 0) >= EQ_STAR_MAX ? 'disabled' : ''}>Tăng sao ★${(cur.st || 0) + 1} ${icon('vang')}${fmt(eqStarCost(cur.st || 0))}</button>` : ''}</div>
         <div class="eq-cand">${cand.map(it => `<button class="btn small" data-eq="${it.id}" style="color:${EQ_RAR[it.r].c}">${eqTxt(it)}</button>`).join('') || '<small>Chưa có trang bị trống (đánh ải tinh anh / boss để rơi)</small>'}</div></div>`; }).join('')}
     <div class="res-btns"><button class="btn" id="eqC">Đóng</button></div></div>`;
   ui.appendChild(w);
   $('#eqC').onclick = () => { w.remove(); showHeroDetail(hid); };
   w.querySelectorAll('[data-un]').forEach(b => b.onclick = () => { delete o.eq[b.dataset.un]; save(); w.remove(); showEquip(hid); });
+  w.querySelectorAll('[data-pl]').forEach(b => b.onclick = () => { const sl = b.dataset.pl; o.eqLv = o.eqLv || {}; const lv = o.eqLv[sl] || 0, c = eqPosCost(lv); if (S.vang < c) { toast('Không đủ vàng'); return; } S.vang -= c; o.eqLv[sl] = lv + 1; save(); w.remove(); showEquip(hid); });
+  w.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const it = S.items.find(x => x.id === b.dataset.st), c = eqStarCost(it.st || 0); if (S.vang < c) { toast('Không đủ vàng'); return; } S.vang -= c; it.st = (it.st || 0) + 1; save(); w.remove(); showEquip(hid); });
   w.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => { const it = S.items.find(x => x.id === b.dataset.eq); o.eq[it.s] = it.id; save(); w.remove(); showEquip(hid); });
 }
 // ---- Truyện Ký (mở theo cấp tướng)

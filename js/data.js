@@ -826,3 +826,12 @@ if (ATK_STYLE.thietphien) Object.assign(ATK_STYLE.thietphien, { proj: 'wind', na
 delete ENEMIES.mala.trait; delete ENEMIES.yeutien.trait;
 ENEMIES.hoanha.flyTint = 'hue-rotate(-30deg) saturate(3) brightness(1.05)';
 TRAIT_INFO.fly.desc = 'Cưỡi mây bay qua đầu hàng trước, lao thẳng vào tướng hàng sau. Tướng cận chiến không đánh tới.';
+
+// ===== ĐƯỜNG CONG TỪ VLĐMT (quy đổi về hệ tiền của game) =====
+const BOND_LV = [0, 0.01, 0.02, 0.03, 0.04, 0.06, 0.09, 0.13, 0.18, 0.28, 0.43];          // herofetterconfig: thưởng thêm theo cấp duyên phận
+const EQ_POS_MAX = 50, eqPosCost = lv => 300 + 150 * lv, EQ_POS_PCT = 0.05;                 // equipposlevelconfig: 3000 + 1500/cấp, +5%/cấp (÷10)
+const EQ_STAR_MAX = 5, eqStarCost = st => 1000 * (st + 1), EQ_STAR_PCT = 0.10;             // equipupstarconfig: 10k…50k (÷10)
+const CH_BOX = [[10, { vang: 3000, ngoc: 60 }], [20, { vang: 6000, ngoc: 120, univ: 3 }], [30, { vang: 10000, ngoc: 250, univ: 6 }]];   // chapterboxconfig: 3 rương / chương
+const PULL_BOX = [[10, { univ: 3 }], [30, { ngoc: 160 }], [50, { univ: 8 }], [100, { ngoc: 400 }], [150, { univ: 15 }], [200, { ngoc: 800 }], [300, { univ: 30 }], [500, { ngoc: 1500 }], [700, { univ: 50 }], [1000, { ngoc: 3000 }]];   // choukaaccumulativeawardconfig
+// khắc hệ phái theo chương (chapterattrrestraintcfg + chỉ số Diệt/Kháng): yếu trước 1 hệ (+25% ST), kháng 1 hệ (−15% ST)
+const CH_ROLE = { 1: ['phap', 'the'], 2: ['sat', 'tran'], 3: ['tran', 'phap'], 4: ['the', 'sat'], 5: ['sat', 'phap'], 6: ['dan', 'sat'], 7: ['phap', 'sat'], 8: ['the', 'tran'], 9: ['tran', 'phap'], 10: ['dan', 'the'], 11: ['sat', 'tran'], 12: ['dan', 'phap'] };

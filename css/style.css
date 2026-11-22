@@ -733,3 +733,11 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .h2-waves { display: none !important; }
 .hud-top.hud2 .h2-prog { align-items: stretch; justify-content: center; } .h2-ptrack { width: 100%; }
 .h2-ptrack .pm.done { filter: grayscale(1) brightness(.6); }
+
+.ch-box { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 4px 0 8px; } .ch-box > span { font-weight: 900; color: #8a5a10; }
+.ch-box .cb, .pull-box .pb { display: flex; flex-direction: column; align-items: center; min-width: 82px; padding: 4px 8px; border-radius: 10px; border: 2px solid #c08a1a; background: #fff6dc; font-weight: 800; cursor: pointer; }
+.ch-box .cb b, .pull-box .pb b { font-size: 13px; } .ch-box .cb small, .pull-box .pb small { font-size: 10px; display: flex; gap: 2px; align-items: center; }
+.ch-box .cb.ready, .pull-box .pb.ready { background: linear-gradient(#ffe58a, #ffb02e); box-shadow: 0 0 10px #ffcf3f; animation: hmPulse 1s infinite; }
+.ch-box .cb.done, .pull-box .pb.done { opacity: .5; } .ch-box .cb:disabled:not(.done), .pull-box .pb:disabled:not(.done) { opacity: .75; cursor: default; }
+.pull-box { margin: 8px 0; } .pull-box > div { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.eq-up { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0; } .eq-pl { font-style: normal; color: #2a9a4a; }
