@@ -3498,7 +3498,7 @@ function showSettings() {
       <div class="set-row"><button class="btn small ${S.mute ? '' : 'gold'}" id="sSnd">Âm thanh: ${S.mute ? 'Tắt' : 'Bật'}</button>
       <button class="btn small ${S.ultScene === false ? '' : 'gold'}" id="sScene">Cảnh tuyệt kỹ SSR: ${S.ultScene === false ? 'Tắt' : 'Bật'}</button>
       <button class="btn small" id="sGfx">Đồ hoạ: ${S.gfx === 'low' ? 'Nhẹ' : S.gfx === 'high' ? 'Đẹp' : 'Tự động'}</button></div></section>
-    <section><h4>Chơi thử</h4><div class="set-row"><button class="btn small" id="sTut">Xem lại hướng dẫn</button><button class="btn small red" id="sReset">Xoá dữ liệu chơi thử</button></div><small id="sResetMsg"></small></section>
+    <section><h4>Chơi thử</h4><div class="set-row"><button class="btn small gold" id="sFull">Nhận full tướng</button><button class="btn small" id="sTut">Xem lại hướng dẫn</button><button class="btn small red" id="sReset">Xoá dữ liệu chơi thử</button></div><small id="sResetMsg"></small></section>
   </div><div class="res-btns"><button class="btn gold" id="sClose">Đóng</button></div></div>`;
   ui.appendChild(w);
   const q = s => w.querySelector(s), close = () => { w.remove(); showHome(); };
@@ -3506,6 +3506,7 @@ function showSettings() {
   q('#sAcc').onclick = async () => { if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
     try { if (Cloud.user) await Cloud.signOut(); else await Cloud.signIn(); } catch (e) { toast('Lỗi: ' + (e.code || e.message)); } w.remove(); showSettings(); };
   q('#sData').onclick = () => { w.remove(); showSaveTransfer(); };
+  q('#sFull').onclick = () => { w.remove(); grantAllHeroes(); };
   q('#sSnd').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); audioOn(); w.remove(); showSettings(); };
   q('#sScene').onclick = () => { S.ultScene = S.ultScene === false ? true : false; save(); w.remove(); showSettings(); };
   q('#sGfx').onclick = () => { S.gfx = S.gfx === 'low' ? 'high' : S.gfx === 'high' ? 'auto' : 'low'; save(); w.remove(); showSettings(); };
