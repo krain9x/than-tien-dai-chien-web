@@ -1172,3 +1172,6 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 @keyframes hcG2 { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255,60,40,.6)); } 50% { filter: drop-shadow(0 0 9px rgba(255,60,40,1)) drop-shadow(0 0 3px #ffb040); } }
 @keyframes hcG3 { 0% { filter: drop-shadow(0 0 7px #c070ff) drop-shadow(0 0 2px #fff); } 33% { filter: drop-shadow(0 0 7px #ff5aa0) drop-shadow(0 0 2px #fff); } 66% { filter: drop-shadow(0 0 7px #3affd0) drop-shadow(0 0 2px #fff); } 100% { filter: drop-shadow(0 0 7px #c070ff) drop-shadow(0 0 2px #fff); } }
 .hc2.locked .hc2-fr { animation: none; filter: grayscale(.7) brightness(.8); }
+/* UR: ánh cầu vồng */
+.hc2.t-UR .hc2-fr { animation: hcG3 3s linear infinite; }
+.hc2.t-UR, .hd5-roster button.t-UR { box-shadow: 0 3px 6px rgba(0,0,0,.35), 0 0 12px rgba(200,120,255,.45) !important; }
