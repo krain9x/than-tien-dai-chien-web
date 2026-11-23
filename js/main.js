@@ -3980,12 +3980,14 @@ function showHeroes() {
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
   ui.querySelectorAll('[data-fs]').forEach(s => s.onchange = () => { HF[s.dataset.fs] = s.value; showHeroes(); });
-  ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.h));
+  ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { const id = b.dataset.h; if (HEROES[id].tier !== 'UR+') return showHeroDetail(id); if (b.classList.contains('qi')) return; b.classList.add('qi'); snd('magic'); setTimeout(() => showHeroDetail(id), 650); });   // UR+: Tử khí toả ra rồi mới mở
 }
 let HD_TAB = 'info', HD_SKSEL = 'ult';
 function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + vệt sáng + hạt
   const r = TIER_RANK[HEROES[id].tier] || 0;
-  return '<i class="hc2-fr"></i>' + (r >= 5 ? '<i class="hc2-shine"></i>' : '') + (r >= 6 ? '<i class="hc2-tw"><b></b><b></b><b></b></i>' : '');
+  const urp = HEROES[id].tier === 'UR+';   // UR+ (độc bản): nền tinh vân, viền khung trôi tinh vân, Thái Cực xoay, sao băng
+  return (urp ? '<i class="hc2-neb"></i><i class="hc2-meteor"><b></b><b></b></i><i class="hc2-band"></i>' : '') + '<i class="hc2-fr"></i>' + (urp ? '<i class="hc2-tj"></i>' : '')
+    + (r >= 5 ? '<i class="hc2-shine"></i>' : '') + (r >= 6 ? '<i class="hc2-tw"><b></b><b></b><b></b></i>' : '');
 }
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
 const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
@@ -4826,6 +4828,7 @@ function route() {
     $('#bBack').onclick = () => { SHOW = null; location.hash = ''; showHome(); };
   }
   else if (k === 'gacha') showGacha();
+  else if (k === 'heroes' && /urp=/.test(h)) { const u = h.match(/urp=(\w+)/)[1]; HEROES[u].tier = 'UR+'; for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id)) S.owned[id] = newRec(); showHeroes(); { const hd = h.match(/hide=([\w,-]+)/); if (hd) { const st = document.createElement('style'); st.textContent = hd[1].split(',').map(x => '.' + x + '{display:none!important}').join(''); document.head.appendChild(st); } } if (/cssdbg/.test(h)) setTimeout(() => { const f = ui.querySelector(`[data-h=${u}] .hc2-fr`), c = getComputedStyle(f), r = f.getBoundingClientRect(); const d = document.createElement('pre'); d.id = 'cssdbg'; d.textContent = [c.backgroundImage, c.display, c.opacity, c.zIndex, c.filter, c.visibility, r.width + 'x' + r.height].join(' | '); document.body.appendChild(d); }, 500); if (/qi/.test(h)) setTimeout(() => { const c = ui.querySelector(`[data-h=${u}]`); c.classList.add('qi'); }, 300); }   // (chụp thử) #heroes&urp=giaochu: xem thẻ UR+ trên tướng có hình
   else if (k === 'heroes') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id) && Math.random() < 0.7) S.owned[id] = newRec(); showHeroes(); }   // (chụp thử) #heroes=some
   else if (k === 'lineup') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id)) S.owned[id] = newRec(); showLineup(); if (/scrolltest/.test(h)) { const g = ui.querySelector('.pick-grid2'); g.scrollTop = 380; g.querySelectorAll('[data-pick]')[14].click(); } }   // (chụp thử) #lineup=all&scrolltest: cuộn rồi chọn, phải giữ nguyên vị trí
   else if (k === 'full') grantAllHeroes();

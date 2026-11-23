@@ -236,6 +236,12 @@
 :root[data-theme="dem"] .hc2-shine::before { background:linear-gradient(90deg, transparent, rgba(47,43,18,.55), transparent) }
 :root[data-theme="dem"] .hc2-tw b { background:radial-gradient(circle, #171717 0 15%, rgba(75,64,29,.9) 30%, transparent 70%) }
 :root[data-theme="dem"] .hc2-tw b::before, :root[data-theme="dem"] .hc2-tw b::after { background:linear-gradient(transparent, #171717, transparent) }
+:root[data-theme="dem"] .hc2-meteor b { background:linear-gradient(90deg, rgba(23,23,23,0), #171717 80%, #473d1b) }
+:root[data-theme="dem"] .hc2.t-URP .hc2-rar::after { background:linear-gradient(180deg, #373215, #ffcf3f 55%, #b06a10) }
+:root[data-theme="dem"] .hc2.t-URP b { background:linear-gradient(90deg, #473d1b 0%, #171717 20%, #ffcf3f 40%, #473d1b 60%, #171717 80%, #ffcf3f 100%) 0 0 / 200% 100% }
+:root[data-theme="dem"] .hc2.t-URP::before { background:radial-gradient(circle, rgba(23,23,23,.9) 0, rgba(60,30,79,.85) 25%, rgba(150,60,255,.5) 50%, transparent 72%) }
+:root[data-theme="dem"] .hc2.t-URP .hc2-meteor b { background:linear-gradient(90deg, rgba(23,23,23,0), #171717 80%, #473d1b) !important }
+:root[data-theme="dem"] .hc2.t-URP .hc2-tw b { background:radial-gradient(circle, #171717 0 15%, rgba(75,64,29,.9) 30%, transparent 70%) !important }
 :root[data-theme="mac"] { --ink: #2f3e3a; }
 :root[data-theme="mac"] body { background: #e9efe9; }
 :root[data-theme="mac"] .panel-screen { background: linear-gradient(#eef3ee, #dbe5de); color: #24302c; }
@@ -460,3 +466,9 @@
 :root[data-theme="mac"] .hc2-shine::before { background:linear-gradient(90deg, transparent, rgba(231,244,238,.55), transparent) }
 :root[data-theme="mac"] .hc2-tw b { background:radial-gradient(circle, #ffffff 0 15%, rgba(184,221,203,.9) 30%, transparent 70%) }
 :root[data-theme="mac"] .hc2-tw b::before, :root[data-theme="mac"] .hc2-tw b::after { background:linear-gradient(transparent, #ffffff, transparent) }
+:root[data-theme="mac"] .hc2-meteor b { background:linear-gradient(90deg, rgba(255,255,255,0), #ffffff 80%, #bfe0d0) }
+:root[data-theme="mac"] .hc2.t-URP .hc2-rar::after { background:linear-gradient(180deg, #daede4, #ffcf3f 55%, #b06a10) }
+:root[data-theme="mac"] .hc2.t-URP b { background:linear-gradient(90deg, #bfe0d0 0%, #ffffff 20%, #ffcf3f 40%, #bfe0d0 60%, #ffffff 80%, #ffcf3f 100%) 0 0 / 200% 100% }
+:root[data-theme="mac"] .hc2.t-URP::before { background:radial-gradient(circle, rgba(255,255,255,.9) 0, rgba(210,140,255,.85) 25%, rgba(150,60,255,.5) 50%, transparent 72%) }
+:root[data-theme="mac"] .hc2.t-URP .hc2-meteor b { background:linear-gradient(90deg, rgba(255,255,255,0), #ffffff 80%, #bfe0d0) !important }
+:root[data-theme="mac"] .hc2.t-URP .hc2-tw b { background:radial-gradient(circle, #ffffff 0 15%, rgba(184,221,203,.9) 30%, transparent 70%) !important }

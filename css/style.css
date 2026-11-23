@@ -1175,3 +1175,39 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 /* UR: ánh cầu vồng */
 .hc2.t-UR .hc2-fr { animation: hcG3 3s linear infinite; }
 .hc2.t-UR, .hd5-roster button.t-UR { box-shadow: 0 3px 6px rgba(0,0,0,.35), 0 0 12px rgba(200,120,255,.45) !important; }
+/* ===================== UR+ độc bản ===================== */
+.hc2.t-URP { order: -1; }
+.hc2-neb { position: absolute; inset: 3.5% 4.5%; z-index: 2; pointer-events: none; border-radius: 2px; background: url(../art/ui/frames/nebula.webp) 0 0 / 120px 120px; mix-blend-mode: screen; opacity: .75; animation: hcNeb 40s linear infinite;
+  -webkit-mask-image: radial-gradient(ellipse 60% 48% at 50% 42%, transparent 55%, #000 100%); mask-image: radial-gradient(ellipse 60% 48% at 50% 42%, transparent 55%, #000 100%); }
+@keyframes hcNeb { to { background-position: 240px 120px; } }
+.hc2-meteor { position: absolute; inset: 3.5% 4.5%; z-index: 3; overflow: hidden; pointer-events: none; }
+.hc2-meteor b { position: absolute; top: 0; left: 70%; width: 46px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, rgba(255,255,255,0), #fff 80%, #ffe9a0); transform: rotate(-35deg); opacity: 0; animation: hcMet 5s ease-in infinite; }
+.hc2-meteor b:nth-child(2) { left: 95%; top: 20%; animation-delay: 2.6s; }
+@keyframes hcMet { 0%, 80% { opacity: 0; transform: translate(0, 0) rotate(-35deg); } 84% { opacity: 1; } 100% { opacity: 0; transform: translate(-120px, 85px) rotate(-35deg); } }
+.hc2-band { position: absolute; inset: -2%; z-index: 5; pointer-events: none; background: url(../art/ui/frames/nebula.webp) 0 0 / 90px 90px; mix-blend-mode: screen; opacity: .9; animation: hcNeb 18s linear infinite;
+  -webkit-mask: url(../art/ui/frames/URP.webp) center / 100% 100% no-repeat; mask: url(../art/ui/frames/URP.webp) center / 100% 100% no-repeat; }
+.hc2.t-URP .hc2-fr { z-index: 4; }
+.hc2-tj { position: absolute; z-index: 6; left: 50%; top: 3%; width: 26%; aspect-ratio: 1; margin-left: -13%; transform: translateY(-50%); pointer-events: none; background: url(../art/ui/frames/taiji.webp) center / contain no-repeat; filter: drop-shadow(0 0 4px rgba(200,140,255,.9)) drop-shadow(0 2px 2px rgba(0,0,0,.6)); animation: hcTj 8s linear infinite; }
+@keyframes hcTj { to { transform: translateY(-50%) rotate(360deg); } }
+.hc2.t-URP .hc2-rar { font-size: 0 !important; -webkit-text-stroke: 0; top: 5%; }
+.hc2.t-URP .hc2-rar::after { content: 'Đạo Tổ'; font: 700 17px/1 "Dancing Script", cursive; background: linear-gradient(180deg, #fff6c8, #ffcf3f 55%, #b06a10); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 1px 0 #2a0a3a) drop-shadow(0 0 4px rgba(200,120,255,.8)); }
+.hc2.t-URP .hc2-pw { top: calc(5% + 20px); }
+.hc2.t-URP b { color: transparent !important; background: linear-gradient(90deg, #ffe9a0 0%, #fff 20%, #ffcf3f 40%, #ffe9a0 60%, #fff 80%, #ffcf3f 100%) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; text-shadow: none; filter: drop-shadow(0 1px 0 #000) drop-shadow(0 0 3px rgba(0,0,0,.8)); animation: hcGold 3s linear infinite; }
+@keyframes hcGold { to { background-position: -200% 0; } }
+/* chạm thẻ: Tử khí Hồng Mông toả ra */
+.hc2.t-URP::before { content: ''; position: absolute; left: 50%; top: 45%; width: 30%; aspect-ratio: 1; margin-left: -15%; border-radius: 50%; z-index: 7; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(255,255,255,.9) 0, rgba(210,140,255,.85) 25%, rgba(150,60,255,.5) 50%, transparent 72%); }
+.hc2.t-URP.qi::before { animation: hcQi .65s ease-out forwards; }
+.hc2.t-URP.qi { transform: scale(1.06); transition: transform .3s; z-index: 10; }
+@keyframes hcQi { 0% { opacity: 1; transform: scale(.3); } 100% { opacity: 0; transform: scale(9); } }
+.hc2-band { opacity: .42; mix-blend-mode: soft-light; }
+.hc2.t-URP .hc2-rar::after { font-size: 13.5px; }
+.hc2-tj { width: 22%; margin-left: -11%; }
+/* viền UR+ đổi sắc: bản sao khung xoay sắc màu (không dùng mask vì file:// chặn ảnh mask -> che mất khung) */
+.hc2-band { -webkit-mask: none !important; mask: none !important; mix-blend-mode: normal !important; background: url(../art/ui/frames/URP.webp) center / 100% 100% no-repeat !important; opacity: 0; animation: hcBand 6s linear infinite !important; z-index: 5; }
+@keyframes hcBand { 0% { opacity: 0; filter: hue-rotate(0deg) saturate(1.6); } 50% { opacity: .75; filter: hue-rotate(180deg) saturate(1.8) brightness(1.15); } 100% { opacity: 0; filter: hue-rotate(360deg) saturate(1.6); } }
+.hc2-meteor b, .hc2-tw b { -webkit-background-clip: border-box !important; background-clip: border-box !important; animation-name: inherit; }
+.hc2.t-URP .hc2-meteor b { background: linear-gradient(90deg, rgba(255,255,255,0), #fff 80%, #ffe9a0) !important; animation: hcMet 5s ease-in infinite !important; filter: none; }
+.hc2.t-URP .hc2-meteor b:nth-child(2) { animation-delay: 2.6s !important; }
+.hc2.t-URP .hc2-tw b { background: radial-gradient(circle, #fff 0 15%, rgba(255,230,150,.9) 30%, transparent 70%) !important; animation: hcTw 2.2s ease-in-out infinite !important; filter: none; }
+.hc2.t-URP .hc2-tw b:nth-child(2) { animation-delay: .8s !important; } .hc2.t-URP .hc2-tw b:nth-child(3) { animation-delay: 1.5s !important; }
