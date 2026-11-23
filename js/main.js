@@ -2005,12 +2005,13 @@ function urLayersDom(hero, id) {   // màn chi tiết: 2 canvas (sau / trước 
   const L = UR_LAYERS[id]; if (!L) return; const D = window.HPOSE && HPOSE[poseDir(id)]; const p1 = hero.querySelector('.p1'); if (!D || !p1) return;
   const mk = (cls, before) => { const c = document.createElement('canvas'); c.className = 'url ' + cls; before ? hero.insertBefore(c, hero.firstChild) : hero.appendChild(c); return c; };
   const back = mk('back', 1), front = mk('front'), W0 = 300, H0 = 400, dpr = Math.min(2, window.devicePixelRatio || 1);
-  for (const c of [back, front]) { c.width = W0 * dpr; c.height = H0 * 1.2 * dpr; }   // cao hơn khung 20%: nền chân tràn xuống dưới
+  const PX = W0 * 0.6, PY = H0 * 0.45;   // khung vẽ rộng hơn ảnh tướng mọi phía: hào quang / pháp bảo không bị cắt thẳng
+  for (const c of [back, front]) { c.width = (W0 + PX * 2) * dpr; c.height = (H0 + PY + H0 * 0.2) * dpr; }
   const tick = () => { if (!back.isConnected) return; requestAnimationFrame(tick);
     for (const [c, sd] of [[back, -1], [front, 1]]) { const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height);
       if (!p1.naturalWidth) continue;
       const k = Math.min(W0 / p1.naturalWidth, H0 / p1.naturalHeight), x0 = (W0 - p1.naturalWidth * k) / 2, y0 = H0 - p1.naturalHeight * k;
-      g.setTransform(dpr, 0, 0, dpr, 0, 0); urLayers(g, L, x0 + D.gnd[0] * 0.5 * k, y0 + D.gnd[1] * 0.5 * k, D.H * 0.5 * k, 1, sd); } };
+      g.setTransform(dpr, 0, 0, dpr, PX * dpr, PY * dpr); urLayers(g, L, x0 + D.gnd[0] * 0.5 * k, y0 + D.gnd[1] * 0.5 * k, D.H * 0.5 * k, 1, sd); } };
   tick();
 }
 function drawRigUnit(u, h, alpha) {
@@ -4164,7 +4165,9 @@ const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat
 const HD_FIX = { giaochu: 0.7, thailaoquan: 0.74 };   // màn chi tiết: chừa chỗ cho quạt kiếm sau lưng
 function hdScale(id) {   // màn chi tiết: phóng theo chiều cao THÂN (tướng có kiếm bay / thú cưỡi không bị nhỏ), cùng số đo với trong trận
   const D = window.HPOSE && HPOSE[poseDir(id)]; if (!D) return 1;
-  return Math.max(0.75, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1) * (HD_FIX[id] || (UR_LAYERS[id] ? 0.74 : 1)))).toFixed(3);
+  const want = 1300 / D.H * (HFIX[id] || 1) * (HD_FIX[id] || (UR_LAYERS[id] ? 0.74 : 1));
+  const fit = 378 / (400 * (1 - (D.top || 0)));   // khung còn ~378px trên thanh danh sách: đỉnh tóc / mũ / vũ khí không tràn khỏi màn
+  return Math.max(0.6, Math.min(1.4, want, fit)).toFixed(3);
 }
 function hdSkill(id, k) { const h = HEROES[id], a = ATK_STYLE[id] || {};
   return k === 'atk' ? { n: a.name || 'Đánh thường', d: a.desc || '' } : k === 'passive' ? { n: h.passive.name, d: h.passive.desc } : k === 'cap' ? capSkill(id) : { n: h[k].name, d: h[k].desc }; }
