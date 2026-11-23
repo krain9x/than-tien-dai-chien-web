@@ -3143,7 +3143,7 @@ function castPhapTuong(u) {
   for (let i = 0; i < n; i++) B.later.push({ t: 0.55 + i * 0.3, fn: () => {   // các đòn pháp tướng gộp thành nhịp sát thương trong chiêu (tổng giữ nguyên)
     if (!B || B.over || u.dead) return; B.shake = Math.max(B.shake, 0.35);
     const L = aliveEnemies();
-    if (u.id === 'hongquan') { for (const e of L) { dealDmg(u, e, 1.0, 'ult'); if (!e.boss && !e.dead) e.stun = Math.max(e.stun || 0, 0.8); } for (const h of alliesAlive()) healU(h, maxHp(h) * 0.03, true); }
+    if (u.id === 'hongquan') { for (const h of alliesAlive()) healU(h, maxHp(h) * 0.03, true); }   // Pháp Tướng chỉ là hình: sát thương đã nằm trọn trong Hồng Mông Khai Thiên
     else if (u.id === 'nguyenthuy') { for (const e of L) { dealDmg(u, e, 0.8, 'ult'); if (!e.boss && !e.dead) e.stun = Math.max(e.stun || 0, 0.6); } }
     else if (u.id === 'giaochu') { for (const e of L.slice().sort(() => Math.random() - 0.5).slice(0, 5)) { dealDmg(u, e, 1.3, 'ult'); } }
     else { const cx = W * 0.62, cy = H * 0.6; for (const e of L) { if (!e.boss) { e.x += (cx - e.x) * 0.25; e.y += (cy - e.y) * 0.25; } dealDmg(u, e, 0.55, 'ult'); }
@@ -5368,12 +5368,14 @@ SIG.nuoa = { sheets: ['nuoa_sky', 'nuoa_fuse', 'nuoa_pillar', 'nuoa_rain', 'nuoa
 SIG.tiepdan = { sheets: ['td_heaven', 'td_bloom', 'td_ray', 'td_hit', 'td_petals', 'td_revive'],
   ult(u, sk, tgt) {
     const P = sigPt(u, 170, tgt), cx = Math.min(VIEW_R() - 260, (u.x + P.x) / 2 + 40), cy = Math.max(LANE_Y0 - 30, Math.min(u.y, P.y) - 140);
-    const aoe = sk.fx.find(x => x.t === 'aoe'), rayM = aoe.mult / 12;
+    const aoe = sk.fx.find(x => x.t === 'aoe');
     sigFx({ ult: 1, who: u.id, dur: 3.4, rays: [], upd(f, dt) {
       if (f.t >= 0.9) sigOnce(f, 'fire', () => { const L = B.enemies.filter(e => !e.dead).sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
         for (let i = 0; i < 12; i++) { const e = L[i % Math.max(1, L.length)]; if (!e) break; const a0 = -Math.PI / 2 + (i - 5.5) * 0.26;
-          f.rays.push({ e, d: i * 0.04, sx: cx + Math.cos(a0) * 70, sy: cy + Math.sin(a0) * 40, done: 0 }); } snd('magic'); });
-      for (const r of f.rays) if (!r.done && f.t >= 0.9 + r.d + 0.3) { r.done = 1; if (!r.e.dead) { dealDmg(u, r.e, rayM, 'ult'); sfxOnce('td_hit', r.e.x, r.e.y - 34, 120, 0.4, { add: 1 }); } }
+          f.rays.push({ e, d: i * 0.04, sx: cx + Math.cos(a0) * 70, sy: cy + Math.sin(a0) * 40, done: 0 }); }
+        f.cnt = new Map(); for (const r of f.rays) f.cnt.set(r.e, (f.cnt.get(r.e) || 0) + 1); snd('magic'); });
+      if (f.t >= 1.5) sigOnce(f, 'glow', () => { for (const e of B.enemies) if (!e.dead && !(f.cnt && f.cnt.has(e)) && Math.hypot(e.x - cx, e.y - cy) < 420) { dealDmg(u, e, aoe.mult * 0.5, 'ult'); sfxOnce('td_hit', e.x, e.y - 34, 110, 0.4, { add: 1 }); } });
+      for (const r of f.rays) if (!r.done && f.t >= 0.9 + r.d + 0.3) { r.done = 1; if (!r.e.dead) { dealDmg(u, r.e, aoe.mult / f.cnt.get(r.e), 'ult'); sfxOnce('td_hit', r.e.x, r.e.y - 34, 120, 0.4, { add: 1 }); } }
       if (f.t >= 1.6) sigOnce(f, 'heal', () => { for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult'); snd('heal'); B.flash = Math.max(B.flash || 0, 0.15); });
       if (f.t >= 1.9 && !u.tdRev) sigOnce(f, 'rev', () => { const d = B.heroes.find(x => x.dead && !x.clone && !x.gone && x !== u); if (!d) return; u.tdRev = 1;
         sfxOnce('td_revive', d.x, d.y + 8, 220, 1.2, { ay: 0.94, add: 1 });
@@ -5400,8 +5402,9 @@ SIG.chuande = { sheets: ['cd_tailopen', 'cd_sweep', 'cd_vajra', 'cd_vajra_hit', 
         for (const e of B.enemies) if (!e.dead && Math.abs(e.y - P.y) < 200 && e.x > u.x) { e.shield = 0; e.buffs = e.buffs.filter(b => b.v < 0); }
         const bo = B.enemies.find(e => e.boss && !e.dead); if (bo) { B.silence = 3; f.bo = bo; floater(bo.x, bo.y - 110, 'Thu Bảo · Câm', '#9fffc0', 17); } });
       if (f.t >= 1.5) sigOnce(f, 'vj', () => { const E = B.enemies.filter(e => !e.dead); for (let i = 0; i < 10; i++) { const e = E[i % Math.max(1, E.length)]; if (!e) break;
-        f.vj.push({ e, d: i * 0.08, sx: u.x + rand(-40, 40), sy: u.y - h * 1.3 - rand(0, 40), done: 0 }); } });
-      for (const v of f.vj) if (!v.done && f.t >= 1.5 + v.d + 0.35) { v.done = 1; if (!v.e.dead) { dealDmg(u, v.e, aoe.mult * 0.03, 'ult'); sfxOnce('cd_vajra_hit', v.e.x, v.e.y - 20, 130, 0.4, { add: 1 }); B.shake = Math.max(B.shake, 0.25); } }
+        f.vj.push({ e, d: i * 0.08, sx: u.x + rand(-40, 40), sy: u.y - h * 1.3 - rand(0, 40), done: 0 }); }
+        f.cnt = new Map(); for (const v of f.vj) f.cnt.set(v.e, (f.cnt.get(v.e) || 0) + 1); });
+      for (const v of f.vj) if (!v.done && f.t >= 1.5 + v.d + 0.35) { v.done = 1; if (!v.e.dead) { dealDmg(u, v.e, aoe.mult * 0.3 / f.cnt.get(v.e), 'ult'); sfxOnce('cd_vajra_hit', v.e.x, v.e.y - 20, 130, 0.4, { add: 1 }); B.shake = Math.max(B.shake, 0.25); } }
     }, draw(f) {
       const t = f.t;
       sigDim(0.6 * Math.min(1, t / 0.25) * fadeOut(t, 2.8, 0.6));
@@ -5461,7 +5464,7 @@ SIG.thailaoquan = { sheets: ['tl_open', 'tl_yang', 'tl_yin', 'tl_clamp', 'tl_fin
       if (f.t >= 1.3) sigOnce(f, 'kc0', () => { f.kc = big(); });
       if (f.t >= 1.85) sigOnce(f, 'kc', () => { const e = f.kc; if (!e || e.dead) return; dealDmg(u, e, 1.0, 'ult'); e.buffs.push({ k: 'atk', v: -0.3, t: 6 });
         floater(e.x, e.y - 100, 'Thu binh khí · -30% công', '#ffe58a', 15); sfx('boom'); f.kcAt = [e.x, e.y]; });
-      if (f.t >= 2.5) sigOnce(f, 'fin', () => { for (const e of B.enemies) if (!e.dead && e.x > GATE_X) dealDmg(u, e, 0.8, 'ult'); B.shake = 1.1; B.flash = 0.35; sfx('boom'); snd('thunder', 0.8, 0.7); });
+      if (f.t >= 2.5) sigOnce(f, 'fin', () => { for (const e of B.enemies) if (!e.dead) dealDmg(u, e, 0.8, 'ult'); B.shake = 1.1; B.flash = 0.35; sfx('boom'); snd('thunder', 0.8, 0.7); });
     }, draw(f) {
       const t = f.t;
       sigDim(0.6 * Math.min(1, t / 0.3) * fadeOut(t, 3.0, 0.5), '#06080a');
@@ -5485,8 +5488,8 @@ SIG.nguyenthuy = { sheets: ['nt_chaos', 'nt_axe', 'nt_split', 'nt_rocks', 'nt_ru
     sigFx({ ult: 1, who: u.id, dur: 3.4, upd(f) {
       if (f.t >= SPLIT) sigOnce(f, 'split', () => { B.shake = 1.2; B.flash = 0.35; sfx('boom'); snd('thunder', 0.9, 0.6); B.hitstop = Math.max(B.hitstop || 0, 0.12);
         for (const e of B.enemies) { if (e.dead) continue; const dx = e.x - P.x;
-          if (Math.abs(dx) < 85 && Math.abs(e.y - P.y) < 220) dealDmg(u, e, f0.mult * 0.7, 'ult');
-          else if (Math.hypot(dx, (e.y - P.y) * 1.4) < 300) { dealDmg(u, e, f0.mult * 0.1, 'ult'); if (!e.boss && !e.dead) { e.x = clamp(e.x + Math.sign(dx || 1) * 150, GATE_X + 60, W + 20); e.hitT = 0.5; } } } });
+          if (Math.abs(dx) < 85 && Math.abs(e.y - P.y) < 220) dealDmg(u, e, f0.mult * 0.8, 'ult');
+          else if (Math.hypot(dx, (e.y - P.y) * 1.4) < 300) { dealDmg(u, e, f0.mult * 0.3, 'ult'); if (!e.boss && !e.dead) { e.x = clamp(e.x + Math.sign(dx || 1) * 150, GATE_X + 60, W + 20); e.hitT = 0.5; } } } });
       if (f.t >= RUYI + 0.4) sigOnce(f, 'slam', () => { runFx(u, { ...f0, P, mult: f0.mult * 0.2 }, tgt, 'ult'); for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult'); B.shake = Math.max(B.shake, 0.9); B.flash = 0.25; sfx('boom'); });
     }, draw(f) {
       const t = f.t;
