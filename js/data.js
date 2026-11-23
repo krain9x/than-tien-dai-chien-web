@@ -1141,19 +1141,19 @@ const DOMAIN = {
     nuoa: { ...base, name: 'Nữ Oa Nương Nương', title: 'Thánh nhân Yêu tộc · Luyện Thạch Bổ Thiên', role: 'tran', el: 'tho', fac: 'yeu', look: LOOK('#2a1a10', '#f0a8d0', '#8ad0ff'),
       passive: { name: 'Thánh Thể Bổ Thiên', desc: 'Nhận ít hơn 15% sát thương.', dr: 0.15 },
       small: { name: 'Ngũ Sắc Thạch', desc: 'Đá ngũ sắc giáng chỗ quái đông nhất 170% công, choáng 1,4 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 105, mult: 1.7, color: '#ffb0e0', stun: 1.4 }] },
-      ult: { name: 'Luyện Thạch Bổ Thiên', desc: 'Vá trời bằng đá ngũ sắc: 480% công cả vùng, choáng 2 giây; cả đội nhận khiên 15% máu.', fx: [{ t: 'aoe', at: 'cluster', r: 185, mult: 4.8, color: '#ffb0e0', stun: 2.0 }, { t: 'shield', who: 'team', pct: 0.15, dur: 6 }] } },
+      ult: { name: 'Luyện Thạch Bổ Thiên', desc: 'Vá trời bằng đá ngũ sắc: 480% công cả vùng, choáng 2 giây; cả đội nhận khiên 15% máu. Nặn 3 người đất theo hình mình đánh cùng 8 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 185, mult: 4.8, color: '#ffb0e0', stun: 2.0 }, { t: 'shield', who: 'team', pct: 0.15, dur: 6 }] } },
     tiepdan: { ...base, name: 'Tiếp Dẫn Đạo Nhân', title: 'Giáo chủ Tây Phương', role: 'dan', el: 'kim', fac: 'phat', hp: 1700, atk: 100, look: LOOK('#eeeeee', '#e8b830', '#2a3a7a'),
       passive: { name: 'Tiếp Dẫn Vãng Sinh', desc: 'Hồi máu nhận thêm 20%.', healPct: 0.2 },
       small: { name: 'Kim Liên Hộ Thể', desc: 'Hồi máu cả đội 180% công.', fx: [{ t: 'heal', mult: 1.8 }] },
-      ult: { name: 'Thập Nhị Phẩm Kim Liên', desc: 'Mười hai cánh Kim Liên nở: hồi máu cả đội 480% công, khiên 12% máu, kim quang 380% công cả vùng.', fx: [{ t: 'heal', mult: 4.8 }, { t: 'shield', who: 'team', pct: 0.12, dur: 6 }, { t: 'aoe', at: 'cluster', r: 185, mult: 3.8, color: '#ffd76a' }] } },
+      ult: { name: 'Thập Nhị Phẩm Kim Liên', desc: 'Mười hai cánh Kim Liên nở: hồi máu cả đội 480% công, khiên 12% máu, kim quang 380% công cả vùng. Mỗi trận một lần: đón một đồng đội đã ngã sống lại với 40% máu.', fx: [{ t: 'heal', mult: 4.8 }, { t: 'shield', who: 'team', pct: 0.12, dur: 6 }, { t: 'aoe', at: 'cluster', r: 185, mult: 3.8, color: '#ffd76a' }] } },
     chuande: { ...base, name: 'Chuẩn Đề Đạo Nhân', title: 'Thánh nhân Tây Phương', role: 'phap', el: 'moc', fac: 'phat', atk: 120, look: LOOK('#eeeeee', '#f0f0ff', '#2a5aaa'),
       passive: { name: 'Thất Bảo Diệu Thụ', desc: '+15% sát thương chiêu thức.', skillPct: 0.15 },
       small: { name: 'Gia Trì Thần Xử', desc: 'Thần Xử giáng chỗ quái đông nhất 190% công, choáng 1,2 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 105, mult: 1.9, color: '#9fffc0', stun: 1.2 }] },
-      ult: { name: 'Ngũ Sắc Thần Quang', desc: 'Đuôi khổng tước quét ánh sáng năm màu 540% công cả vùng, choáng 2 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 195, mult: 5.4, color: '#9fffc0', stun: 2.0 }] } },
+      ult: { name: 'Ngũ Sắc Thần Quang', desc: 'Đuôi khổng tước quét ánh sáng năm màu 540% công cả vùng, choáng 2 giây; quái mất khiên và hiệu ứng có lợi, boss bị câm 3 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 195, mult: 5.4, color: '#9fffc0', stun: 2.0 }] } },
     nhulai: { ...base, name: 'Như Lai Phật Tổ', title: 'Thích Ca Mâu Ni', src: 'Tây Du Ký', role: 'tran', el: 'kim', fac: 'phat', hp: 1650, look: LOOK('#2a3a8a', '#c0302a', '#ffd34d'),
       passive: { name: 'Kim Thân Bất Hoại', desc: 'Nhận ít hơn 15% sát thương, +10% bạo kích.', dr: 0.15, crit: 0.1 },
       small: { name: 'Vạn Tự Phật Ấn', desc: 'Phật ấn đè chỗ quái đông nhất 170% công, choáng 1,5 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 110, mult: 1.7, color: '#ffd76a', stun: 1.5 }] },
-      ult: { name: 'Ngũ Hành Sơn', desc: 'Bàn tay Phật hoá Ngũ Hành Sơn giáng xuống 560% công cả vùng, choáng 2,5 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 195, mult: 5.6, color: '#ffd76a', stun: 2.5 }] } },
+      ult: { name: 'Ngũ Hành Sơn', desc: 'Bàn tay Phật hoá Ngũ Hành Sơn giáng xuống 560% công cả vùng; núi đè quái 4 giây, năm đỉnh lần lượt nổ Kim, Mộc (hồi máu), Thuỷ (chậm), Hoả (thiêu), Thổ (choáng).', fx: [{ t: 'aoe', at: 'cluster', r: 195, mult: 5.6, color: '#ffd76a', stun: 2.5 }] } },
   });
   Object.assign(ATK_STYLE, {
     nuoa: { pat: 'bounce', proj: 'light', name: 'Ngũ Sắc Quang', desc: 'Tia năm màu nảy lan 4 quái.', bounces: 4 },
@@ -1162,6 +1162,18 @@ const DOMAIN = {
     nhulai: { pat: 'bounce', proj: 'light', name: 'Phật Quang', desc: 'Phật quang nảy lan 5 quái.', bounces: 5 },
   });
   for (const id of ['nuoa', 'tiepdan', 'chuande', 'nhulai']) { TIER_TABLE.UR.push(id); SSR_POOL.push(id); }
+  Object.assign(ATK_STYLE, {   // đạn riêng (main.js UR_PROJ vẽ sheet vẽ tay)
+    nguyenthuy: { pat: 'pierce', proj: 'light', name: 'Ngọc Như Ý Quang', desc: 'Tia ngọc Như Ý xuyên mọi quái trên đường.', pierceN: 99 },
+    nuoa: { pat: 'lob', proj: 'light', name: 'Ngũ Sắc Thạch', desc: 'Ném đá ngũ sắc nổ lan; đá đổi màu khắc hệ mục tiêu (+30% sát thương).', boom: 70 },
+    tiepdan: { pat: 'bounce', proj: 'light', name: 'Kim Liên Biện', desc: 'Cánh sen vàng nảy 3 quái; mỗi lần trúng hồi máu đồng đội yếu nhất.', bounces: 3 },
+    chuande: { pat: 'fan', proj: 'light', name: 'Lông Khổng Tước', desc: 'Phóng 3 lông khổng tước hình quạt.', n: 3 },
+    nhulai: { pat: 'bounce', proj: 'light', name: 'Vạn Tự Phật Ấn', desc: 'Phật ấn bay chậm mà nặng; đủ 3 dấu thì quái bị choáng.', bounces: 1, speed: 380 },
+  });
+  ATK_STYLE.hongquan.desc = 'Sợi tinh quang tím nảy lan 5 quái.';
+  HEROES.thailaoquan.ult.name = 'Thái Cực Hoá Giới'; HEROES.thailaoquan.ult.desc = 'Thái Cực Đồ trải phủ sân. Dương: hồi máu cả đội 500% công, giải khống chế, khiên 10% máu. Âm: 200% công và trói quái 1,5 giây. Kim Cương Trác thu binh khí quái mạnh nhất: -30% công 6 giây.';
+  HEROES.nguyenthuy.ult.desc = 'Bóng búa Bàn Cổ bổ trời đất tách đôi: quái giữa vết tách chịu 340% công, hai bên bị hất văng; Ngọc Như Ý giáng chốt, choáng 2 giây, cả đội +20% công 6 giây.';
+  HEROES.giaochu.ult.desc = 'Bốn kiếm cắm bốn góc thành Tru Tiên Kiếm Trận 520% công; quái trong trận bị chảy máu, chậm, trói và giảm thủ.'; ATK_STYLE.hongquan.name = 'Tinh Quang';
+  ATK_STYLE.giaochu.desc = 'Phóng lần lượt Tru Tiên, Lục Tiên, Hãm Tiên, Tuyệt Tiên: chảy máu, làm chậm, trói, giảm thủ.';
   Object.assign(CAP_SPECIAL, {
     nuoa: { n: 'Mẫu Nghi Thiên Hạ', d: 'Cả đội +20% máu, +10% công', m: { hpPct: 0.2, atkPct: 0.1 } },
     tiepdan: { n: 'Tây Phương Tiếp Dẫn', d: 'Cả đội +20% máu, nhận ít hơn 10% sát thương', m: { hpPct: 0.2, kc: 0.1 } },
