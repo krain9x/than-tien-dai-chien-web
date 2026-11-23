@@ -4547,6 +4547,20 @@ function bgmApply() {
 function bgmSet(k) { bgmWant = k; bgmApply(); }
 function bgmStart() { _bgmGest = true; bgmApply(); }
 document.addEventListener('pointerdown', () => setTimeout(bgmStart, 50));
+// Thoát ra ngoài / tắt màn hình / chuyển ứng dụng: dừng nhạc + âm thanh, tạm dừng trận. Quay lại: bật lại nhạc (trận vẫn ở bảng Tạm dừng).
+function appHidden() {
+  try { if (BGM) BGM.pause(); } catch (e) {}
+  try { if (AC && AC.state === 'running') AC.suspend(); } catch (e) {}
+  try { if (B && !B.over && !B.paused) openPause(); } catch (e) {}
+}
+function appShown() {
+  try { if (AC && AC.state === 'suspended') AC.resume(); } catch (e) {}
+  lastT = performance.now(); bgmApply();
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) appHidden(); else appShown(); });
+window.addEventListener('pagehide', appHidden);
+window.addEventListener('pageshow', e => { if (e.persisted) appShown(); });
+if (navigator.mediaSession) try { navigator.mediaSession.setActionHandler('pause', appHidden); } catch (e) {}
 
 
 // ---- Lưu trực tuyến (js/cloud.js): khi đăng nhập, so bản trên mạng với bản trên máy
