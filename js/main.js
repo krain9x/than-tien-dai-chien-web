@@ -123,7 +123,7 @@ function drawEnemyPose(u, alpha) {
   ctx.filter = 'none'; ctx.restore(); return true;
 }
 const POSE_NAMES = ['windup', 'strike', 'skill', 'ult', 'idle1', 'idle2', 'hit'];
-const POSE_IDS = ['nuoa','tiepdan','chuande','nhulai','hongquan','nguyenthuy','ngochoang','dilac','quangthanh','kimlinh','chanvu','vuongmau','phohien','daibang','ngocdinh','hoangbao','bachnhan','hattu','moctra','nganggiac','kimmaohong','loicong','ngoctho','linhcam','maonhat','giaochu','khongtuyen','nhiendang','thaisu','hoangmi','vanthu','quynhtieu','hoangthienhoa','viho','thachco','bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
+const POSE_IDS = ['phuchy','thannong','hienvien','dabao','lucap','namcuc','diatang','lucnhi','cuukho','nuoa','tiepdan','chuande','nhulai','hongquan','nguyenthuy','ngochoang','dilac','quangthanh','kimlinh','chanvu','vuongmau','phohien','daibang','ngocdinh','hoangbao','bachnhan','hattu','moctra','nganggiac','kimmaohong','loicong','ngoctho','linhcam','maonhat','giaochu','khongtuyen','nhiendang','thaisu','hoangmi','vanthu','quynhtieu','hoangthienhoa','viho','thachco','bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
 const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tướng, chỉ nạp khi tướng ra trận (tiết kiệm ~30 MB lúc khởi động)
 function ensureHeroAssets(ids) {
   try { applySkins(); } catch (e) {}
@@ -2669,6 +2669,15 @@ const UCFG = {
   linhcam: {"t": "drop", "obj": "bronze_mace", "size": 190, "col": "#7fc8ff"},
   maonhat: {"t": "summon", "obj": "golden_rooster", "size": 240, "col": "#ffb060", "waves": 1},
   hongquan: {"t": "drop", "obj": "creation_tablet", "size": 260, "col": "#d8a0ff", "beam": 1},
+  phuchy: {"t": "drop", "obj": "xiantian_bagua", "size": 250, "col": "#9fffc0", "beam": 1},
+  thannong: {"t": "heal", "obj": "herb_basket", "size": 220, "col": "#9fff9a"},
+  hienvien: {"t": "throw", "obj": "xuanyuan_sword", "n": 1, "size": 200, "col": "#ffd34d"},
+  dabao: {"t": "rain", "obj": "treasure_rain", "n": 12, "size": 80, "col": "#ffd34d"},
+  lucap: {"t": "throw", "obj": "flying_blade", "n": 3, "size": 120, "col": "#ffffff"},
+  namcuc: {"t": "heal", "obj": "longevity_peach", "size": 200, "col": "#ffb0a0"},
+  diatang: {"t": "summon", "obj": "ditingbeast", "size": 260, "col": "#ffd76a", "waves": 1},
+  lucnhi: {"t": "smash", "obj": "black_rod", "col": "#c070ff", "len": 480},
+  cuukho: {"t": "summon", "obj": "nine_lion", "size": 300, "col": "#7fc8ff", "waves": 1},
   giaochu: { t: 'rain', obj: 'tru_sword', n: 8, size: 110, col: '#ff5a3a' },
   khongtuyen: { t: 'wind', obj: 'peacock_fan', size: 220, col: '#9fffc0' },
   nhiendang: { t: 'heal', obj: 'holy_lamp', size: 200, col: '#ffe58a' },
@@ -2937,7 +2946,7 @@ const CX = {
 
 
 // ===================== ĐIỆN ẢNH CHO TUYỆT KỸ =====================
-const ULT_THEME = { ngokhong: ['#ffb02e', '#4a1400'], nata: ['#ff5a2a', '#3a0800'], ngumavuong: ['#ff3a1a', '#2a0505'], quanam: ['#bfffe8', '#06262a'], datky: ['#ff6ad0', '#2a0828'],
+const ULT_THEME = { phuchy: ['#9fffc0', '#0a0612'], thannong: ['#9fff9a', '#0a0612'], hienvien: ['#ffd34d', '#0a0612'], dabao: ['#ffd34d', '#0a0612'], lucap: ['#ffffff', '#0a0612'], namcuc: ['#ffb0a0', '#0a0612'], diatang: ['#ffd76a', '#0a0612'], lucnhi: ['#c070ff', '#0a0612'], cuukho: ['#7fc8ff', '#0a0612'], ngokhong: ['#ffb02e', '#4a1400'], nata: ['#ff5a2a', '#3a0800'], ngumavuong: ['#ff3a1a', '#2a0505'], quanam: ['#bfffe8', '#06262a'], datky: ['#ff6ad0', '#2a0828'],
   duongtien: ['#9fc8ff', '#06102a'], vantieu: ['#ffd34d', '#2a1a00'], thailaoquan: ['#9fffd0', '#04201a'], loichantu: ['#7fb3ff', '#040a2a'], thaiatchannhan: ['#ff7a2e', '#2a0a00'], tieubachlong: ['#7fe0ff', '#021a2a'], khuongtanha: ['#ffe58a', '#1a1404'], bodetosu: ['#bfffd0', '#04201a'], tranguyentu: ['#e8c080', '#1a1004'], giaochu: ['#ff7a5a', '#200404'], khongtuyen: ['#9fffc0', '#021a10'], nguyenthuy: ['#bfe0ff', '#04101a'], hongquan: ['#d8a0ff', '#10041a'], ngochoang: ['#ffe58a', '#1a1404'], dilac: ['#ffd34d', '#1a1004'], quangthanh: ['#ffcf6a', '#1a1004'], kimlinh: ['#ffd34d', '#200a04'], chanvu: ['#7fc8ff', '#020a1a'], vuongmau: ['#ffb0c8', '#200410'], phohien: ['#e0f0ff', '#04101a'], daibang: ['#ffd34d', '#1a0a00'], ngocdinh: ['#bfe0ff', '#04101a'] };
 const cineTheme = id => ULT_THEME[id] || [(UCFG[id] && UCFG[id].col) || '#ffe58a', '#0a0612'];
 const isSSR = id => (window.SSR_POOL || SSR_POOL).includes(id);
