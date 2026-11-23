@@ -1141,7 +1141,7 @@ const DOMAIN = {
     nuoa: { ...base, name: 'Nữ Oa Nương Nương', title: 'Thánh nhân Yêu tộc · Luyện Thạch Bổ Thiên', role: 'tran', el: 'tho', fac: 'yeu', look: LOOK('#2a1a10', '#f0a8d0', '#8ad0ff'),
       passive: { name: 'Thánh Thể Bổ Thiên', desc: 'Nhận ít hơn 15% sát thương.', dr: 0.15 },
       small: { name: 'Ngũ Sắc Thạch', desc: 'Đá ngũ sắc giáng chỗ quái đông nhất 170% công, choáng 1,4 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 105, mult: 1.7, color: '#ffb0e0', stun: 1.4 }] },
-      ult: { name: 'Luyện Thạch Bổ Thiên', desc: 'Vá trời bằng đá ngũ sắc: 480% công cả vùng, choáng 2 giây; cả đội nhận khiên 15% máu. Nặn 3 người đất theo hình mình đánh cùng 8 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 185, mult: 4.8, color: '#ffb0e0', stun: 2.0 }, { t: 'shield', who: 'team', pct: 0.15, dur: 6 }] } },
+      ult: { name: 'Luyện Thạch Bổ Thiên', desc: 'Vá trời bằng đá ngũ sắc: 480% công cả vùng, choáng 2 giây; cả đội nhận khiên 15% máu. Nặn 3 chiến binh đất đánh cùng đội 8 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 185, mult: 4.8, color: '#ffb0e0', stun: 2.0 }, { t: 'shield', who: 'team', pct: 0.15, dur: 6 }] } },
     tiepdan: { ...base, name: 'Tiếp Dẫn Đạo Nhân', title: 'Giáo chủ Tây Phương', role: 'dan', el: 'kim', fac: 'phat', hp: 1700, atk: 100, look: LOOK('#eeeeee', '#e8b830', '#2a3a7a'),
       passive: { name: 'Tiếp Dẫn Vãng Sinh', desc: 'Hồi máu nhận thêm 20%.', healPct: 0.2 },
       small: { name: 'Kim Liên Hộ Thể', desc: 'Hồi máu cả đội 180% công.', fx: [{ t: 'heal', mult: 1.8 }] },
@@ -1191,6 +1191,29 @@ DOMAIN.phantu = { n: 'Phạn Tự Vực', d: 'Kim văn Phạn tự trấn sân: 
 for (const k of ['giaochu', 'thailaoquan', 'nguyenthuy']) delete DOMAIN[k];
 const DOM_GROUP = id => (TAM_THANH.includes(id) || id === 'hongquan') ? 'tamthanh' : PHAT_UR.includes(id) ? 'phantu' : null;
 const DOM_NEED = { tamthanh: 'Có Hồng Quân, hoặc đủ Tam Thanh (Thái Thượng, Nguyên Thuỷ, Thông Thiên) trên sân', phantu: 'Đủ Tiếp Dẫn, Chuẩn Đề, Như Lai trên sân' };
+// ===== CÂN BẰNG UR / UR+ (2026-11-24, tools/balance_report.js) =====
+// Mục tiêu (1★, trước cấp): UR chủ công ~ SSR+ mạnh nhất, UR khống chế/hồi máu vượt SSR+ cùng vai trò, UR+ trên mọi UR.
+// Chỉ số ở đây là gốc, nhân TIER_BASE (UR 1,2 · UR+ 1,32). Đổi hệ số chiêu thì % trong mô tả tự cập nhật.
+(function balanceUR() {
+  const pct = m => Math.round(m * 100) + '%';
+  function setM(id, w, i, m) { const sk = HEROES[id][w], f = sk.fx[i], o = f.mult; if (o === m) return; sk.desc = sk.desc.split(pct(o)).join(pct(m)); f.mult = m; }
+  const B = {   // id: [máu, công, thủ, tốc đánh]
+    hongquan: [2000, 150, 90, 0.9], giaochu: [1580, 220, 64, 1.0], chuande: [1620, 215, 70, 0.95],
+    nguyenthuy: [1850, 160, 82, 0.9], nuoa: [1850, 160, 82, 0.9], nhulai: [1950, 160, 88, 0.9],
+    tiepdan: [1950, 140, 84, 0.9], thailaoquan: [1950, 150, 84, 0.9],
+  };
+  for (const id in B) { const h = HEROES[id]; [h.hp, h.atk, h.def, h.aspd] = B[id]; }
+  setM('hongquan', 'small', 0, 2.2); setM('hongquan', 'ult', 0, 6.5);
+  setM('giaochu', 'small', 0, 2.2); setM('giaochu', 'ult', 0, 6.0);
+  setM('chuande', 'small', 0, 2.2); setM('chuande', 'ult', 0, 6.0);
+  setM('nguyenthuy', 'small', 0, 2.0); setM('nguyenthuy', 'ult', 0, 5.5);
+  HEROES.nguyenthuy.ult.desc = 'Bóng búa Bàn Cổ bổ trời đất tách đôi: quái giữa vết tách chịu 385% công, hai bên bị hất văng; Ngọc Như Ý giáng chốt 110% công, choáng 2 giây, cả đội +20% công 6 giây.';
+  setM('nuoa', 'small', 0, 2.0); setM('nuoa', 'ult', 0, 5.5);
+  setM('nhulai', 'small', 0, 2.0); setM('nhulai', 'ult', 0, 6.0);
+  setM('tiepdan', 'small', 0, 2.4); setM('tiepdan', 'ult', 0, 5.5); setM('tiepdan', 'ult', 2, 4.0);
+  setM('thailaoquan', 'small', 0, 2.4); setM('thailaoquan', 'ult', 0, 5.5);
+  HEROES.thailaoquan.ult.desc = HEROES.thailaoquan.ult.desc.replace('500% công', '550% công');
+})();
 const NO_ART = new Set(["kimmaohong"]);
 (function hideNoArt() {
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
