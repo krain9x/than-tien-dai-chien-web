@@ -1250,3 +1250,12 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 @keyframes hgHue { to { filter: hue-rotate(360deg); } }
 .hc2.locked .hc2-glow { display: none; }
 .hc2-fr { will-change: filter; }
+/* tên UR+: bỏ chữ cắt nền (điện thoại hiện thành dải sáng mất chữ) → chữ vàng + ánh sáng nhịp, chạy mọi máy */
+.hc2.t-URP b { color: #ffe9a0 !important; background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important; filter: none !important;
+  text-shadow: 0 1px 0 #2a0a3a, 0 0 3px #000, 0 0 6px rgba(200,120,255,.9) !important; animation: hcGoldT 3s ease-in-out infinite !important; }
+@keyframes hcGoldT { 0%, 100% { color: #ffe9a0; } 50% { color: #fff; } }
+.hc2.t-URP .hc2-rar::after { color: #ffd76a !important; background: none !important; -webkit-background-clip: border-box !important; background-clip: border-box !important; filter: none !important; text-shadow: 0 1px 0 #2a0a3a, 0 0 4px rgba(200,120,255,.9); }
+
+/* Hồng Quân: lớp tinh hà chuyển động trên màn chi tiết */
+.hd5-hero canvas.hqg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.hd5-hero.off canvas.hqg { display: none; }

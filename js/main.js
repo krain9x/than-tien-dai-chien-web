@@ -1895,7 +1895,7 @@ function poseFor(u) {
   }
   return null;
 }
-const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25, thailaoquan: 1.22, giaochu: 1.22, nguyenthuy: 1.22, hongquan: 1.25 };   // UR concept A (Thánh Toạ) to hơn để uy   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
+const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25, thailaoquan: 1.22, giaochu: 1.0, nguyenthuy: 1.22, hongquan: 1.25 };   // UR concept A (Thánh Toạ) to hơn để uy   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
 const _bright = new WeakMap();
 function brightImg(img) {   // bản sáng của ảnh dáng (tạo 1 lần): nháy trắng khi trúng đòn mà không dùng ctx.filter mỗi khung
   let c = _bright.get(img); if (c) return c;
@@ -1917,8 +1917,47 @@ function drawPose(u, name, t, h, alpha) {
   else if (name === 'hit') { const e = 1 - eo(Math.min(1, t)); ox = -11 * e; rot = -0.06 * e; sy = 1 - 0.03 * e; }
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(ox, 0); ctx.rotate(rot); ctx.scale(sx, sy);
   ctx.drawImage(u.hurt > 0 ? brightImg(img) : img, -gx, -gy, img.width * k, img.height * k);
+  if (u.id === 'hongquan' && HQ_GAL[name]) hqGalaxy(img, HQ_GAL[name], -gx, -gy, k, alpha);
   ctx.filter = 'none'; ctx.restore();
   return true;
+}
+// Hồng Quân: dải tinh hà ở vạt áo chuyển động — tinh vân xoáy chậm quanh lõi + sao lấp lánh, chỉ phủ trong hình nhân vật (cắt theo độ trong của ảnh dáng)
+const HQ_GAL = {"idle1":[0.35,0.732],"idle2":[0.346,0.732],"windup":[0.344,0.732],"strike":[0.425,0.809],"skill":[0.425,0.811],"ult":[0.425,0.809],"hit":[0.346,0.732]};   // tools/find_galaxy_core.py
+const HQ_NEB = new Image(); HQ_NEB.src = 'art/ui/frames/nebula.webp';
+const HQ_STARS = Array.from({ length: 16 }, (_, i) => ({ a: i * 2.39996, r: 0.12 + 0.88 * ((i * 0.618) % 1), ph: i * 1.7, sp: 1.6 + (i % 5) * 0.5 }));
+let _hqOff = null;
+function hqGalaxy(img, c, x0, y0, k, alpha, tc) {
+  tc = tc || ctx;
+  if (gfxLow() || !HQ_NEB.complete || !HQ_NEB.naturalWidth) return;
+  const R = img.width * 0.3, S = Math.ceil(R * 2), cx = c[0] * img.width, cy = c[1] * img.height, T = performance.now() / 1000;
+  if (!_hqOff) _hqOff = document.createElement('canvas');
+  if (_hqOff.width !== S) { _hqOff.width = S; _hqOff.height = S; }
+  const g = _hqOff.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, S, S);
+  g.drawImage(img, cx - R, cy - R, S, S, 0, 0, S, S);                                   // lấy hình vạt áo làm khuôn
+  g.globalCompositeOperation = 'source-in'; g.fillStyle = '#000'; g.fillRect(0, 0, S, S);
+  g.globalCompositeOperation = 'source-atop';
+  for (const [rot, sc, al] of [[T * 0.35, 1.5, 0.9], [-T * 0.22 + 1, 1.15, 0.6]]) {   // hai lớp tinh vân xoay ngược nhau = xoáy
+    g.save(); g.globalAlpha = al; g.translate(R, R); g.rotate(rot); g.drawImage(HQ_NEB, -R * sc, -R * sc, R * 2 * sc, R * 2 * sc); g.restore(); }
+  const fl = FXT.flare;
+  if (fl && fl.complete && fl.naturalWidth) for (const s of HQ_STARS) {                  // sao quay quanh lõi, nhấp nháy
+    const tw = Math.max(0, Math.sin(T * s.sp + s.ph)); if (tw < 0.15) continue;
+    const ang = s.a + T * 0.25 / (0.3 + s.r), rr = s.r * R * 0.9, sz = R * (0.1 + 0.16 * tw);
+    g.globalAlpha = tw; g.drawImage(fl, R + Math.cos(ang) * rr - sz / 2, R + Math.sin(ang) * rr * 0.75 - sz / 2, sz, sz); }
+  g.globalCompositeOperation = 'destination-in'; g.globalAlpha = 1;                     // mờ dần ra rìa
+  const rg = g.createRadialGradient(R, R, R * 0.15, R, R, R); rg.addColorStop(0, '#000'); rg.addColorStop(0.6, 'rgba(0,0,0,0.75)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = rg; g.fillRect(0, 0, S, S);
+  tc.save(); tc.globalCompositeOperation = 'lighter'; tc.globalAlpha = alpha * 0.55;
+  tc.drawImage(_hqOff, x0 + (cx - R) * k, y0 + (cy - R) * k, S * k, S * k); tc.restore();
+}
+function hqGalaxyDom(hero) {   // màn chi tiết tướng: lớp canvas phủ đúng khung ảnh dáng đứng (object-fit: contain, neo đáy)
+  const p1 = hero.querySelector('.p1'); if (!p1) return;
+  const cv = document.createElement('canvas'); cv.className = 'hqg'; hero.appendChild(cv);
+  const W0 = 300, H0 = 400, dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = W0 * dpr; cv.height = H0 * dpr; const g = cv.getContext('2d');
+  const tick = () => { if (!cv.isConnected) return; requestAnimationFrame(tick);
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); if (!p1.naturalWidth || hero.classList.contains('act')) return;
+    const k = Math.min(W0 / p1.naturalWidth, H0 / p1.naturalHeight); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    hqGalaxy(p1, HQ_GAL.idle1, (W0 - p1.naturalWidth * k) / 2, H0 - p1.naturalHeight * k, k, 1.3, g); };
+  tick();
 }
 function drawRigUnit(u, h, alpha) {
   const pz = poseFor(u) || (window.HPOSE && HPOSE[u.id] && !hasSkel(u.id) ? ['idle1', 0] : null);   // tướng chỉ có tư thế (không rig): thắng/chết dùng dáng đứng
@@ -4075,7 +4114,8 @@ function showHeroDetail(id, tab) {
   { const ro = ui.querySelector('.hd5-roster .on'); if (ro) ro.scrollIntoView({ block: 'nearest', inline: 'center' }); }
   ui.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.ro));
   ui.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { HD_SKSEL = b.dataset.sk; showHeroDetail(id); });
-  { let n = 0; const st2 = $('#hdStage'), pa = st2.querySelector('.pa'), hero = st2.querySelector('.hd5-hero');   // bấm: lần lẻ ra đòn, lần chẵn tung tuyệt kỹ
+  { let n = 0; const st2 = $('#hdStage'), pa = st2.querySelector('.pa'), hero = st2.querySelector('.hd5-hero');
+    if (pd === 'hongquan' && hero) hqGalaxyDom(hero);   // bấm: lần lẻ ra đòn, lần chẵn tung tuyệt kỹ
     st2.onclick = () => { if (hero.classList.contains('act')) return; const seq = n++ % 2 ? [['skill', 260], ['ult', 700]] : [['windup', 200], ['strike', 420]];
       hero.classList.add('act'); let t = 0; for (const [p, d] of seq) { setTimeout(() => { pa.src = `art/poses/${pd}/${p}.webp`; }, t); t += d; }
       if (seq[1][0] === 'ult') { st2.classList.add('ultfx'); snd('magic'); } else snd('whoosh');
