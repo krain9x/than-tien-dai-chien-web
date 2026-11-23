@@ -1221,3 +1221,20 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 @keyframes hgRainbow { 0% { box-shadow: 0 0 14px 5px #ff3a5a; } 20% { box-shadow: 0 0 16px 6px #ffb020; } 40% { box-shadow: 0 0 14px 5px #40e070; } 60% { box-shadow: 0 0 16px 6px #30b0ff; } 80% { box-shadow: 0 0 14px 5px #b050ff; } 100% { box-shadow: 0 0 14px 5px #ff3a5a; } }
 .hc2.locked .hc2-glow { display: none; }
 .lu4 .hc2-glow { inset: 2%; }
+/* ánh sáng bám theo khung (toả cả mép trong lẫn mép ngoài viền) — kiểu ánh "nâng sao" cũ, theo màu phẩm */
+.hc2.r-SSR .hc2-fr { animation: fgGold 2.4s ease-in-out infinite; filter: none; }
+.hc2.t-SSRP .hc2-fr { animation: fgOrange 1.8s ease-in-out infinite; }
+.hc2.t-UR .hc2-fr { animation: fgRainbow 3s linear infinite; }
+.hc2.t-URP .hc2-fr { animation: fgRainbow 2s linear infinite; }
+@keyframes fgGold { 0%, 100% { filter: drop-shadow(0 0 1px #ffe080); } 50% { filter: drop-shadow(0 0 4px #ffc830) drop-shadow(0 0 2px #ffe080); } }
+@keyframes fgOrange { 0%, 100% { filter: drop-shadow(0 0 1px #ffb060); } 50% { filter: drop-shadow(0 0 5px #ff8a1a) drop-shadow(0 0 2px #ffc060); } }
+@keyframes fgRainbow { 0% { filter: drop-shadow(0 0 4px #ff3a5a) drop-shadow(0 0 2px #ff9aaa); } 20% { filter: drop-shadow(0 0 5px #ffb020) drop-shadow(0 0 2px #ffe080); } 40% { filter: drop-shadow(0 0 4px #30e070) drop-shadow(0 0 2px #a0ffb0); } 60% { filter: drop-shadow(0 0 5px #30a8ff) drop-shadow(0 0 2px #a0d8ff); } 80% { filter: drop-shadow(0 0 4px #b050ff) drop-shadow(0 0 2px #e0b0ff); } 100% { filter: drop-shadow(0 0 4px #ff3a5a) drop-shadow(0 0 2px #ff9aaa); } }
+.hc2.locked .hc2-fr { animation: none !important; filter: grayscale(.7) brightness(.8) !important; }
+/* SSR = cam, SSR+ = đỏ */
+.hc2.r-SSR .hc2-fr { animation: fgOrange 2.4s ease-in-out infinite; }
+.hc2.t-SSRP .hc2-fr { animation: fgRed 1.8s ease-in-out infinite; }
+@keyframes fgRed { 0%, 100% { filter: drop-shadow(0 0 1px #ff8a7a); } 50% { filter: drop-shadow(0 0 5px #ff2a2a) drop-shadow(0 0 2px #ff9a8a); } }
+.hc2.r-SSR .hc2-glow { box-shadow: 0 0 10px 3px rgba(255,130,20,.8); }
+.hc2.t-SSRP .hc2-glow { animation: hgRed 1.8s ease-in-out infinite; }
+@keyframes hgRed { 0%, 100% { box-shadow: 0 0 8px 2px rgba(255,40,40,.7); } 50% { box-shadow: 0 0 18px 6px rgba(255,40,40,1); } }
+.hc2.t-UR .hc2-fr { animation: fgRainbow 3s linear infinite; } .hc2.t-URP .hc2-fr { animation: fgRainbow 2s linear infinite; }
