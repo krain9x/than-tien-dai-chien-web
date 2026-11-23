@@ -146,6 +146,13 @@ const FACE = { tieuyeu: -1, tieuyeu_chibi: -1 };   // ảnh gốc của Tiểu Y
 const ANIM = {};
 // nền ải vẽ bằng Codex (art/bg/<theme>.webp); thiếu thì dùng nền vẽ bằng code
 const HOMEBG = new Image(); HOMEBG.src = 'art/ui/home_bg.webp';
+// Giao diện: hoa (Hoa Đào, mặc định) · dem (Đêm Thiên Cung, tối) · mac (Thuỷ Mặc). Màu sinh bởi tools/gen_themes.py -> css/themes.css
+const THEMES = { hoa: { n: 'Hoa Đào', d: 'Sáng, ấm', bg: 'home_bg' }, dem: { n: 'Đêm Thiên Cung', d: 'Nền tối, dịu mắt', bg: 'home_bg_dem' }, mac: { n: 'Thuỷ Mặc', d: 'Ngọc bích, tranh mực', bg: 'home_bg_mac' } };
+function applyTheme() {
+  const t = THEMES[S.theme] ? S.theme : 'hoa';
+  if (t === 'hoa') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
+  const src = 'art/ui/' + THEMES[t].bg + '.webp'; if (!HOMEBG.src.endsWith(src)) HOMEBG.src = src;
+}
 const BGIMG = {};
 for (const t of ['forest', 'pass', 'tomb', 'fire', 'river', 'cave', 'sea', 'snow', 'heaven']) { const i = new Image(); i.src = 'art/bg/' + t + '.webp'; BGIMG[t] = i; }
 function loadArt() {
@@ -3686,6 +3693,7 @@ function showSettings() {
   const st = !window.Cloud || !Cloud.ok ? 'Chưa kết nối máy chủ lưu' : Cloud.user ? 'Đã đăng nhập: ' + esc(Cloud.user.displayName || '') + ' · tự lưu lên mạng' : 'Chưa đăng nhập: dữ liệu chỉ lưu trên máy này';
   const w = document.createElement('div'); w.className = 'modal set-modal';
   w.innerHTML = `<div class="buff-box"><div class="cp-title"><span>Cài Đặt</span></div><div class="buff-body">
+    <section><h4>Giao diện</h4><div class="th-pick">${Object.keys(THEMES).map(k => `<button class="th-opt ${(S.theme || 'hoa') === k ? 'on' : ''}" data-th="${k}"><img src="art/ui/${THEMES[k].bg}.webp" alt=""><b>${THEMES[k].n}</b><small>${THEMES[k].d}</small></button>`).join('')}</div></section>
     <section><h4>Tài khoản</h4><div class="bf"><b>Lưu trực tuyến</b><span>${st}</span></div>
       <div class="set-row"><button class="btn small gold" id="sAcc">${window.Cloud && Cloud.user ? 'Đăng xuất' : 'Đăng nhập Google'}</button><button class="btn small" id="sData">Mã chuyển dữ liệu</button></div></section>
     <section><h4>Âm thanh và hình ảnh</h4>
@@ -3703,6 +3711,7 @@ function showSettings() {
   q('#sFull').onclick = () => { w.remove(); grantAllHeroes(); };
   q('#sSnd').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); audioOn(); w.remove(); showSettings(); };
   q('#sScene').onclick = () => { S.ultScene = S.ultScene === false ? true : false; save(); w.remove(); showSettings(); };
+  w.querySelectorAll('[data-th]').forEach(b => b.onclick = () => { S.theme = b.dataset.th; save(); applyTheme(); w.remove(); showSettings(); });
   q('#sGfx').onclick = () => { S.gfx = S.gfx === 'low' ? 'high' : S.gfx === 'high' ? 'auto' : 'low'; save(); w.remove(); showSettings(); };
   q('#sTut').onclick = () => { S.tut = {}; save(); toast('Hướng dẫn sẽ hiện lại ở trận tới'); };
   let armed = false; q('#sReset').onclick = () => { if (!armed) { armed = true; q('#sResetMsg').textContent = 'Bấm lần nữa để xoá toàn bộ tiến độ.'; q('#sReset').textContent = 'Xác nhận xoá'; return; }
@@ -3781,7 +3790,7 @@ function IC2(n, fb) { return `<img src="art/ui/${n}.webp" onerror="this.onerror=
 // tranh thẻ ải trên trang chủ: cảnh tuyệt kỹ hợp với boss / vùng của chương
 const CH_ART = ['datky', 'thaisu', 'trieucongminh', 'vantieu', 'giaochu', 'khuongtanha', 'duongtien', 'ngumavuong', 'honghainhi', 'bachcot', 'longvuong', 'duongtang'];
 function showHome() {
-  bgmSet('home');
+  applyTheme(); bgmSet('home');
   B = null;
   ensureHeroAssets(S.lineup.filter(id => S.owned[id]));   // nạp tư thế để tướng ở trang chủ có dáng đứng riêng
   const cap = S.lineup.find(id => S.owned[id]), nf = STAGES.findIndex(st => !S.cleared[st.id]), nx = STAGES[nf < 0 ? STAGES.length - 1 : nf];
@@ -4715,6 +4724,7 @@ function showEvents() {
 // Đường dẫn nhanh: #battle=1 (vào ải 1, bật tự động), #gacha, #heroes, #lineup, #stages, #hero=nata
 function route() {
   const h = (location.hash || '').slice(1);
+  { const tm = h.match(/(?:^|&)theme=(\w+)/); if (tm && THEMES[tm[1]]) { S.theme = tm[1]; applyTheme(); } }   // (chụp thử) &theme=dem
   window.__chibi = !/(^|&)anime(&|$)/.test(h);   // trong trận mặc định dùng chibi; thêm &anime để xem bản anime
   const [main, simPart] = h.split('&').filter(x => x !== 'chibi').concat([undefined]);
   const [k, v] = main.split('=');
@@ -4802,7 +4812,7 @@ function route() {
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); showHeroDetail(v || 'ngokhong'); }
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
-  else if (k === 'settings') { showHome(); setTimeout(showSettings, 600); }
+  else if (k === 'settings') { showHome(); showSettings(); setTimeout(() => { if (!document.querySelector('.set-modal')) showSettings(); }, 1500); }
   else if (k === 'balance') { window.__dmgBy = {}; const eg = (location.hash.match(/eg=([\d.]+)/) || [])[1]; if (eg) window.__eg = +eg;   // (đo cân bằng) máy tự đánh: #balance=1-12 → kết quả trong <pre id="bal">
     const [c0, c1] = (v || '1-12').split('-').map(Number), out = [], RANK = { SSR: 3, SR: 2, R: 1 };
     for (let c = c0; c <= (c1 || c0); c++) {
