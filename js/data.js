@@ -1203,6 +1203,7 @@ const DOM_NEED = { tamthanh: 'Có Hồng Quân, hoặc đủ Tam Thanh (Thái Th
     tiepdan: [1950, 140, 84, 0.9], thailaoquan: [1950, 150, 84, 0.9],
   };
   for (const id in B) { const h = HEROES[id]; [h.hp, h.atk, h.def, h.aspd] = B[id]; }
+  setM('nata', 'small', 0, 1.4); setM('nata', 'ult', 0, 5.0);   // Na Tra (SSR+ mạnh nhất) hạ nhẹ về ~450 ST/giây để UR chủ công hơn rõ
   setM('hongquan', 'small', 0, 2.2); setM('hongquan', 'ult', 0, 6.5);
   setM('giaochu', 'small', 0, 2.2); setM('giaochu', 'ult', 0, 6.0);
   setM('chuande', 'small', 0, 2.2); setM('chuande', 'ult', 0, 6.0);
