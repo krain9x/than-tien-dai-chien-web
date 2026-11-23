@@ -1132,6 +1132,14 @@ const DOMAIN = {
 })();
 
 // Tướng chưa vẽ xong (thiếu dáng) -> ẩn khỏi chiêu mộ, danh sách, Thánh Điện cho tới khi có hình. Cập nhật bằng tools/patch_hud4.py
+// ===== VỰC: bỏ vực riêng từng UR. Chỉ còn vực NHÓM khi đủ 3 UR cùng hệ trên sân =====
+//   đủ Tam Thanh -> Thái Cực Đồ; đủ 3 UR Phật giáo (Tiếp Dẫn, Chuẩn Đề, Như Lai) -> Phạn Tự Vực
+const PHAT_UR = ['tiepdan', 'chuande', 'nhulai'];   // Tiếp Dẫn, Chuẩn Đề, Như Lai (theo Bảng Thần Tiên; chưa thêm vào game)
+DOMAIN.tamthanh.n = 'Thái Cực Đồ';
+DOMAIN.phantu = { n: 'Phạn Tự Vực', d: 'Kim văn Phạn tự trấn sân: +20% thủ, nhận ít hơn 15% sát thương, hồi 1,5% máu mỗi giây, +15% công cả đội', m: { defPct: 0.2, kc: 0.15, atkPct: 0.15 }, regen: 0.015, col: '#ffd76a' };
+for (const k of ['giaochu', 'thailaoquan', 'nguyenthuy']) delete DOMAIN[k];
+const DOM_GROUP = id => (TAM_THANH.includes(id) || id === 'hongquan') ? 'tamthanh' : PHAT_UR.includes(id) ? 'phantu' : null;
+const DOM_NEED = { tamthanh: 'Có Hồng Quân, hoặc đủ Tam Thanh (Thái Thượng, Nguyên Thuỷ, Thông Thiên) trên sân', phantu: 'Đủ Tiếp Dẫn, Chuẩn Đề, Như Lai trên sân' };
 const NO_ART = new Set(["kimmaohong"]);
 (function hideNoArt() {
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
