@@ -1895,7 +1895,14 @@ function poseFor(u) {
   }
   return null;
 }
-const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25, thailaoquan: 1.22, giaochu: 1.0, nguyenthuy: 1.22, hongquan: 1.0 };   // UR concept A (Thánh Toạ) to hơn để uy   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
+// ===== CHUẨN KÍCH THƯỚC TƯỚNG (trong trận + màn chi tiết dùng chung) =====
+//   Số đo H (tools/make_heroes2.py) = từ đỉnh đầu (bỏ vũ khí/pháp bảo giơ cao) tới mặt đất của CẢ KHỐI (gồm thú cưỡi / toà ngồi).
+//   Hiển thị = 108px × look.size × SIZE_K × (UR 1,08). SIZE_K bù phần thú cưỡi/toà để NGƯỜI luôn cùng cỡ.
+//   SIZE_K[id] = tổng chiều cao khối / chiều cao người (chỉ tướng cưỡi thú, ngồi toà, áo dài lơ lửng, dáng khom). Kiểm bằng tools/size_sheet.py:
+//   đỉnh đầu NGƯỜI phải chạm vạch đỏ. Vẽ lại tướng có thú cưỡi -> chạy lại size_sheet.py và chỉnh số của tướng đó.
+const SIZE_K = { giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 1.2, hongquan: 1.12, kimgiac: 1.1, thaisu: 1.12 };
+const heroK = id => (SIZE_K[id] || 1) * (isUR(id) ? 1.08 : 1);
+const HFIX = new Proxy({}, { get: (_, id) => typeof id === 'string' && HEROES[id] ? heroK(id) : undefined });   // tương thích chỗ cũ dùng HFIX[id]
 const _bright = new WeakMap();
 function brightImg(img) {   // bản sáng của ảnh dáng (tạo 1 lần): nháy trắng khi trúng đòn mà không dùng ctx.filter mỗi khung
   let c = _bright.get(img); if (c) return c;
@@ -1927,11 +1934,24 @@ function drawPose(u, name, t, h, alpha) {
 //   ground: sheet art/sigfx (vòng lặp) đặt dưới chân; orbit: ảnh art/ultc bay vòng elip quanh thân (nửa sau vẽ sau lưng, mờ hơn)
 const UR_LAYERS = {
   giaochu: { fan: { imgs: ['tt_sw_tru', 'tt_sw_luc', 'tt_sw_ham', 'tt_sw_tuyet'], cols: ['#ff3a3a', '#3aa8ff', '#b05aff', '#e8e8ff'], spread: 0.4, x: -0.16, y: 0.92, len: 0.64 } },
+  thailaoquan: { halo: { img: 'tl_taiji', qi: 'tl_qi', x: -0.1, y: 0.86, size: 0.8, spd: 0.12 },
+    float: { img: 'tl_lo', smoke: 'tl_smoke', x: 0.42, y: 0.74, size: 0.17 },
+    orbit: { img: 'tl_kimcang', n: 1, rx: 0.5, ry: 0.1, y: 0.42, size: 0.13, spd: 0.7 } },
   hongquan: { ground: { sheet: 'hq_galaxy', w: 1.3, y: 0.0, spd: 0.18, a: 0.95 }, orbit: { img: 'hq_tablet', n: 3, rx: 0.62, ry: 0.12, y: 0.62, size: 0.34, spd: 0.45 } },
 };
 function urLayers(g, L, x, y, hb, alpha, side, pose, u) {   // side -1: lớp sau thân; 1: lớp trước thân; pose: dáng đang vẽ
   const T = performance.now() / 1000, c0 = ctx; ctx = g;   // sfxDraw/sigImg vẽ lên ctx toàn cục -> mượn tạm
   try {
+    const HL = L.halo;   // vầng hào quang xoay sau lưng (Thái Thượng: Thái Cực Đồ) + khí âm dương bay ra vào
+    if (HL && side < 0) { const im = ucImg(HL.img); if (im) { const S = hb * HL.size, cx = x + hb * HL.x, cy = y - hb * HL.y, ult = pose === 'ult' || pose === 'skill';
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (ult ? 0.7 : 0.4);
+      const gr = g.createRadialGradient(cx, cy, S * 0.2, cx, cy, S * 0.75); gr.addColorStop(0, 'rgba(160,255,200,0.6)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(cx - S, cy - S, S * 2, S * 2); g.restore();
+      g.save(); g.translate(cx, cy); g.rotate(T * HL.spd * (ult ? 3 : 1)); g.globalAlpha = alpha * 0.92; g.drawImage(im, -S / 2, -S / 2, S, S); g.restore();
+      if (HL.qi) { sfxImg(HL.qi); sfxDraw(HL.qi, T * 0.35, cx, cy, S * 1.35, { loop: 1, add: 1, a: alpha * (ult ? 1 : 0.75), rot: -T * 0.2 }); } } }
+    const FL = L.float;   // pháp bảo lơ lửng cạnh vai (Thái Thượng: lò Bát Quái phun khói)
+    if (FL && side > 0) { const im = ucImg(FL.img); if (im) { const S = hb * FL.size, fx = x + hb * FL.x, fy = y - hb * FL.y + Math.sin(T * 1.6) * hb * 0.015;
+      if (FL.smoke) { sfxImg(FL.smoke); sfxDraw(FL.smoke, T * 0.8, fx, fy - S * 0.35, S * 1.3, { loop: 1, ay: 0.95, add: 1, a: alpha * 0.85 }); }
+      g.save(); g.globalAlpha = alpha; g.drawImage(im, fx - S * im.width / im.height / 2, fy - S / 2, S * im.width / im.height, S); g.restore(); } }
     const F = L.fan;   // quạt pháp bảo sau lưng (Thông Thiên: 4 kiếm mũi chĩa lên, toả ra ngoài)
     if (F && side < 0 && !(u && u.side === 'h' && B && B.fx.some(f => f.k === 'sigx' && f.who === u.id && f.ult && f.t < 2.3))) {   // tuyệt kỹ: kiếm đã bay ra thành trận
       const n = F.imgs.length, atk = pose === 'strike' ? 1 : pose === 'windup' ? -0.5 : 0, ult = pose === 'ult' || pose === 'skill';
@@ -4054,7 +4074,7 @@ function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + v�
 }
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
 const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
-const HD_FIX = { giaochu: 0.7 };   // màn chi tiết: chừa chỗ cho quạt kiếm sau lưng
+const HD_FIX = { giaochu: 0.7, thailaoquan: 0.74 };   // màn chi tiết: chừa chỗ cho quạt kiếm sau lưng
 function hdScale(id) {   // màn chi tiết: phóng theo chiều cao THÂN (tướng có kiếm bay / thú cưỡi không bị nhỏ), cùng số đo với trong trận
   const D = window.HPOSE && HPOSE[poseDir(id)]; if (!D) return 1;
   return Math.max(0.75, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1) * (HD_FIX[id] || 1))).toFixed(3);
@@ -4976,7 +4996,7 @@ loadArt().then(() => {
 // =====================================================================
 const SIG = {};
 // [cột, hàng, rộng ô, cao ô] — tools/make_sigfx.py in ra
-const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
+const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } }   // gọi khi tướng ra trận
