@@ -3967,16 +3967,18 @@ function showHeroes() {
   ids.sort((a, b) => (S.owned[b] ? 1 : 0) - (S.owned[a] ? 1 : 0) || key(b) - key(a));
   const chip = (grp, v, label) => `<button class="chip ${HF[grp] === v ? 'on' : ''}" data-f="${grp}:${v}">${label}</button>`;
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tướng')}
-    <div class="hf-bar"><div class="hf-chips">${chip('rar', 'all', 'Tất cả')}${TIER_ORDER.map(t => chip('rar', t, t)).join('')}</div>
-      <div class="hf-chips">${chip('role', 'all', 'Mọi hệ')}${Object.keys(ROLES).map(r => chip('role', r, sysIco('role_' + r) + ROLES[r].name)).join('')}</div>
-      <div class="hf-chips">${chip('fac', 'all', 'Mọi phe')}${Object.keys(FACTIONS).filter(f => Object.values(HEROES).some(h => h.fac === f)).map(f => chip('fac', f, sysIco('fac_' + f) + FACTIONS[f])).join('')}</div>
-      <div class="hf-chips">${chip('sort', 'power', 'Lực chiến')}${chip('sort', 'rar', 'Phẩm chất')}${chip('sort', 'lv', 'Cấp')}<span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div></div>
+    <div class="hf-bar hf1"><div class="hf-chips">${chip('rar', 'all', 'Tất cả')}${TIER_ORDER.filter(t => all.some(id => HEROES[id].tier === t)).map(t => chip('rar', t, t)).join('')}</div>
+      <select class="hf-sel" data-fs="role"><option value="all">Mọi hệ</option>${Object.keys(ROLES).map(r => `<option value="${r}" ${HF.role === r ? 'selected' : ''}>${ROLES[r].name}</option>`).join('')}</select>
+      <select class="hf-sel" data-fs="fac"><option value="all">Mọi phe</option>${Object.keys(FACTIONS).filter(f => all.some(id => HEROES[id].fac === f)).map(f => `<option value="${f}" ${HF.fac === f ? 'selected' : ''}>${FACTIONS[f]}</option>`).join('')}</select>
+      <select class="hf-sel" data-fs="sort">${[['power', 'Lực chiến'], ['rar', 'Phẩm chất'], ['lv', 'Cấp']].map(([k, n]) => `<option value="${k}" ${HF.sort === k ? 'selected' : ''}>Xếp: ${n}</option>`).join('')}</select>
+      <span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div>
     <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
       return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} ${o ? '' : 'locked'}" data-h="${id}"><span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
         <span class="hc2-rar">${h.tier}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
-        <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(5 - o.star)}</i></span>` : ROLES[h.role].name}</small></button>`; }).join('')}</div></div>`;
+        <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(Math.max(0, maxStar(id) - o.star))}</i></span>` : '<span class="hc2-lock">Chưa có</span>'}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
+  ui.querySelectorAll('[data-fs]').forEach(s => s.onchange = () => { HF[s.dataset.fs] = s.value; showHeroes(); });
   ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.h));
 }
 let HD_TAB = 'info';
@@ -4798,6 +4800,7 @@ function route() {
     $('#bBack').onclick = () => { SHOW = null; location.hash = ''; showHome(); };
   }
   else if (k === 'gacha') showGacha();
+  else if (k === 'heroes') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id) && Math.random() < 0.7) S.owned[id] = newRec(); showHeroes(); }   // (chụp thử) #heroes=some
   else if (k === 'lineup') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id)) S.owned[id] = newRec(); showLineup(); if (/scrolltest/.test(h)) { const g = ui.querySelector('.pick-grid2'); g.scrollTop = 380; g.querySelectorAll('[data-pick]')[14].click(); } }   // (chụp thử) #lineup=all&scrolltest: cuộn rồi chọn, phải giữ nguyên vị trí
   else if (k === 'full') grantAllHeroes();
   else if (k === 'rv') { showGacha(); ssrReveal([v || 'ngokhong'], () => {}); }   // (chụp thử) màn quay ra SSR

@@ -998,3 +998,30 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .th-opt b { font-size: 13px; margin-top: 4px; color: #ffe9b0; } .th-opt small { font-size: 10.5px; color: #c8b89a; }
 .th-opt.on { border-color: #2e9b7c; box-shadow: 0 0 0 2px rgba(46,155,124,.45); }
 .th-opt img { aspect-ratio: 16 / 7; } .th-opt { padding: 3px 3px 4px; }
+/* ===== Khung thẻ tướng kiểu chân dung (hero list + đội hình) ===== */
+.hc2 { aspect-ratio: 3 / 4; padding: 0; border-radius: 6px; border-width: 2px; display: block; background: #2a1e16; box-shadow: 0 2px 4px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,255,255,.35); }
+.hc2 .hc2-img { position: absolute; inset: 0; height: auto !important; aspect-ratio: auto !important; }
+.hc2 .hc2-img img { width: 100%; height: 100%; object-fit: cover; object-position: center 18%; transition: transform .2s; }
+.hc2:hover .hc2-img img { transform: scale(1.05); }
+.hc2 .hc2-img::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: linear-gradient(180deg, transparent, rgba(12,8,6,.55) 40%, rgba(12,8,6,.92)); }
+.hc2 b { position: absolute; left: 0; right: 0; bottom: 17px; margin: 0; z-index: 2; color: #fff !important; font-size: 12px; text-shadow: 0 1px 0 #000, 0 0 4px #000; }
+.hc2 small { position: absolute; left: 0; right: 0; bottom: 3px; z-index: 2; color: #ffe9b0 !important; font-size: 10px; text-shadow: 0 1px 0 #000; }
+.hc2 .hc2-st { color: #ffcf3f; } .hc2 .hc2-st i { color: rgba(255,255,255,.28); }
+.hc2 .hc2-lock { color: #c8b8a0; }
+.hc2 .hc2-rar, .hc2 .hc2-sys, .hc2 .hc2-in, .hc2 .dot { z-index: 3; }
+.hc2 .hc2-rar { top: 0; left: 0; border-radius: 0 0 6px 0; padding: 1px 7px 2px 5px; font-size: 10px; }
+.hc2 .hc2-sys { top: 3px; right: 3px; padding: 2px; border-radius: 10px; background: rgba(12,8,6,.45); }
+.hc2 .hc2-sys .sys-ico { width: 16px; height: 16px; }
+.hc2.r-R { border-color: #4a8af0; } .hc2.r-SR { border-color: #9a5cff; } .hc2.r-SSR { border-color: #e8a820; box-shadow: 0 2px 4px rgba(0,0,0,.3), inset 0 0 0 1px rgba(255,230,150,.6), 0 0 6px rgba(232,168,32,.45); }
+.hc2.r-R .hc2-rar { background: #2a5ab0; color: #fff; } .hc2.r-SR .hc2-rar { background: #6a2ad0; color: #fff; } .hc2.r-SSR .hc2-rar { background: linear-gradient(90deg, #c07a0a, #e8a820); color: #fff; }
+.hc2.t-SSRP .hc2-rar { background: linear-gradient(90deg, #e05a10, #ffb020); color: #fff; }
+.hc2.locked .hc2-img img { filter: grayscale(.85) brightness(.55); } .hc2.locked { opacity: 1; }
+.hc2.locked b { color: #b8a898 !important; }
+.lu4 .hc2 { aspect-ratio: auto; height: 124px; } .lu4 .hc2 b { font-size: 11px; }
+.hero-grid2 { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 7px; }
+/* bộ lọc 1 hàng */
+.hf-bar.hf1 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 8px; }
+.hf1 .hf-chips { gap: 4px; flex-wrap: nowrap; }
+.hf1 .chip { padding: 3px 9px; border-radius: 3px; }
+.hf-sel { height: 26px; border-radius: 3px; border: 1px solid #c08a1a; background: #fff6dc; color: #5a3410; font: 800 12px "Baloo 2", sans-serif; padding: 0 6px; cursor: pointer; }
+.hf1 .hf-count { margin-left: auto; font-size: 12px; }
