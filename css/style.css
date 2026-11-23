@@ -1159,3 +1159,16 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 @keyframes hc2up2 { 50% { filter: drop-shadow(0 0 4px #7dff9a) drop-shadow(0 0 2px #7dff9a); } }
 .lu4 .hc2.in { outline: 0; } .lu4 .hc2.in .hc2-fr { filter: drop-shadow(0 0 3px #2eff9c) drop-shadow(0 0 2px #2eff9c); }
 .hero-grid2 { gap: 9px; padding: 4px 2px; }
+/* báo nâng sao: mũi tên nhỏ, không làm sáng khung (trước đây R hay đủ mảnh nên sáng nhất) */
+.hc2.can-up .hc2-fr { animation: none; filter: none; }
+.hc2 .hc2-up { position: absolute; z-index: 6; right: 4%; bottom: 3%; width: 18px; height: 18px; border-radius: 50%; font: 900 10px/16px sans-serif; font-style: normal; color: #fff; text-align: center; background: radial-gradient(circle at 40% 30%, #5aff8a, #12803a); border: 2px solid #eaffea; box-sizing: border-box; animation: hcUp 1s ease-in-out infinite; }
+@keyframes hcUp { 50% { transform: translateY(-3px); } }
+/* ánh sáng khung theo phẩm: cao hơn rực hơn */
+.hc2.r-SSR .hc2-fr { filter: drop-shadow(0 0 3px rgba(255,210,90,.55)); }
+.hc2.t-SSRP .hc2-fr { animation: hcG1 2.6s ease-in-out infinite; }
+.hc2.t-UR .hc2-fr { animation: hcG2 1.8s ease-in-out infinite; }
+.hc2.t-URP .hc2-fr { animation: hcG3 3s linear infinite; }
+@keyframes hcG1 { 0%, 100% { filter: drop-shadow(0 0 3px rgba(255,150,40,.5)); } 50% { filter: drop-shadow(0 0 7px rgba(255,150,40,.95)) drop-shadow(0 0 2px #ffd080); } }
+@keyframes hcG2 { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255,60,40,.6)); } 50% { filter: drop-shadow(0 0 9px rgba(255,60,40,1)) drop-shadow(0 0 3px #ffb040); } }
+@keyframes hcG3 { 0% { filter: drop-shadow(0 0 7px #c070ff) drop-shadow(0 0 2px #fff); } 33% { filter: drop-shadow(0 0 7px #ff5aa0) drop-shadow(0 0 2px #fff); } 66% { filter: drop-shadow(0 0 7px #3affd0) drop-shadow(0 0 2px #fff); } 100% { filter: drop-shadow(0 0 7px #c070ff) drop-shadow(0 0 2px #fff); } }
+.hc2.locked .hc2-fr { animation: none; filter: grayscale(.7) brightness(.8); }

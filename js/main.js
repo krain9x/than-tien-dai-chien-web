@@ -3974,7 +3974,7 @@ function showHeroes() {
       <span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div>
     <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
       const li = S.lineup.indexOf(id);
-      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} el-${h.el} ${o ? '' : 'locked'} ${canStarUp(id) ? 'can-up' : ''}" data-h="${id}">${hcDeco(id)}${o ? `<em class="hc2-lv">${o.lv}</em>` : ''}${li >= 0 && o ? `<span class="hc2-team ${li === 0 ? 'cap' : ''}">${li === 0 ? '♛ Đội trưởng' : 'Ra trận'}</span>` : ''}${o ? `<span class="hc2-pw">⚔${fmt(power(id))}</span>` : ''}<span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
+      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} el-${h.el} ${o ? '' : 'locked'} ${canStarUp(id) ? 'can-up' : ''}" data-h="${id}">${hcDeco(id)}${o ? `<em class="hc2-lv">${o.lv}</em>` : ''}${canStarUp(id) ? '<em class="hc2-up" title="Đủ mảnh nâng sao">▲</em>' : ''}${li >= 0 && o ? `<span class="hc2-team ${li === 0 ? 'cap' : ''}">${li === 0 ? '♛ Đội trưởng' : 'Ra trận'}</span>` : ''}${o ? `<span class="hc2-pw">⚔${fmt(power(id))}</span>` : ''}<span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
         <span class="hc2-rar">${h.tier}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
         <b>${esc(h.name)}</b><small>${o ? `<span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(Math.max(0, maxStar(id) - o.star))}</i></span>` : '<span class="hc2-lock">Chưa có</span>'}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
