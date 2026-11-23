@@ -3778,6 +3778,8 @@ function showTrials() {
   $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trPB').onclick = () => showPB(); $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank();
 }
 function IC2(n, fb) { return `<img src="art/ui/${n}.webp" onerror="this.onerror=null;this.src='art/ui/${fb}.webp'" alt="">`; }
+// tranh thẻ ải trên trang chủ: cảnh tuyệt kỹ hợp với boss / vùng của chương
+const CH_ART = ['datky', 'thaisu', 'trieucongminh', 'vantieu', 'giaochu', 'khuongtanha', 'duongtien', 'ngumavuong', 'honghainhi', 'bachcot', 'longvuong', 'duongtang'];
 function showHome() {
   bgmSet('home');
   B = null;
@@ -3810,12 +3812,12 @@ function showHome() {
       ${hi('hFb', 'fb_holo', 'Pháp Bảo')}
     </div>
     <div class="h4-cards">
-      <button class="h4-main" id="hFight" style="background-image:url(art/bg/ch${chN}.webp)">
+      <button class="h4-main ${nx.kind === 'boss' ? 'boss' : ''}" id="hFight" style="background-image:url(art/scene/${CH_ART[nx.chap] || 'datky'}_bg.webp)"><span class="h4-st">${nx.kind === 'boss' ? '☠ Ải Boss' : '⭐ ' + chapStars(nx.chap) + '/30'}</span>
         <b>Ải ${nx.id} · ${esc(CHAPTERS[nx.chap].region)}</b>
         <small>Chương ${chN}: ${esc(CHAPTERS[nx.chap].name)} · ${nx.kind === 'boss' ? 'Boss ' + esc(nx.bossName) : nx.kind === 'elite' ? 'Ải tinh anh' : STAGE_PHASE[(+nx.id.split('-')[1]) - 1]}</small>
         <span class="h4-go">Bắt đầu khiêu chiến</span></button>
       <div class="h4-sub">
-        <button class="h4-c" id="hTrial" style="background-image:url(art/bg/cave.webp)">${rdLeft > 0 || nanRun ? '<i class="dot"></i>' : ''}<img src="art/ui/ic_tower.webp" alt=""><b>Thử Luyện</b></button>
+        <button class="h4-c" id="hTrial" style="background-image:url(art/scene/nhiendang_bg.webp)">${rdLeft > 0 || nanRun ? '<i class="dot"></i>' : ''}<img src="art/ui/ic_tower.webp" alt=""><b>Thử Luyện</b></button>
         <button class="h4-c h4-gacha" id="hGacha" style="background-image:url(art/scene/${wk}_bg.webp)"><img class="h4-fh" src="art/scene/${wk}_hero.webp" alt="" onerror="this.src='${por(wk, 96)}'"><b>Chiêu Mộ</b></button>
       </div>
     </div>
@@ -3898,36 +3900,39 @@ function showStages() {
 function synergyHTML(ids) {
   const info = teamInfo(ids);
   const facs = info.facs.map(f => `<div class="syn ${f.pct ? 'on' : ''}">${sysIco('fac_' + f.f)}<b>${FACTIONS[f.f]}</b> ${f.n} người ${f.pct ? `<em>+${Math.round(f.pct * 100)}% máu, công</em>` : '<small>cần 3 người</small>'}</div>`).join('');
-  const bonds = BONDS.map(b => {
-    const on = info.bonds.includes(b);
-    return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <small>${b.members.map(m => HEROES[m].name).join(' + ')}</small>${on ? `<em>${b.desc}${bondLv(b) ? ` · Cấp ${bondLv(b)}: +${Math.round(BOND_LV[bondLv(b)] * 100)}% công, máu` : ''}</em>` : ''}</div>`;
+  const rel = BONDS.filter(b => b.members.some(x => ids.includes(x))).sort((x, y) => info.bonds.includes(y) - info.bonds.includes(x));
+  const bonds = rel.map(b => {
+    const on = info.bonds.includes(b), have = b.members.filter(x => ids.includes(x)).length;
+    return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <i>${have}/${b.members.length}</i> <small>${b.members.map(m => `<span class="${ids.includes(m) ? 'got' : ''}">${HEROES[m].name}</span>`).join(' + ')}</small>${on ? `<em>${b.desc}${bondLv(b) ? ` · Cấp ${bondLv(b)}: +${Math.round(BOND_LV[bondLv(b)] * 100)}% công, máu` : ''}</em>` : ''}</div>`;
   }).join('');
   const cs = ids[0] ? capSkill(ids[0]) : null;
   const cb = COMBOS.filter(c => ids.includes(c.a) && ids.includes(c.b)).map(c => `<div class="syn on"><b>${esc(c.name)}</b> <small>${HEROES[c.a].name} + ${HEROES[c.b].name}</small><em>Hai người tung tuyệt kỹ cách nhau ≤3 giây → hợp kích</em></div>`).join('');
-  return `${cs ? `<h4>Kỹ năng đội trưởng</h4><div class="syn on"><b>${esc(cs.n)}</b> <em>${esc(cs.d)}</em></div>` : ''}<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}<h4>Duyên phận</h4>${bonds}`;
+  return `${cs ? `<h4>Kỹ năng đội trưởng</h4><div class="syn on"><b>${esc(cs.n)}</b> <em>${esc(cs.d)}</em></div>` : ''}<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}${cb ? `<h4>Hợp kích</h4>${cb}` : ''}<h4>Duyên phận</h4>${bonds || '<small>Chưa có duyên phận nào</small>'}`;
 }
 function showLineup() {
+  const keep = ui.querySelector('.lu4') ? [ui.querySelector('.lu4 .pick-grid2').scrollTop, ui.querySelector('.lu4 .synergy').scrollTop] : null;   // giữ vị trí cuộn khi chọn tướng
   const lu = S.lineup.filter(id => S.owned[id]);
-  const owned = Object.keys(HEROES).filter(id => S.owned[id]);
-  ui.innerHTML = `<div class="screen panel-screen">${topBar('Đội Hình')}
+  const owned = Object.keys(HEROES).filter(id => S.owned[id] && !NO_ART.has(id));
+  ui.innerHTML = `<div class="screen panel-screen lu4">${topBar('Đội Hình')}
     <div class="lineup-slots">${[0, 1, 2, 3, 4].map(i => {
       const id = lu[i];
-      return `<div class="slot ${id ? '' : 'empty'}" data-slot="${i}">
-        <span class="slot-no">${i === 0 ? 'Đội trưởng' : 'Ra trận ' + (i + 1)}</span>
-        ${id ? `<img src="${por(id)}"><b>${esc(HEROES[id].name)}</b>${roleTag(HEROES[id].role)}
-          ${i > 0 ? `<button class="mini cap" data-cap="${i}" title="Đặt làm đội trưởng">♛</button>` : '<span class="crown">♛</span>'}
+      return `<div class="slot ${id ? '' : 'empty'} ${i === 0 ? 'cap0' : ''}" data-slot="${i}">
+        <span class="slot-no">${i === 0 ? '♛ Đội trưởng' : 'Ra trận ' + (i + 1)}</span>
+        ${id ? `<img src="${por(id)}"><span class="sl-t"><b>${esc(HEROES[id].name)}</b>${roleTag(HEROES[id].role)}<small>⚔${fmt(power(id))}</small></span>
+          ${i > 0 ? `<button class="mini cap" data-cap="${i}" title="Đặt làm đội trưởng">♛</button>` : ''}
           <button class="mini rm" data-rm="${i}" title="Bỏ khỏi đội">×</button>` : '<i>+</i>'}
       </div>`;
     }).join('')}</div>
-    <p class="hint">Đội trưởng ra trận đầu tiên, được <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và kích hoạt <b>kỹ năng đội trưởng</b> cho cả đội. Các tướng khác ra trận theo thứ tự khi nhặt Linh Phù. · Lực chiến đội: <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b></p>
+    <p class="lu-hint">Lực chiến đội <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b> · Đội trưởng ra trận đầu, <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và mở kỹ năng đội trưởng</p>
     <div class="lineup-body">
       <div class="pick-grid2">${owned.sort((a, b) => power(b) - power(a)).map(id => `
         <button class="hc2 r-${HEROES[id].rar} ${tierCls(tierOf(id))} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}"><span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
           <span class="hc2-rar">${HEROES[id].tier}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}${sysIco('fac_' + HEROES[id].fac)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
-          <b>${esc(HEROES[id].name)}</b><small>${ROLES[HEROES[id].role].name} · ⚔${fmt(power(id))}</small></button>`).join('')}</div>
+          <b>${esc(HEROES[id].name)}</b><small>⚔${fmt(power(id))}</small></button>`).join('')}</div>
       <div class="synergy">${synergyHTML(lu)}</div>
     </div>
   </div>`;
+  if (keep) { ui.querySelector('.lu4 .pick-grid2').scrollTop = keep[0]; ui.querySelector('.lu4 .synergy').scrollTop = keep[1]; }
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
     const id = b.dataset.pick;
@@ -4783,6 +4788,7 @@ function route() {
     $('#bBack').onclick = () => { SHOW = null; location.hash = ''; showHome(); };
   }
   else if (k === 'gacha') showGacha();
+  else if (k === 'lineup') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id)) S.owned[id] = newRec(); showLineup(); if (/scrolltest/.test(h)) { const g = ui.querySelector('.pick-grid2'); g.scrollTop = 380; g.querySelectorAll('[data-pick]')[14].click(); } }   // (chụp thử) #lineup=all&scrolltest: cuộn rồi chọn, phải giữ nguyên vị trí
   else if (k === 'full') grantAllHeroes();
   else if (k === 'rv') { showGacha(); ssrReveal([v || 'ngokhong'], () => {}); }   // (chụp thử) màn quay ra SSR
   else if (k === 'quests') showQuests();
