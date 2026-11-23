@@ -1164,7 +1164,7 @@ const DOMAIN = {
   for (const id of ['nuoa', 'tiepdan', 'chuande', 'nhulai']) { TIER_TABLE.UR.push(id); SSR_POOL.push(id); }
   Object.assign(ATK_STYLE, {   // đạn riêng (main.js UR_PROJ vẽ sheet vẽ tay)
     nguyenthuy: { pat: 'pierce', proj: 'light', name: 'Ngọc Như Ý Quang', desc: 'Tia ngọc Như Ý xuyên mọi quái trên đường.', pierceN: 99 },
-    nuoa: { pat: 'lob', proj: 'light', name: 'Ngũ Sắc Thạch', desc: 'Ném đá ngũ sắc nổ lan; đá đổi màu khắc hệ mục tiêu (+30% sát thương).', boom: 70 },
+    nuoa: { pat: 'lob', proj: 'light', name: 'Ngũ Sắc Thạch', desc: 'Ném lần lượt 5 viên đá ngũ hành: Hoả thiêu, Thổ choáng, Mộc hồi máu đồng đội, Thuỷ làm chậm, Kim giảm thủ; viên khắc hệ quái +30% sát thương.', boom: 70 },
     tiepdan: { pat: 'bounce', proj: 'light', name: 'Kim Liên Biện', desc: 'Cánh sen vàng nảy 3 quái; mỗi lần trúng hồi máu đồng đội yếu nhất.', bounces: 3 },
     chuande: { pat: 'fan', proj: 'light', name: 'Lông Khổng Tước', desc: 'Phóng 3 lông khổng tước hình quạt.', n: 3 },
     nhulai: { pat: 'bounce', proj: 'light', name: 'Vạn Tự Phật Ấn', desc: 'Phật ấn bay chậm mà nặng; đủ 3 dấu thì quái bị choáng.', bounces: 1, speed: 380 },

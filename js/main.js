@@ -474,7 +474,7 @@ function dealDmg(src, tgt, mult, kind) {
   const K = 500 + 50 * (tgt.level || 1);
   a *= K / (K + getDef(tgt) * (src.side === 'h' && M('vnSee') ? 1 - Math.min(5, src.vn || 0) * M('vnSee') : 1));   // Lạc Anh: Thấu Thị bỏ qua phòng thủ
   if (src.side === 'h' && tgt.side === 'e' && B.st && CHAPTERS[B.st.chap]) { const cr = CH_ROLE[CHAPTERS[B.st.chap].id]; if (cr) { if (src.role === cr[0]) a *= 1.25; else if (src.role === cr[1]) a *= 0.85; } }
-  if (BEATS[src.el] === tgt.el || (src.id === 'nuoa' && kind === 'atk' && tgt.side === 'e')) { a *= 1.3; if (src.side === 'h' && kind !== 'dot' && Math.random() < 0.35) floater(tgt.x + 14, tgt.y - 62 * sizeOf(tgt), 'Khắc!', ELEMENTS[src.el].color, 15, false, src.el); }
+  if (BEATS[src.el] === tgt.el) { a *= 1.3; if (src.side === 'h' && kind !== 'dot' && Math.random() < 0.35) floater(tgt.x + 14, tgt.y - 62 * sizeOf(tgt), 'Khắc!', ELEMENTS[src.el].color, 15, false, src.el); }
   else if (BEATS[tgt.el] === src.el) a *= 0.8;
   let crit = false;
   if (kind !== 'dot' && Math.random() < getCrit(src)) { a *= 1 + getCritDmg(src); crit = true; }
@@ -1819,7 +1819,7 @@ function drawUnit(u) {
     if (u.side === 'e') { alpha = Math.max(0, 1 - u.deathT * 2.2); ctx.translate(0, -u.deathT * 30); }
     else alpha = 0.35;
   }
-  if (u.clone) alpha = 0.7;
+  if (u.clone && !u.clay) alpha = 0.7;   // người đất Nữ Oa: rõ nét
   if (u.inv > 0 && !u.dead) alpha *= 0.55;
   if (u.shield > 0 && !u.dead) {
     ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(u.t * 6) * 0.08;
@@ -1905,15 +1905,6 @@ function poseFor(u) {
 const SIZE_K = { nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
 const heroK = id => (SIZE_K[id] || 1) * (isUR(id) ? 1.08 : 1);
 const HFIX = new Proxy({}, { get: (_, id) => typeof id === 'string' && HEROES[id] ? heroK(id) : undefined });   // tương thích chỗ cũ dùng HFIX[id]
-const _clay = new WeakMap();
-function clayImg(img) {   // Nữ Oa nặn người: bản đất sét (tô màu bằng điểm ảnh, không dùng ctx.filter để chạy cả trên iPhone)
-  let c = _clay.get(img); if (c) return c;
-  c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-  try { const d = g.getImageData(0, 0, c.width, c.height), a = d.data;
-    for (let i = 0; i < a.length; i += 4) { const l = (a[i] * 0.3 + a[i + 1] * 0.59 + a[i + 2] * 0.11) / 255; a[i] = 70 + l * 150; a[i + 1] = 45 + l * 110; a[i + 2] = 25 + l * 70; }
-    g.putImageData(d, 0, 0); } catch (e) {}
-  _clay.set(img, c); return c;
-}
 const _bright = new WeakMap();
 function brightImg(img) {   // bản sáng của ảnh dáng (tạo 1 lần): nháy trắng khi trúng đòn mà không dùng ctx.filter mỗi khung
   let c = _bright.get(img); if (c) return c;
@@ -1921,6 +1912,11 @@ function brightImg(img) {   // bản sáng của ảnh dáng (tạo 1 lần): nh
   const g = c.getContext('2d'); g.filter = 'brightness(1.8) saturate(0.7)'; g.drawImage(img, 0, 0); _bright.set(img, c); return c;
 }
 function drawPose(u, name, t, h, alpha) {
+  if (u.clay) {   // Nữ Oa nặn người đất: hình người đất vẽ riêng (đứng / đâm giáo)
+    const im = ucImg(name === 'strike' || name === 'windup' || name === 'skill' || name === 'ult' ? 'nuoa_clay_atk' : 'nuoa_clay_idle'); if (!im) return false;
+    const hh = h * 0.82, w = hh * im.width / im.height, sq = 1 + 0.02 * Math.sin((u.t || 0) * 3);
+    ctx.save(); ctx.globalAlpha *= alpha; ctx.scale(1, sq); ctx.drawImage(u.hurt > 0 ? brightImg(im) : im, -w * 0.5, -hh, w, hh); ctx.restore(); return true;
+  }
   h *= HFIX[u.id] || 1;
   if (!POSES[u.id]) return false;
   const img = POSES[u.id][name], D = (window.HPOSE && HPOSE[u.id]) || (window.SKEL_DEFS && SKEL_DEFS[u.id]); if (!img || !D) return false;
@@ -1936,7 +1932,7 @@ function drawPose(u, name, t, h, alpha) {
   const LY = !u.clone && UR_LAYERS[u.id], hb = D.H * k * 0.5;   // hb: chiều cao thân trên màn hình
   if (LY) urLayers(ctx, LY, 0, 0, hb, alpha, -1, name, u);
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(ox, 0); ctx.rotate(rot); ctx.scale(sx, sy);
-  ctx.drawImage(u.hurt > 0 ? brightImg(img) : u.clay ? clayImg(img) : img, -gx, -gy, img.width * k, img.height * k);
+  ctx.drawImage(u.hurt > 0 ? brightImg(img) : img, -gx, -gy, img.width * k, img.height * k);
   ctx.filter = 'none'; ctx.restore();
   if (LY) urLayers(ctx, LY, 0, 0, hb, alpha, 1, name, u);
   return true;
@@ -3071,7 +3067,7 @@ const UR_PROJ = {
   chuande: { sheet: 'cd_feather', hit: 'cd_hit', len: 80, col: '#9fffc0' },
   nhulai: { sheet: 'nl_seal', hit: 'nl_hit', len: 56, col: '#ffd76a' },
 };
-const NUOA_EL = { kim: 0, moc: 2, thuy: 3, hoa: 1, tho: 4 };   // màu đá theo hệ khắc mục tiêu (đỏ, vàng, lục, lam, tím)
+const NUOA_ST = [['hoa', 'Hoả', '#ff6a3a'], ['tho', 'Thổ', '#e8b040'], ['moc', 'Mộc', '#6aff8a'], ['thuy', 'Thuỷ', '#6ac8ff'], ['kim', 'Kim', '#e0b0ff']];   // đá ngũ sắc: đỏ Hoả, vàng Thổ, lục Mộc, lam Thuỷ, tím Kim (theo thứ tự ném)
 function drawUrProj(p) {
   const C = UR_PROJ[p.src.id], a = Math.atan2(p.vy, p.vx), L = C.len * (p.child ? 0.75 : 1);
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5;
@@ -3081,13 +3077,13 @@ function drawUrProj(p) {
     if (p.swI == null) p.swI = p.src.swN = ((p.src.swN || 0) + 1) % 4;
     const im = ucImg(TT_IMG[p.swI]); if (im) { const w = L * im.width / im.height; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(a + Math.PI / 2); ctx.drawImage(im, -w / 2, -L * 0.6, w, L); ctx.restore(); }
   } else if (C.stones) {   // Nữ Oa: đá ngũ sắc đổi màu khắc hệ mục tiêu
-    const t = p.homing || {}, i = NUOA_EL[BEATS_BY && BEATS_BY[t.el]] ?? (p.stI = p.stI ?? (Math.random() * 5 | 0));
-    const im = ucImg('nuoa_st' + i); if (im) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.age * 8); ctx.drawImage(im, -L / 2, -L / 2 * im.height / im.width, L, L * im.height / im.width); ctx.restore(); }
+    if (p.stI == null) p.stI = p.src.stN = ((p.src.stN ?? -1) + 1) % 5;   // ném lần lượt 5 viên ngũ hành
+    const i = p.stI, im = ucImg('nuoa_st' + i);
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.6; const g2 = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, L); g2.addColorStop(0, NUOA_ST[i][2]); g2.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(p.x, p.y, L, 0, TAU); ctx.fill(); ctx.restore(); if (im) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.age * 8); ctx.drawImage(im, -L / 2, -L / 2 * im.height / im.width, L, L * im.height / im.width); ctx.restore(); }
   } else return false;
   if (Math.random() < 0.3) B.parts.push({ x: p.x, y: p.y, vx: -p.vx * 0.08 + rand(-20, 20), vy: -p.vy * 0.08 + rand(-20, 20), life: 0.4, max: 0.4, color: C.col, size: 4 });
   return true;
 }
-const BEATS_BY = (() => { const o = {}; for (const k in BEATS) o[BEATS[k]] = k; return o; })();   // hệ nào khắc hệ X
 function urHit(src, tgt, crit) {
   const C = UR_PROJ[src.id], x = tgt.x, y = tgt.y - 34 * sizeOf(tgt);
   if (C.hit) { sfxImg(C.hit); sfxOnce(C.hit, x, y, crit ? 150 : 110, 0.35, { add: 1 }); }
@@ -3099,6 +3095,15 @@ function urHit(src, tgt, crit) {
     else if (i === 1) tgt.slow = Math.max(tgt.slow || 0, 1.5);                                       // Lục Tiên: chậm
     else if (i === 2 && !tgt.boss) tgt.stun = Math.max(tgt.stun || 0, 0.35);                         // Hãm Tiên: trói
     else if (i === 3) tgt.buffs.push({ k: 'def', v: -0.15, t: 3 });                                  // Tuyệt Tiên: giảm thủ
+  } else if (src.id === 'nuoa') {   // đá ngũ hành: mỗi viên một tác dụng; viên khắc hệ mục tiêu +30% sát thương
+    const i = src.stN ?? 0, el = NUOA_ST[i][0];
+    if (BEATS[el] === tgt.el) { dealDmg(src, tgt, 0.3, 'skill'); floater(tgt.x + 14, tgt.y - 62 * sizeOf(tgt), NUOA_ST[i][1] + ' khắc!', NUOA_ST[i][2], 14); }
+    if (tgt.dead) return;
+    if (el === 'hoa') { tgt.burn = 2; tgt.burnDps = Math.max(tgt.burnDps || 0, getAtk(src) * 0.15); }
+    else if (el === 'tho' && !tgt.boss) tgt.stun = Math.max(tgt.stun || 0, 0.3);
+    else if (el === 'moc') { const lo = alliesAlive().sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b))[0]; if (lo) healU(lo, getAtk(src) * 0.25, true); }
+    else if (el === 'thuy') tgt.slow = Math.max(tgt.slow || 0, 1.5);
+    else if (el === 'kim') tgt.buffs.push({ k: 'def', v: -0.12, t: 3 });
   } else if (src.id === 'tiepdan') {   // sen nở: hồi máu đồng đội yếu nhất
     const lo = alliesAlive().sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b))[0]; if (lo) healU(lo, getAtk(src) * 0.3, true);
   } else if (src.id === 'nhulai') {   // Phật ấn: đủ 3 dấu -> choáng
@@ -5079,7 +5084,7 @@ loadArt().then(() => {
 // =====================================================================
 const SIG = {};
 // [cột, hàng, rộng ô, cao ô] — tools/make_sigfx.py in ra
-const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
+const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } }   // gọi khi tướng ra trận
@@ -5331,22 +5336,30 @@ SIG.hongquan = {
 function sigUltAt(u, sk, tgt, P, hitT) {   // chạy toàn bộ fx của tuyệt kỹ tại điểm P đúng lúc hitT
   return f => { if (f.t >= hitT) sigOnce(f, 'hit', () => { for (const x of sk.fx) runFx(u, x.at === 'cluster' ? { ...x, P } : x, tgt, 'ult'); B.shake = Math.max(B.shake, 0.9); B.flash = 0.3; sfx('boom'); }); };
 }
-// Nữ Oa — Luyện Thạch Bổ Thiên + Đoàn Thổ Tạo Nhân: trời nứt -> 5 đá ngũ sắc vá trời -> cầu vồng giáng xuống, 3 người đất (theo hình Nữ Oa) đánh cùng 8 giây
-SIG.nuoa = { sheets: ['nuoa_sky', 'nuoa_cloud', 'nuoa_clay'], need: ['nuoa_st0', 'nuoa_st1', 'nuoa_st2', 'nuoa_st3', 'nuoa_st4'],
+// Nữ Oa — Luyện Thạch Bổ Thiên + Đoàn Thổ Tạo Nhân (biên đạo nhiều nhịp):
+//   0,0 trời tối, khe trời nứt trên sân -> 0,2 năm viên đá ngũ sắc bay lên kết vòng -> 0,7 luyện thành một viên (sheet fuse)
+//   -> 1,4 viên đá lao vào khe, khe liền lại -> 1,55 cột cầu vồng giáng xuống (sát thương) -> mưa cầu vồng -> 2,0 ba người đất trồi lên
+SIG.nuoa = { sheets: ['nuoa_sky', 'nuoa_fuse', 'nuoa_pillar', 'nuoa_rain', 'nuoa_clay'], need: ['nuoa_st0', 'nuoa_st1', 'nuoa_st2', 'nuoa_st3', 'nuoa_st4', 'nuoa_clay_idle', 'nuoa_clay_atk'],
   ult(u, sk, tgt) {
-    const P = sigPt(u, 170, tgt), sy = P.y - 230, h = spriteH(u), T0 = 0.15, hit = sigUltAt(u, sk, tgt, P, T0 + 1.25);
-    sigFx({ ult: 1, who: u.id, dur: T0 + 2.6, upd(f) { hit(f);
-      if (f.t >= T0 + 1.5) sigOnce(f, 'clay', () => { const n0 = B.heroes.length; runFx(u, { t: 'clone', n: 3, dur: 8 }, tgt, 'ult');
-        for (const c of B.heroes.slice(n0)) { c.clay = 1; sfxOnce('nuoa_clay', c.x, c.y + 6, 150, 0.8, { ay: 0.92, add: 1 }); }
+    const P = sigPt(u, 170, tgt), h = spriteH(u), SX = Math.min(P.x - 60, VIEW_R() - 300), SY = Math.max(LANE_Y0 - 40, P.y - 190), HIT = 1.6, hit = sigUltAt(u, sk, tgt, P, HIT);
+    sigFx({ ult: 1, who: u.id, dur: 3.2, upd(f) { hit(f);
+      if (f.t >= 1.45) sigOnce(f, 'seal', () => { B.flash = Math.max(B.flash || 0, 0.25); snd('magic'); });
+      if (f.t >= 2.0) sigOnce(f, 'clay', () => { const n0 = B.heroes.length; runFx(u, { t: 'clone', n: 3, dur: 8 }, tgt, 'ult');
+        for (const c of B.heroes.slice(n0)) { c.clay = 1; c.hp = maxHp(c) * 0.6; sfxOnce('nuoa_clay', c.x, c.y + 6, 120, 0.8, { ay: 0.92, a: 0.7 }); }
         floater(u.x, u.y - 90, 'Đoàn Thổ Tạo Nhân', '#ffc0f0', 16); });
     }, draw(f) {
-      const t = f.t - T0; if (t < 0) return;
-      sigDim(0.45 * Math.min(1, t / 0.3) * fadeOut(t, 1.5, 0.5));
-      sfxDraw('nuoa_sky', t / 1.6, P.x, sy, 520, { add: 1 });
-      for (let i = 0; i < 5; i++) { const q = (t - 0.35 - i * 0.08) / 0.5; if (q < 0 || q > 1) continue;
-        const sx = u.x + (i - 2) * 30, s0y = u.y - h * 0.6, x = sx + (P.x - sx) * q, y = s0y + (sy - s0y) * q - Math.sin(q * Math.PI) * 120;
-        sigGlow(x, y, 40, 'rgba(255,230,255,0.9)', 0.8); sigImg('nuoa_st' + i, x, y, 30, q * 6, 1); }
-      if (t > 1.2) sigGlow(P.x, P.y - 60, 260, 'rgba(255,200,240,0.9)', 0.8 * (1 - Math.max(0, (t - 1.5) / 0.5)));
+      const t = f.t;
+      sigDim(0.5 * Math.min(1, t / 0.3) * fadeOut(t, 2.4, 0.6), '#0a0614');
+      sfxDraw('nuoa_sky', Math.min(1, t / 1.9), SX + 40, SY - 70, 420, { add: 1, a: (t > 0.45 && t < 1.4 ? 0.35 : 0.75) * fadeOut(t, 2.2, 0.5) });   // khe trời mờ đi khi luyện đá để thấy đá     // trời nứt -> được vá
+      for (let i = 0; i < 5; i++) {   // 5 viên bay từ tay Nữ Oa lên kết vòng quanh điểm luyện đá
+        const q = Math.min(1, Math.max(0, (t - 0.1 - i * 0.07) / 0.5)); if (t > 0.85 || q <= 0) continue;
+        const a0 = i * TAU / 5 + t * 4, tx = SX + Math.cos(a0) * 60, ty = SY + 70 + Math.sin(a0) * 30, sx = u.x, sy = u.y - h * 0.7, e = q * q * (3 - 2 * q);
+        const x = sx + (tx - sx) * e, y = sy + (ty - sy) * e - Math.sin(q * Math.PI) * 80;
+        sigGlow(x, y, 36, NUOA_ST[i][2], 0.9); sigImg('nuoa_st' + i, x, y, 34, t * 6, 1); }
+      if (t > 0.55 && t < 1.45) { sigGlow(SX, SY + 70, 120, 'rgba(255,220,255,0.8)', 0.5); sfxDraw('nuoa_fuse', (t - 0.55) / 0.8, SX, SY + 70, 300, { add: 1 }); sfxDraw('nuoa_fuse', (t - 0.55) / 0.8, SX, SY + 70, 300, { a: 0.6 }); }   // luyện thạch
+      if (t >= 1.25 && t < 1.5) { const q = (t - 1.25) / 0.25; sigGlow(SX, SY + 70 - 100 * q, 90, 'rgba(255,255,255,0.95)', 1 - q * 0.5); }   // viên đá lao vào khe
+      if (t >= 1.45) sfxDraw('nuoa_pillar', (t - 1.45) / 1.1, P.x, P.y + 30, 330, { ay: 0.95, add: 1 });   // cột cầu vồng giáng xuống
+      if (t >= 1.6 && t < 3.2) sfxDraw('nuoa_rain', t * 0.7, P.x - 60, P.y - 160, 640, { loop: 1, add: 1, a: 0.8 * fadeOut(t, 2.7, 0.5) });
     } });
     snd('magic');
   } };
