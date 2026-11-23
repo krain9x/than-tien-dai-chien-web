@@ -1170,7 +1170,7 @@ const DOMAIN = {
     nhulai: { pat: 'bounce', proj: 'light', name: 'Vạn Tự Phật Ấn', desc: 'Phật ấn bay chậm mà nặng; đủ 3 dấu thì quái bị choáng.', bounces: 1, speed: 380 },
   });
   ATK_STYLE.hongquan.desc = 'Sợi tinh quang tím nảy lan 5 quái.';
-  HEROES.thailaoquan.ult.name = 'Thái Cực Hoá Giới'; HEROES.thailaoquan.ult.desc = 'Thái Cực Đồ trải phủ sân. Dương: hồi máu cả đội 500% công, giải khống chế, khiên 10% máu. Âm: 200% công và trói quái 1,5 giây. Kim Cương Trác thu binh khí quái mạnh nhất: -30% công 6 giây.';
+  HEROES.thailaoquan.ult.name = 'Thái Cực Hoá Giới'; HEROES.thailaoquan.ult.desc = 'Thái Cực Đồ phủ sân. Dương: hồi máu cả đội 500% công, giải khống chế, khiên 10% máu. Âm: 120% công và trói quái 1,5 giây. Kim Cương Trác thu binh khí quái mạnh nhất (-30% công 6 giây). Thái Cực Đồ bùng nổ 80% công cả sân.';
   HEROES.nguyenthuy.ult.desc = 'Bóng búa Bàn Cổ bổ trời đất tách đôi: quái giữa vết tách chịu 340% công, hai bên bị hất văng; Ngọc Như Ý giáng chốt, choáng 2 giây, cả đội +20% công 6 giây.';
   HEROES.giaochu.ult.desc = 'Bốn kiếm cắm bốn góc thành Tru Tiên Kiếm Trận 520% công; quái trong trận bị chảy máu, chậm, trói và giảm thủ.'; ATK_STYLE.hongquan.name = 'Tinh Quang';
   ATK_STYLE.giaochu.desc = 'Phóng lần lượt Tru Tiên, Lục Tiên, Hãm Tiên, Tuyệt Tiên: chảy máu, làm chậm, trói, giảm thủ.';

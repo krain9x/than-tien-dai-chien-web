@@ -5084,7 +5084,7 @@ loadArt().then(() => {
 // =====================================================================
 const SIG = {};
 // [cột, hàng, rộng ô, cao ô] — tools/make_sigfx.py in ra
-const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
+const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"tl_open":[4,2,192,256],"tl_clamp":[3,2,256,256],"tl_finale":[4,2,192,256],"nt_chaos":[4,2,192,256],"nt_ruyi":[4,2,192,256],"nt_rocks":[3,2,256,256],"nl_halo_burst":[4,2,192,256],"nl_land":[4,2,192,256],"nl_talisman":[3,2,256,256],"td_heaven":[4,2,192,256],"td_ray":[3,2,256,256],"cd_tailopen":[4,2,192,256],"cd_vajra":[3,2,256,256],"cd_vajra_hit":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } }   // gọi khi tướng ra trận
@@ -5363,110 +5363,140 @@ SIG.nuoa = { sheets: ['nuoa_sky', 'nuoa_fuse', 'nuoa_pillar', 'nuoa_rain', 'nuoa
     } });
     snd('magic');
   } };
-// Tiếp Dẫn — Thập Nhị Phẩm Kim Liên + Tiếp Dẫn Vãng Sinh: sen 12 cánh nở -> hồi máu, khiên, kim quang; đón 1 đồng đội đã ngã sống lại 40% máu (1 lần/trận)
-SIG.tiepdan = { sheets: ['td_bloom', 'td_petals', 'td_ground', 'td_revive'],
+// Tiếp Dẫn — Thập Nhị Phẩm Kim Liên (5 nhịp): kim quang từ trời rọi xuống -> sen 12 cánh nở -> 12 tia kim quang bắn từ cánh sen ghim vào quái
+//   -> sen toả hồi máu + khiên -> (1 lần/trận) cột sáng đón đồng đội đã ngã sống lại 40% máu
+SIG.tiepdan = { sheets: ['td_heaven', 'td_bloom', 'td_ray', 'td_hit', 'td_petals', 'td_revive'],
   ult(u, sk, tgt) {
-    const P = sigPt(u, 170, tgt), cx = (u.x + P.x) / 2, cy = Math.min(u.y, P.y) - 150, T0 = 0.15, hit = sigUltAt(u, sk, tgt, P, T0 + 1.3);
-    sigFx({ ult: 1, who: u.id, dur: T0 + 2.4, upd(f) { hit(f);
-      if (f.t >= T0 + 1.4 && !u.tdRev) sigOnce(f, 'rev', () => { const d = B.heroes.find(x => x.dead && !x.clone && !x.gone && x !== u); if (!d) return; u.tdRev = 1;
+    const P = sigPt(u, 170, tgt), cx = Math.min(VIEW_R() - 260, (u.x + P.x) / 2 + 40), cy = Math.max(LANE_Y0 - 30, Math.min(u.y, P.y) - 140);
+    const aoe = sk.fx.find(x => x.t === 'aoe'), rayM = aoe.mult / 12;
+    sigFx({ ult: 1, who: u.id, dur: 3.4, rays: [], upd(f, dt) {
+      if (f.t >= 0.9) sigOnce(f, 'fire', () => { const L = B.enemies.filter(e => !e.dead).sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy));
+        for (let i = 0; i < 12; i++) { const e = L[i % Math.max(1, L.length)]; if (!e) break; const a0 = -Math.PI / 2 + (i - 5.5) * 0.26;
+          f.rays.push({ e, d: i * 0.04, sx: cx + Math.cos(a0) * 70, sy: cy + Math.sin(a0) * 40, done: 0 }); } snd('magic'); });
+      for (const r of f.rays) if (!r.done && f.t >= 0.9 + r.d + 0.3) { r.done = 1; if (!r.e.dead) { dealDmg(u, r.e, rayM, 'ult'); sfxOnce('td_hit', r.e.x, r.e.y - 34, 120, 0.4, { add: 1 }); } }
+      if (f.t >= 1.6) sigOnce(f, 'heal', () => { for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult'); snd('heal'); B.flash = Math.max(B.flash || 0, 0.15); });
+      if (f.t >= 1.9 && !u.tdRev) sigOnce(f, 'rev', () => { const d = B.heroes.find(x => x.dead && !x.clone && !x.gone && x !== u); if (!d) return; u.tdRev = 1;
         sfxOnce('td_revive', d.x, d.y + 8, 220, 1.2, { ay: 0.94, add: 1 });
         B.later.push({ t: 0.7, fn: () => { if (!B || B.over) return; d.dead = false; d.hp = maxHp(d) * 0.4; d.stun = 0; d.inv = 1.5; floater(d.x, d.y - 80, 'Tiếp Dẫn Vãng Sinh', '#ffe08a', 16); snd('heal'); } }); });
     }, draw(f) {
-      const t = f.t - T0; if (t < 0) return;
-      sigDim(0.4 * Math.min(1, t / 0.3) * fadeOut(t, 1.7, 0.5), '#0c0800');
-      sfxDraw('td_bloom', t / 1.4, cx, cy, 440, { add: 1, a: fadeOut(t, 1.6, 0.6) });
-      if (t > 1.2) sfxDraw('td_petals', t * 0.6, cx, cy + 120, 620, { loop: 1, add: 1, a: fadeOut(t, 1.6, 0.6) });
+      const t = f.t;
+      sigDim(0.6 * Math.min(1, t / 0.3) * fadeOut(t, 2.6, 0.6), '#0c0800');
+      sfxDraw('td_heaven', t * 0.8, cx, cy + 160, 520, { loop: 1, ay: 0.95, add: 1, a: 0.6 * Math.min(1, t / 0.4) * fadeOut(t, 2.4, 0.6) });   // kim quang rọi xuống
+      if (t > 0.25) sfxDraw('td_bloom', (t - 0.25) / 0.9, cx, cy, 340, { a: 0.6 * fadeOut(t, 2.6, 0.6) }); sfxDraw('td_bloom', (t - 0.25) / 0.9, cx, cy, 340, { add: 1, a: 0.5 * fadeOut(t, 2.6, 0.6) });                              // sen 12 cánh nở
+      for (const r of f.rays) { const q = (t - 0.9 - r.d) / 0.3; if (q < 0 || q > 1 || r.e.dead && q > 0.95) continue;                       // 12 tia kim quang
+        const ex = r.e.x, ey = r.e.y - 34, x = r.sx + (ex - r.sx) * q, y = r.sy + (ey - r.sy) * q;
+        sfxDraw('td_ray', t * 5 + r.d * 9, x, y, 130, { loop: 1, rot: Math.atan2(ey - r.sy, ex - r.sx), add: 1 }); sfxDraw('td_ray', t * 5 + r.d * 9, x, y, 130, { loop: 1, rot: Math.atan2(ey - r.sy, ex - r.sx), a: 0.5 }); }
+      if (t > 1.5) sfxDraw('td_petals', t * 0.6, (u.x + cx) / 2, u.y - 120, 600, { loop: 1, add: 1, a: fadeOut(t, 2.8, 0.6) });
     } });
     snd('heal');
   } };
-// Chuẩn Đề — Ngũ Sắc Thần Quang + Thu Bảo: năm dải sáng quét ngang sân; quái mất khiên + buff, boss bị câm 3 giây (ngừng đòn đặc biệt)
-SIG.chuande = { sheets: ['cd_sweep', 'cd_feathers', 'cd_silence'],
+// Chuẩn Đề — Ngũ Sắc Thần Quang (5 nhịp): đuôi khổng tước xoè bừng sáng -> năm dải sáng quét ngang (sát thương chính) -> quái mất khiên, boss bị câm
+//   -> mưa Gia Trì Thần Xử từ 16 cánh tay giáng xuống (sát thương phụ) -> ấn câm trên đầu boss
+SIG.chuande = { sheets: ['cd_tailopen', 'cd_sweep', 'cd_vajra', 'cd_vajra_hit', 'cd_silence', 'cd_feathers'],
   ult(u, sk, tgt) {
-    const P = sigPt(u, 170, tgt), T0 = 0.15, L = Math.max(500, P.x - u.x + 260), hit = sigUltAt(u, sk, tgt, P, T0 + 0.6);
-    sigFx({ ult: 1, who: u.id, dur: T0 + 3.4, upd(f) { hit(f);
-      if (f.t >= T0 + 0.65) sigOnce(f, 'thu', () => {
+    const P = sigPt(u, 170, tgt), h = spriteH(u), L = Math.max(500, P.x - u.x + 260), aoe = sk.fx.find(x => x.t === 'aoe');
+    sigFx({ ult: 1, who: u.id, dur: 3.6, vj: [], upd(f) {
+      if (f.t >= 1.05) sigOnce(f, 'sweep', () => { runFx(u, { ...aoe, P, mult: aoe.mult * 0.7 }, tgt, 'ult'); B.shake = Math.max(B.shake, 0.8); B.flash = 0.25; sfx('boom');
         for (const e of B.enemies) if (!e.dead && Math.abs(e.y - P.y) < 200 && e.x > u.x) { e.shield = 0; e.buffs = e.buffs.filter(b => b.v < 0); }
         const bo = B.enemies.find(e => e.boss && !e.dead); if (bo) { B.silence = 3; f.bo = bo; floater(bo.x, bo.y - 110, 'Thu Bảo · Câm', '#9fffc0', 17); } });
+      if (f.t >= 1.5) sigOnce(f, 'vj', () => { const E = B.enemies.filter(e => !e.dead); for (let i = 0; i < 10; i++) { const e = E[i % Math.max(1, E.length)]; if (!e) break;
+        f.vj.push({ e, d: i * 0.08, sx: u.x + rand(-40, 40), sy: u.y - h * 1.3 - rand(0, 40), done: 0 }); } });
+      for (const v of f.vj) if (!v.done && f.t >= 1.5 + v.d + 0.35) { v.done = 1; if (!v.e.dead) { dealDmg(u, v.e, aoe.mult * 0.03, 'ult'); sfxOnce('cd_vajra_hit', v.e.x, v.e.y - 20, 130, 0.4, { add: 1 }); B.shake = Math.max(B.shake, 0.25); } }
     }, draw(f) {
-      const t = f.t - T0; if (t < 0) return;
-      sigDim(0.4 * Math.min(1, t / 0.25) * fadeOut(t, 1.2, 0.5));
-      sfxDraw('cd_sweep', t / 1.1, u.x + L / 2, P.y - 50, L, { add: 1, rot: Math.atan2(P.y - u.y, L) * 0.5 });
-      if (t > 0.5 && t < 1.8) sfxDraw('cd_feathers', t * 0.8, P.x, P.y - 70, 360, { loop: 1, add: 1, a: fadeOut(t, 1.2, 0.5) });
-      if (f.bo && !f.bo.dead && t > 0.5) sfxDraw('cd_silence', (t - 0.5) * 2, f.bo.x, f.bo.y - spriteH(f.bo) - 20, 90, { loop: 1, add: 1, a: fadeOut(t, 3.0, 0.3) });
+      const t = f.t;
+      sigDim(0.6 * Math.min(1, t / 0.25) * fadeOut(t, 2.8, 0.6));
+      if (t < 1.6) sfxDraw('cd_tailopen', t / 0.9, u.x - 10 * (u.f || 1), u.y + 10, h * 2.4, { ay: 0.95, add: 1, a: fadeOut(t, 1.3, 0.3) });   // đuôi khổng tước xoè
+      if (t > 0.85 && t < 2.1) sfxDraw('cd_sweep', (t - 0.85) / 1.1, u.x + L / 2, P.y - 50, L, { add: 1, rot: Math.atan2(P.y - u.y, L) * 0.5 });
+      for (const v of f.vj) { const q = (t - 1.5 - v.d) / 0.35; if (q < 0 || q > 1) continue;                                                  // mưa Thần Xử
+        const ex = v.e.x, ey = v.e.y - 30, x = v.sx + (ex - v.sx) * q, y = v.sy + (ey - v.sy) * q - Math.sin(q * Math.PI) * 60;
+        sfxDraw('cd_vajra', t * 5 + v.d * 7, x, y, 90, { loop: 1, rot: Math.atan2(ey - v.sy, ex - v.sx), add: 1 }); }
+      if (t > 1.0 && t < 2.6) sfxDraw('cd_feathers', t * 0.8, P.x, P.y - 70, 380, { loop: 1, add: 1, a: fadeOut(t, 2.2, 0.4) });
+      if (f.bo && !f.bo.dead && t > 1.05) sfxDraw('cd_silence', (t - 1.05) * 2, f.bo.x, f.bo.y - spriteH(f.bo) - 20, 90, { loop: 1, add: 1, a: fadeOut(t, 3.3, 0.3) });
     } });
     snd('whoosh');
   } };
-// Như Lai — Ngũ Hành Sơn: bàn tay giáng hoá núi; núi đứng 4 giây đè quái; năm đỉnh lần lượt nổ Kim, Mộc, Thuỷ, Hoả, Thổ
+// Như Lai — Ngũ Hành Sơn (5 nhịp): hào quang nghìn Phật bừng sáng -> bàn tay Phật giáng -> núi Ngũ Hành rơi đè, bụi tung (sát thương chính)
+//   -> bùa Lục Tự dán đỉnh núi (núi đè quái 4 giây) -> năm đỉnh nổ lần lượt Kim, Mộc, Thuỷ, Hoả, Thổ
 const WX = [['Kim', '#ffe58a'], ['Mộc', '#7dff9a'], ['Thuỷ', '#7fc8ff'], ['Hoả', '#ff7a3a'], ['Thổ', '#d8a060']];
-SIG.nhulai = { sheets: ['nl_palm', 'nl_glyphs', 'nl_burst'], need: ['nl_mountain'],
+SIG.nhulai = { sheets: ['nl_halo_burst', 'nl_palm', 'nl_land', 'nl_talisman', 'nl_burst', 'nl_glyphs'], need: ['nl_mountain'],
   ult(u, sk, tgt) {
-    const P = sigPt(u, 170, tgt), T0 = 0.15, f0 = sk.fx.find(x => x.t === 'aoe'), HIT = T0 + 0.95, M0 = HIT, M1 = HIT + 4;
+    const P = sigPt(u, 170, tgt), h = spriteH(u), f0 = sk.fx.find(x => x.t === 'aoe'), HIT = 1.35, TAL = 1.9, M1 = HIT + 4.2;
     const pin = () => B.enemies.filter(e => !e.dead && Math.hypot(e.x - P.x, (e.y - P.y) * 1.5) < 170);
     sigFx({ ult: 1, who: u.id, dur: M1 + 0.5, upd(f) {
-      if (f.t >= HIT) sigOnce(f, 'hit', () => { runFx(u, { ...f0, P, mult: f0.mult * 0.85 }, tgt, 'ult'); B.shake = 1; B.flash = 0.3; sfx('boom'); B.decals.push({ x: P.x, y: P.y + 4, r: 170, t: 0, dur: 6 }); });
-      if (f.t > M0 && f.t < M1) for (const e of pin()) { if (!e.boss) e.stun = Math.max(e.stun || 0, 0.15); else e.slow = Math.max(e.slow || 0, 0.3); }
-      for (let i = 0; i < 5; i++) if (f.t >= M0 + 0.6 + i * 0.6) sigOnce(f, 'wx' + i, () => { const L = pin(); B.shake = Math.max(B.shake, 0.35); sfx('hit');
-        if (i === 0) for (const e of L) dealDmg(u, e, 0.3, 'ult');                                                   // Kim
-        if (i === 1) for (const h of alliesAlive()) healU(h, getAtk(u) * 0.5, true);                                // Mộc
-        if (i === 2) for (const e of L) e.slow = Math.max(e.slow || 0, 3);                                           // Thuỷ
-        if (i === 3) for (const e of L) { e.burn = 3; e.burnDps = Math.max(e.burnDps || 0, getAtk(u) * 0.3); }      // Hoả
-        if (i === 4) for (const e of L) { dealDmg(u, e, 0.54, 'ult'); if (!e.dead && !e.boss) e.stun = Math.max(e.stun || 0, 1); }   // Thổ
+      if (f.t >= HIT) sigOnce(f, 'hit', () => { runFx(u, { ...f0, P, mult: f0.mult * 0.85 }, tgt, 'ult'); B.shake = 1.2; B.flash = 0.3; sfx('boom'); snd('thunder', 0.8, 0.6); B.decals.push({ x: P.x, y: P.y + 4, r: 170, t: 0, dur: 6 }); });
+      if (f.t > HIT && f.t < M1) for (const e of pin()) { if (!e.boss) e.stun = Math.max(e.stun || 0, 0.15); else e.slow = Math.max(e.slow || 0, 0.3); }
+      if (f.t >= TAL + 0.3) sigOnce(f, 'tal', () => { snd('gong'); floater(P.x, P.y - 230, 'Án Ma Ni Bát Mê Hồng', '#ffd76a', 16); });
+      for (let i = 0; i < 5; i++) if (f.t >= TAL + 0.7 + i * 0.5) sigOnce(f, 'wx' + i, () => { const L = pin(); B.shake = Math.max(B.shake, 0.4); sfx('hit');
+        if (i === 0) for (const e of L) dealDmg(u, e, 0.3, 'ult');
+        if (i === 1) for (const x of alliesAlive()) healU(x, getAtk(u) * 0.5, true);
+        if (i === 2) for (const e of L) e.slow = Math.max(e.slow || 0, 3);
+        if (i === 3) for (const e of L) { e.burn = 3; e.burnDps = Math.max(e.burnDps || 0, getAtk(u) * 0.3); }
+        if (i === 4) for (const e of L) { dealDmg(u, e, 0.54, 'ult'); if (!e.dead && !e.boss) e.stun = Math.max(e.stun || 0, 1); }
         floater(P.x + (i - 2) * 40, P.y - 170, WX[i][0], WX[i][1], 16); });
     }, draw(f) {
-      const t = f.t - T0; if (t < 0) return;
-      sigDim(0.45 * Math.min(1, t / 0.3) * fadeOut(t, 1.4, 0.5), '#0c0800');
-      if (f.t < HIT + 0.6) sfxDraw('nl_palm', t / 1.6, P.x, P.y + 30, 420, { ay: 0.92 });
-      if (f.t > HIT - 0.1 && f.t < M1 + 0.5) { const e = Math.min(1, (f.t - HIT + 0.1) / 0.25), a = fadeOut(f.t, M1, 0.5);   // núi Ngũ Hành
-        sigImg('nl_mountain', P.x, P.y - 70 * e, 230 * (0.7 + 0.3 * e), 0, a); }
-      for (let i = 0; i < 5; i++) { const t0 = M0 + 0.6 + i * 0.6, q = (f.t - t0) / 0.5; if (q < 0 || q > 1) continue;
-        const x = P.x + (i - 2) * 42, y = P.y - 150 + Math.abs(i - 2) * 22; sigGlow(x, y, 90, WX[i][1], 0.8 * (1 - q)); sfxDraw('nl_burst', q, x, y, 150, { add: 1 }); }
-      if (t > 0.9 && t < 2.5) sfxDraw('nl_glyphs', t * 0.7, P.x, P.y - 40, 360, { loop: 1, add: 1, a: fadeOut(t, 1.8, 0.5) });
+      const t = f.t;
+      sigDim(0.6 * Math.min(1, t / 0.3) * fadeOut(t, 2.6, 0.6), '#0c0800');
+      if (t < 1.3) sfxDraw('nl_halo_burst', t / 1.1, u.x, u.y - h * 0.7, h * 2.6, { add: 1, a: fadeOut(t, 1.0, 0.3) });             // hào quang nghìn Phật
+      if (t > 0.35 && t < HIT + 0.3) sfxDraw('nl_palm', (t - 0.35) / 1.25, P.x, P.y + 30, 420, { ay: 0.92, a: fadeOut(t, HIT, 0.3) });   // bàn tay giáng
+      if (t > HIT - 0.12 && t < M1 + 0.5) { const e = Math.min(1, (t - HIT + 0.12) / 0.15), a = fadeOut(t, M1, 0.5);                 // núi rơi
+        sigImg('nl_mountain', P.x, P.y - 75 - (1 - e) * 220, 240, 0, a); }
+      if (t >= HIT) sfxDraw('nl_land', (t - HIT) / 1.0, P.x, P.y + 20, 460, { ay: 0.9, add: 1 });                                       // bụi tung
+      if (t >= TAL) sfxDraw('nl_talisman', Math.min(1, (t - TAL) / 0.6) + (t > TAL + 0.6 ? ((t - TAL - 0.6) * 2) % 0.34 : 0), P.x, P.y - 165, 90, { add: 1, a: fadeOut(t, M1, 0.5) });   // bùa Lục Tự
+      for (let i = 0; i < 5; i++) { const t0 = TAL + 0.7 + i * 0.5, q = (t - t0) / 0.5; if (q < 0 || q > 1) continue;
+        const x = P.x + (i - 2) * 42, y = P.y - 150 + Math.abs(i - 2) * 22; sigGlow(x, y, 100, WX[i][1], 0.9 * (1 - q)); sfxDraw('nl_burst', q, x, y, 170, { add: 1 }); }
+      if (t > HIT && t < 3.2) sfxDraw('nl_glyphs', t * 0.7, P.x, P.y - 40, 360, { loop: 1, add: 1, a: fadeOut(t, 2.6, 0.5) });
     } });
     snd('gong');
   } };
-// Thái Thượng — Thái Cực Hoá Giới: Thái Cực Đồ bay ra trải phủ sân, xoay; nửa dương hồi máu + giải khống chế + khiên; nửa âm đè quái (sát thương + trói);
-//   Kim Cương Trác ném vào quái mạnh nhất: giảm 30% công 6 giây
-SIG.thailaoquan = { sheets: ['tl_yang', 'tl_yin', 'tl_qi'], need: ['tl_taiji', 'tl_kimcang'],
+// Thái Thượng — Thái Cực Hoá Giới (5 nhịp): Thái Cực Đồ mở xoáy phủ sân -> dương: cột sáng hồi máu + giải khống chế + khiên trên đồng đội
+//   -> âm: xích khí trói quái -> Kim Cương Trác bay kẹp quái mạnh nhất, hút binh khí (-30% công) -> Thái Cực Đồ bùng nổ đen trắng
+SIG.thailaoquan = { sheets: ['tl_open', 'tl_yang', 'tl_yin', 'tl_clamp', 'tl_finale', 'tl_qi'], need: ['tl_kimcang'],
   ult(u, sk, tgt) {
-    const h = spriteH(u), cx = (GATE_X + VIEW_R()) / 2, cy = (LANE_Y0 + LANE_Y1) / 2 + 10, RW = (VIEW_R() - GATE_X) * 0.95, T0 = 0.1;
+    const h = spriteH(u), cx = (GATE_X + VIEW_R()) / 2 + 40, cy = (LANE_Y0 + LANE_Y1) / 2 + 10, RW = (VIEW_R() - GATE_X) * 0.95;
     const big = () => B.enemies.filter(e => !e.dead).sort((a, b) => ((b.boss ? 1 : 0) - (a.boss ? 1 : 0)) || (maxHp(b) - maxHp(a)))[0];
-    sigFx({ ult: 1, who: u.id, dur: T0 + 3.0, upd(f) {
-      if (f.t >= T0 + 0.7) sigOnce(f, 'yang', () => { for (const x of sk.fx) runFx(u, x, tgt, 'ult'); for (const a of alliesAlive()) a.stun = 0; snd('heal'); });
-      if (f.t >= T0 + 0.9) sigOnce(f, 'yin', () => { f.yin = B.enemies.filter(e => !e.dead).slice(0, 14);
-        for (const e of f.yin) { dealDmg(u, e, 2.0, 'ult'); if (!e.dead) e.stun = Math.max(e.stun || 0, e.boss ? 0.5 : 1.5); } B.shake = Math.max(B.shake, 0.5); });
-      if (f.t >= T0 + 1.0) sigOnce(f, 'kc0', () => { f.kc = big(); });
-      if (f.t >= T0 + 1.5) sigOnce(f, 'kc', () => { const e = f.kc; if (!e || e.dead) return; dealDmg(u, e, 1.0, 'ult'); e.buffs.push({ k: 'atk', v: -0.3, t: 6 });
-        floater(e.x, e.y - 100, 'Thu binh khí · -30% công', '#ffe58a', 15); sfx('boom'); fxBurst(e.x, e.y - 40, 'burst_gold', 200); });
+    sigFx({ ult: 1, who: u.id, dur: 3.6, upd(f) {
+      if (f.t >= 0.8) sigOnce(f, 'yang', () => { for (const x of sk.fx) runFx(u, x, tgt, 'ult'); for (const a of alliesAlive()) a.stun = 0; snd('heal'); });
+      if (f.t >= 1.0) sigOnce(f, 'yin', () => { f.yin = B.enemies.filter(e => !e.dead).slice(0, 14);
+        for (const e of f.yin) { dealDmg(u, e, 1.2, 'ult'); if (!e.dead) e.stun = Math.max(e.stun || 0, e.boss ? 0.5 : 1.5); } B.shake = Math.max(B.shake, 0.5); });
+      if (f.t >= 1.3) sigOnce(f, 'kc0', () => { f.kc = big(); });
+      if (f.t >= 1.85) sigOnce(f, 'kc', () => { const e = f.kc; if (!e || e.dead) return; dealDmg(u, e, 1.0, 'ult'); e.buffs.push({ k: 'atk', v: -0.3, t: 6 });
+        floater(e.x, e.y - 100, 'Thu binh khí · -30% công', '#ffe58a', 15); sfx('boom'); f.kcAt = [e.x, e.y]; });
+      if (f.t >= 2.5) sigOnce(f, 'fin', () => { for (const e of B.enemies) if (!e.dead && e.x > GATE_X) dealDmg(u, e, 0.8, 'ult'); B.shake = 1.1; B.flash = 0.35; sfx('boom'); snd('thunder', 0.8, 0.7); });
     }, draw(f) {
-      const t = f.t - T0; if (t < 0) return;
-      const im = ucImg('tl_taiji'), q = Math.min(1, t / 0.6), e = q * q * (3 - 2 * q), a = fadeOut(t, 2.3, 0.6);
-      const x = u.x + (cx - u.x) * e, y = (u.y - h * 0.9) + (cy - (u.y - h * 0.9)) * e, S = h * 0.8 + (RW - h * 0.8) * e;
-      if (im) { ctx.save(); ctx.translate(x, y); ctx.scale(1, 1 - 0.55 * e); ctx.rotate(t * 1.2); ctx.globalAlpha = 0.75 * a; ctx.drawImage(im, -S / 2, -S / 2, S, S); ctx.restore(); }
-      if (t > 0.6) sfxDraw('tl_qi', t * 0.5, cx, cy, RW * 1.1, { loop: 1, add: 1, sy: 0.45, a: 0.6 * a });
-      if (t > 0.7 && t < 2.6) for (const al of alliesAlive()) sfxDraw('tl_yang', t * 0.8, al.x, al.y + 6, 120, { loop: 1, ay: 0.92, add: 1, a: fadeOut(t, 2.1, 0.5) });
-      if (f.yin) for (const en of f.yin) if (!en.dead) sfxDraw('tl_yin', (t - 0.8) / 1.4, en.x, en.y + 6, 130, { ay: 0.9, add: 1 });
-      if (f.kc && t > 0.9 && t < 1.45) { const k = (t - 0.9) / 0.55, sx = u.x, sy = u.y - h * 0.7, ex = f.kc.x, ey = f.kc.y - 40;
-        const px = sx + (ex - sx) * k, py = sy + (ey - sy) * k - Math.sin(k * Math.PI) * 80;
-        sigGlow(px, py, 50, 'rgba(255,220,120,0.9)', 0.8); sigImg('tl_kimcang', px, py, 46, t * 14, 1); }
+      const t = f.t;
+      sigDim(0.6 * Math.min(1, t / 0.3) * fadeOut(t, 3.0, 0.5), '#06080a');
+      if (t < 2.7) sfxDraw('tl_open', t / 0.9, cx, cy, RW * 0.9, { sy: 0.8, add: 1, a: 0.55 * fadeOut(t, 2.4, 0.3) }); sfxDraw('tl_open', t / 0.9, cx, cy, RW * 0.9, { sy: 0.8, a: 0.35 * fadeOut(t, 2.4, 0.3) });                                 // Thái Cực Đồ mở ra
+      if (t > 0.7) sfxDraw('tl_qi', t * 0.5, cx, cy, RW * 1.05, { loop: 1, add: 1, sy: 0.42, a: 0.3 * fadeOut(t, 2.4, 0.4) });
+      if (t > 0.8 && t < 2.8) for (const al of alliesAlive()) sfxDraw('tl_yang', t * 0.8, al.x, al.y + 6, 130, { loop: 1, ay: 0.92, add: 1, a: fadeOut(t, 2.3, 0.5) });
+      if (f.yin) for (const en of f.yin) if (!en.dead && t < 2.6) sfxDraw('tl_yin', (t - 0.95) / 1.4, en.x, en.y + 6, 140, { ay: 0.9, add: 1 });
+      if (f.kc && t > 1.3 && t < 1.85) { const k = (t - 1.3) / 0.55, sx = u.x, sy = u.y - h * 0.7, ex = f.kc.x, ey = f.kc.y - 40;   // Kim Cương Trác bay
+        const px = sx + (ex - sx) * k, py = sy + (ey - sy) * k - Math.sin(k * Math.PI) * 90;
+        sigGlow(px, py, 55, 'rgba(255,220,120,0.9)', 0.8); sigImg('tl_kimcang', px, py, 50, t * 16, 1); }
+      if (f.kcAt && t < 2.5) sfxDraw('tl_clamp', (t - 1.85) / 0.6, f.kcAt[0], f.kcAt[1] - 40, 150, { add: 1 });                         // kẹp + hút binh khí
+      if (t >= 2.45) sfxDraw('tl_finale', (t - 2.45) / 1.0, cx, cy - 40, 520, { add: 1 });                                               // bùng nổ
     } });
     snd('gong');
   } };
-// Nguyên Thuỷ — Bàn Cổ Khai Thiên: bóng búa Bàn Cổ bổ dọc -> trời đất tách đôi (quái giữa vết tách chịu nặng, hai bên bị hất văng) -> Ngọc Như Ý giáng chốt
-SIG.nguyenthuy = { sheets: ['nt_axe', 'nt_split', 'nt_slam', 'nt_banner'],
+// Nguyên Thuỷ — Bàn Cổ Khai Thiên (5 nhịp): Bàn Cổ Phiên phất, hỗn độn khí cuộn xoáy trên trời -> búa Bàn Cổ bổ dọc
+//   -> trời đất tách đôi, đá văng (giữa nặng, hai bên bị hất) -> Ngọc Như Ý khổng lồ rơi chốt (choáng + buff đội)
+SIG.nguyenthuy = { sheets: ['nt_chaos', 'nt_axe', 'nt_split', 'nt_rocks', 'nt_ruyi', 'nt_slam'],
   ult(u, sk, tgt) {
-    const P = sigPt(u, 170, tgt), T0 = 0.1, f0 = sk.fx.find(x => x.t === 'aoe');
-    sigFx({ ult: 1, who: u.id, dur: T0 + 2.4, upd(f) {
-      if (f.t >= T0 + 0.6) sigOnce(f, 'split', () => { B.shake = 1.2; B.flash = 0.35; sfx('boom'); snd('thunder', 0.9, 0.6); B.hitstop = Math.max(B.hitstop || 0, 0.12);
+    const P0 = sigPt(u, 170, tgt), P = { x: Math.min(P0.x, VIEW_R() - 280), y: P0.y }, f0 = sk.fx.find(x => x.t === 'aoe'), SPLIT = 1.25, RUYI = 2.2;
+    sigFx({ ult: 1, who: u.id, dur: 3.4, upd(f) {
+      if (f.t >= SPLIT) sigOnce(f, 'split', () => { B.shake = 1.2; B.flash = 0.35; sfx('boom'); snd('thunder', 0.9, 0.6); B.hitstop = Math.max(B.hitstop || 0, 0.12);
         for (const e of B.enemies) { if (e.dead) continue; const dx = e.x - P.x;
-          if (Math.abs(dx) < 85 && Math.abs(e.y - P.y) < 220) dealDmg(u, e, f0.mult * 0.75, 'ult');
+          if (Math.abs(dx) < 85 && Math.abs(e.y - P.y) < 220) dealDmg(u, e, f0.mult * 0.7, 'ult');
           else if (Math.hypot(dx, (e.y - P.y) * 1.4) < 300) { dealDmg(u, e, f0.mult * 0.1, 'ult'); if (!e.boss && !e.dead) { e.x = clamp(e.x + Math.sign(dx || 1) * 150, GATE_X + 60, W + 20); e.hitT = 0.5; } } } });
-      if (f.t >= T0 + 1.45) sigOnce(f, 'slam', () => { runFx(u, { ...f0, P, mult: f0.mult * 0.15 }, tgt, 'ult'); for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult'); B.shake = Math.max(B.shake, 0.7); sfx('boom'); });
+      if (f.t >= RUYI + 0.4) sigOnce(f, 'slam', () => { runFx(u, { ...f0, P, mult: f0.mult * 0.2 }, tgt, 'ult'); for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult'); B.shake = Math.max(B.shake, 0.9); B.flash = 0.25; sfx('boom'); });
     }, draw(f) {
-      const t = f.t - T0; if (t < 0) return;
-      sigDim(0.5 * Math.min(1, t / 0.3) * fadeOut(t, 1.8, 0.5), '#050310');
-      sfxDraw('nt_axe', t / 0.9, P.x, P.y + 30, 460, { ay: 0.93, add: 1 });
-      if (t > 0.5) sfxDraw('nt_split', (t - 0.5) / 1.1, P.x, P.y - 40, 420, { add: 1 });
-      if (t > 1.35) sfxDraw('nt_slam', (t - 1.35) / 0.6, P.x, P.y - 30, 330, { add: 1 });
+      const t = f.t;
+      sigDim(0.65 * Math.min(1, t / 0.3) * fadeOut(t, 2.9, 0.5), '#050310');
+      if (t < 1.4) sfxDraw('nt_chaos', t / 1.1, P.x, P.y - 230, 360, { add: 1, a: fadeOut(t, 1.15, 0.25) });                     // hỗn độn khí cuộn
+      if (t > 0.55 && t < SPLIT + 0.05) { const q = (t - 0.55) / (SPLIT - 0.5); sfxDraw('nt_axe', q * 0.42, P.x, P.y + 30, 420, { ay: 0.93, a: 0.95 * Math.min(1, (SPLIT + 0.05 - t) / 0.15) }); }   // chỉ phần búa vung xuống (bỏ khung chớp trắng)                      // búa Bàn Cổ
+      if (t > SPLIT - 0.1 && t < 2.7) sfxDraw('nt_split', (t - SPLIT + 0.1) / 1.3, P.x, P.y - 40, 400, { add: 1, a: 0.85 });              // trời đất tách
+      if (t > SPLIT && t < 2.0) { sfxDraw('nt_rocks', (t - SPLIT) / 0.7, P.x - 90, P.y + 10, 220, { ay: 0.9 }); sfxDraw('nt_rocks', (t - SPLIT) / 0.7, P.x + 90, P.y + 10, 220, { ay: 0.9, sx: -1 }); }
+      if (t > RUYI) sfxDraw('nt_ruyi', (t - RUYI) / 0.8, P.x, P.y + 20, 360, { ay: 0.93, add: 1 });                             // Ngọc Như Ý rơi
+      if (t > RUYI + 0.4) sfxDraw('nt_slam', (t - RUYI - 0.4) / 0.6, P.x, P.y - 30, 330, { add: 1 });
     } });
     snd('gong');
   } };
