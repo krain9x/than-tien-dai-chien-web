@@ -132,7 +132,7 @@ function ensureHeroAssets(ids) {
     if (_heroLoaded[id]) return _heroLoaded[id];
     try { if (sceneUnlocked(id) || SRX[id]) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ datky: ['fx_ninetails'], quanam: ['fx_halo'], tieubachlong: ['fx_waterpillar'] }[id] || []).forEach(scImg); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'], nata: ['firewheel'] }[id] || []).forEach(ucImg); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
     const jobs = [];
-    if (typeof Skel !== 'undefined' && (window.SKEL_IDS || []).includes(id)) jobs.push(new Promise(res => {
+    if (typeof Skel !== 'undefined' && (window.SKEL_IDS || []).includes(id) && !poseOnly(id)) jobs.push(new Promise(res => {
       const sc = document.createElement('script'); sc.src = 'art/skel/' + id + '.js';
       sc.onload = () => Skel.load(id).then(res, res); sc.onerror = () => res(); document.head.appendChild(sc);
     }));
@@ -940,8 +940,8 @@ function cast(u, w) {
   u.mp -= w === 'ult' ? 60 : 30;
   if (w === 'ult') u.cdU = 12; else u.cdS = 6;   // chiêu nhỏ 6 giây/lần
   if (w === 'ult' && u.side === 'h' && isUR(u.id) && !u.clone && B) { castPhapTuong(u); if (u.id !== 'hongquan' && !(B.dom && B.dom.id === 'tamthanh') && (!B.dom || B.dom.id !== u.id)) domSet(u.id); }
-  const sk_ = typeof Skel !== 'undefined' && Skel.has(u.id);
-  u.castDur = sk_ ? (w === 'ult' ? 1.0 : 0.6) : 0.35; u.castT = u.castDur; u.castUlt = w === 'ult'; u.atkAnim = sk_ ? -1 : 0;
+  const sk_ = hasSkel(u.id);
+  u.castDur = sk_ ? (w === 'ult' ? 1.0 : 0.6) : POSES[u.id] ? (w === 'ult' ? 0.8 : 0.4) : 0.35;   // dáng vẽ: giữ dáng tuyệt kỹ đủ lâu để thấy u.castT = u.castDur; u.castUlt = w === 'ult'; u.atkAnim = sk_ ? -1 : 0;
   const tgt = findTarget(u) || nearestEnemy(u, 400);
   if (tgt) u.f = tgt.x >= u.x ? 1 : -1;
   const SG = u.side === 'h' && SIG[u.id];
@@ -1896,6 +1896,12 @@ function poseFor(u) {
   return null;
 }
 const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25, thailaoquan: 1.22, giaochu: 1.22, nguyenthuy: 1.22, hongquan: 1.25 };   // UR concept A (Thánh Toạ) to hơn để uy   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
+const _bright = new WeakMap();
+function brightImg(img) {   // bản sáng của ảnh dáng (tạo 1 lần): nháy trắng khi trúng đòn mà không dùng ctx.filter mỗi khung
+  let c = _bright.get(img); if (c) return c;
+  c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+  const g = c.getContext('2d'); g.filter = 'brightness(1.8) saturate(0.7)'; g.drawImage(img, 0, 0); _bright.set(img, c); return c;
+}
 function drawPose(u, name, t, h, alpha) {
   h *= HFIX[u.id] || 1;
   if (!POSES[u.id]) return false;
@@ -1910,8 +1916,7 @@ function drawPose(u, name, t, h, alpha) {
   else if (name.startsWith('idle')) { sy = 1 + 0.014 * Math.sin(t * 2.6); sx = 1 - 0.006 * Math.sin(t * 2.6); }   // thở
   else if (name === 'hit') { const e = 1 - eo(Math.min(1, t)); ox = -11 * e; rot = -0.06 * e; sy = 1 - 0.03 * e; }
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(ox, 0); ctx.rotate(rot); ctx.scale(sx, sy);
-  if (u.hurt > 0) ctx.filter = 'brightness(1.8) saturate(0.7)';
-  ctx.drawImage(img, -gx, -gy, img.width * k, img.height * k);
+  ctx.drawImage(u.hurt > 0 ? brightImg(img) : img, -gx, -gy, img.width * k, img.height * k);
   ctx.filter = 'none'; ctx.restore();
   return true;
 }
@@ -1958,8 +1963,9 @@ function drawRigUnit(u, h, alpha) {
 }
 const hasLayered = id => typeof Layered !== 'undefined' && Layered.has(id);
 const hasMesh = id => typeof MeshRig !== 'undefined' && MeshRig.has(id);
-const POSE_ONLY = new Set(['khuongtanha', 'trieucongminh', 'bachcot']);   // đã vẽ lại theo đúng pháp bảo: chỉ dùng tư thế, bỏ rig cũ
-const hasSkel = id => typeof Skel !== 'undefined' && Skel.has(id) && !window.__noSkel && !POSE_ONLY.has(id);
+const POSE_ONLY = new Set(['khuongtanha', 'trieucongminh', 'bachcot']);   // + mọi tướng có dáng vẽ (POSE_IDS) — xem poseOnly()
+const poseOnly = id => POSE_ONLY.has(id) || POSE_IDS.includes(id);   // đã vẽ lại theo đúng pháp bảo: chỉ dùng tư thế, bỏ rig cũ
+const hasSkel = id => typeof Skel !== 'undefined' && Skel.has(id) && !window.__noSkel && !poseOnly(id);
 const hasRig = id => !!(window.HPOSE && HPOSE[id]) || hasSkel(id) || hasMesh(id) || hasLayered(id) || (typeof Rig !== 'undefined' && Rig.has(id));
 // ưu tiên nhân vật tách lớp (Live2D) → rig bộ phận
 // &chibi trên đường dẫn: nhân vật nào có bản chibi (art/mesh/<id>_chibi.js) thì dùng bản đó để so sánh
@@ -5110,5 +5116,6 @@ SIG.giaochu = {
 
 // </SIG>
 // Cho phép chạy thử tự động (không ảnh hưởng game)
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});   // bộ nhớ đệm ảnh/âm thanh
 window.__TTDC = { startBattle, update, get B() { return B; }, get S() { return S; }, pullOne, cast, openCongPhap, applyPick, CONGPHAP };
 })();
