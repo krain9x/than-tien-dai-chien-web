@@ -3986,7 +3986,7 @@ let HD_TAB = 'info', HD_SKSEL = 'ult';
 function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + vệt sáng + hạt
   const r = TIER_RANK[HEROES[id].tier] || 0;
   const urp = HEROES[id].tier === 'UR+';   // UR+ (độc bản): nền tinh vân, viền khung trôi tinh vân, Thái Cực xoay, sao băng
-  return (urp ? '<i class="hc2-neb"></i><i class="hc2-meteor"><b></b><b></b></i><i class="hc2-band"></i>' : '') + '<i class="hc2-fr"></i>' + (urp ? '<i class="hc2-tj"></i>' : '')
+  return (r >= 4 ? '<i class="hc2-glow"></i>' : '') + (urp ? '<i class="hc2-neb"></i><i class="hc2-meteor"><b></b><b></b></i><i class="hc2-band"></i>' : '') + '<i class="hc2-fr"></i>' + (urp ? '<i class="hc2-tj"></i>' : '')
     + (r >= 5 ? '<i class="hc2-shine"></i>' : '') + (r >= 6 ? '<i class="hc2-tw"><b></b><b></b><b></b></i>' : '');
 }
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
