@@ -1916,21 +1916,33 @@ function drawPose(u, name, t, h, alpha) {
   else if (name.startsWith('idle')) { sy = 1 + 0.014 * Math.sin(t * 2.6); sx = 1 - 0.006 * Math.sin(t * 2.6); }   // thở
   else if (name === 'hit') { const e = 1 - eo(Math.min(1, t)); ox = -11 * e; rot = -0.06 * e; sy = 1 - 0.03 * e; }
   const LY = UR_LAYERS[u.id], hb = D.H * k * 0.5;   // hb: chiều cao thân trên màn hình
-  if (LY) urLayers(ctx, LY, 0, 0, hb, alpha, -1);
+  if (LY) urLayers(ctx, LY, 0, 0, hb, alpha, -1, name, u);
   ctx.save(); ctx.globalAlpha *= alpha; ctx.translate(ox, 0); ctx.rotate(rot); ctx.scale(sx, sy);
   ctx.drawImage(u.hurt > 0 ? brightImg(img) : img, -gx, -gy, img.width * k, img.height * k);
   ctx.filter = 'none'; ctx.restore();
-  if (LY) urLayers(ctx, LY, 0, 0, hb, alpha, 1);
+  if (LY) urLayers(ctx, LY, 0, 0, hb, alpha, 1, name, u);
   return true;
 }
 // UR tách lớp: nhân vật vẽ sạch + lớp vẽ tay chuyển động riêng (nền dưới chân chạy vòng, pháp bảo bay quanh người)
 //   ground: sheet art/sigfx (vòng lặp) đặt dưới chân; orbit: ảnh art/ultc bay vòng elip quanh thân (nửa sau vẽ sau lưng, mờ hơn)
 const UR_LAYERS = {
+  giaochu: { fan: { imgs: ['tt_sw_tru', 'tt_sw_luc', 'tt_sw_ham', 'tt_sw_tuyet'], cols: ['#ff3a3a', '#3aa8ff', '#b05aff', '#e8e8ff'], spread: 0.4, x: -0.16, y: 0.92, len: 0.64 } },
   hongquan: { ground: { sheet: 'hq_galaxy', w: 1.3, y: 0.0, spd: 0.18, a: 0.95 }, orbit: { img: 'hq_tablet', n: 3, rx: 0.62, ry: 0.12, y: 0.62, size: 0.34, spd: 0.45 } },
 };
-function urLayers(g, L, x, y, hb, alpha, side) {   // side -1: lớp sau thân; 1: lớp trước thân
+function urLayers(g, L, x, y, hb, alpha, side, pose, u) {   // side -1: lớp sau thân; 1: lớp trước thân; pose: dáng đang vẽ
   const T = performance.now() / 1000, c0 = ctx; ctx = g;   // sfxDraw/sigImg vẽ lên ctx toàn cục -> mượn tạm
   try {
+    const F = L.fan;   // quạt pháp bảo sau lưng (Thông Thiên: 4 kiếm mũi chĩa lên, toả ra ngoài)
+    if (F && side < 0 && !(u && u.side === 'h' && B && B.fx.some(f => f.k === 'sigx' && f.who === u.id && f.ult && f.t < 2.3))) {   // tuyệt kỹ: kiếm đã bay ra thành trận
+      const n = F.imgs.length, atk = pose === 'strike' ? 1 : pose === 'windup' ? -0.5 : 0, ult = pose === 'ult' || pose === 'skill';
+      for (let i = 0; i < n; i++) { const im = ucImg(F.imgs[i]); if (!im) continue;
+        const k = i - (n - 1) / 2, ang = k * F.spread + atk * 0.35 + Math.sin(T * 1.3 + i) * 0.03, L2 = hb * F.len * (ult ? 1.08 : 1), w = L2 * im.width / im.height;
+        const bx = x + hb * F.x + k * hb * 0.05 + atk * hb * 0.12, by = y - hb * F.y + Math.abs(k) * hb * 0.06 + Math.sin(T * 2 + i * 1.7) * hb * 0.025;
+        g.save(); g.translate(bx, by); g.rotate(ang);
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (ult ? 0.7 : 0.45) * (0.8 + 0.2 * Math.sin(T * 3 + i));
+        const gr = g.createRadialGradient(0, -L2 * 0.45, 0, 0, -L2 * 0.45, L2 * 0.5); gr.addColorStop(0, F.cols[i]); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(-L2 * 0.5, -L2, L2, L2 * 1.05);
+        g.globalCompositeOperation = 'source-over'; g.globalAlpha = alpha; g.drawImage(im, -w / 2, -L2 * 0.92, w, L2); g.restore(); }
+    }
     if (side < 0 && L.ground) { sfxImg(L.ground.sheet); sfxDraw(L.ground.sheet, T * L.ground.spd, x, y + hb * L.ground.y, hb * L.ground.w, { loop: 1, a: alpha * L.ground.a }); }
     const O = L.orbit; if (O) { const im = ucImg(O.img); if (im) for (let i = 0; i < O.n; i++) {
       const a = T * O.spd + i * TAU / O.n, front = Math.sin(a) > 0; if ((side > 0) !== front) continue;
@@ -4042,9 +4054,10 @@ function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + v�
 }
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
 const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
+const HD_FIX = { giaochu: 0.7 };   // màn chi tiết: chừa chỗ cho quạt kiếm sau lưng
 function hdScale(id) {   // màn chi tiết: phóng theo chiều cao THÂN (tướng có kiếm bay / thú cưỡi không bị nhỏ), cùng số đo với trong trận
   const D = window.HPOSE && HPOSE[poseDir(id)]; if (!D) return 1;
-  return Math.max(0.85, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1))).toFixed(3);
+  return Math.max(0.75, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1) * (HD_FIX[id] || 1))).toFixed(3);
 }
 function hdSkill(id, k) { const h = HEROES[id], a = ATK_STYLE[id] || {};
   return k === 'atk' ? { n: a.name || 'Đánh thường', d: a.desc || '' } : k === 'passive' ? { n: h.passive.name, d: h.passive.desc } : k === 'cap' ? capSkill(id) : { n: h[k].name, d: h[k].desc }; }
@@ -5105,8 +5118,9 @@ SIG.nata = {
 
 // ---------------------------------------------------------------- THÔNG THIÊN GIÁO CHỦ (UR)
 const TT_SW = [['Tru Tiên', 'none', '#ff3a3a'], ['Lục Tiên', 'hue-rotate(200deg) saturate(1.4)', '#3aa8ff'], ['Hãm Tiên', 'hue-rotate(260deg) saturate(1.5)', '#b05aff'], ['Tuyệt Tiên', 'grayscale(1) brightness(1.5)', '#e8e8ff']];
+const TT_IMG = ['tt_sw_tru', 'tt_sw_luc', 'tt_sw_ham', 'tt_sw_tuyet'];
 SIG.giaochu = {
-  sheets: ['tt_slash', 'tt_cuts', 'tt_land', 'tt_array', 'tt_final'], need: ['tru_sword'],
+  sheets: ['tt_slash', 'tt_cuts', 'tt_land', 'tt_array', 'tt_final'], need: ['tt_sw_tru', 'tt_sw_luc', 'tt_sw_ham', 'tt_sw_tuyet'],
   // Tiểu chiêu: lưỡi kiếm khí lưỡi liềm đỏ quét ngang đám quái + vệt chém chéo
   small(u, sk, tgt) {
     const f0 = sk.fx[0], P = sigPt(u, 110, tgt);
@@ -5125,7 +5139,7 @@ SIG.giaochu = {
     const per = f0.mult * 0.2, fin = f0.mult * 0.2;   // 4 nhịp × 20% + nổ cuối 20% = đúng tổng
     const inTrap = () => B.enemies.filter(e => !e.dead && Math.pow((e.x - P.x) / (rx + 20), 2) + Math.pow((e.y - P.y) / (ry + 20), 2) <= 1);
     B.cam = { x: P.x, y: P.y - 40, t: 0, dur: 2.6 };
-    sigFx({ ult: 1, dur: 3.0, cuts: [], upd(f, dt) {
+    sigFx({ ult: 1, who: 'giaochu', dur: 3.0, cuts: [], upd(f, dt) {
       for (let i = 0; i < 4; i++) if (f.t >= 0.55 + i * 0.05) sigOnce(f, 'land' + i, () => { const c = corners[i];
         sfxOnce('tt_land', c.x, c.y - 10, 190, 0.5, { add: 1, sy: 0.9, filter: TT_SW[i][1] !== 'none' ? TT_SW[i][1] : null }); B.shake = Math.max(B.shake, 0.4); sfx('boom'); B.decals.push({ x: c.x, y: c.y + 4, r: 40, t: 0, dur: 4 }); });
       for (let k = 0; k < 4; k++) if (f.t >= 1.0 + k * 0.3) sigOnce(f, 'cut' + k, () => { for (const e of inTrap()) dealDmg(u, e, per, 'ult'); B.shake = Math.max(B.shake, 0.3); sfx('hit'); });
@@ -5144,7 +5158,7 @@ SIG.giaochu = {
         const sx = u.x + (i - 1.5) * 34, sy = u.y - h - 40, eq = 1 - Math.pow(1 - q, 3);
         let x = sx + (c.x - sx) * eq, y = (sy + (c.y - 70 - sy) * eq) - Math.sin(q * Math.PI) * 80, rot = (q < 1 ? (1 - q) * (i < 2 ? -1.2 : 1.2) : 0), S = 96;
         if (t > 2.05) { const k = Math.min(1, (t - 2.05) / 0.2); x += (P.x - x) * k; y += (P.y - 90 - y) * k; S *= 1 - 0.4 * k; }
-        if (t < 2.3) { sigGlow(x, y, 54, TT_SW[i][2], 0.6 * fade); sigImg('tru_sword', x, y, S * 0.42, rot, fade, TT_SW[i][1] !== 'none' ? TT_SW[i][1] : null); }
+        if (t < 2.3) { sigGlow(x, y, 54, TT_SW[i][2], 0.6 * fade); sigImg(TT_IMG[i], x, y, S * 0.3, rot + Math.PI, fade); }   // 4 kiếm vẽ riêng (mũi vẽ hướng lên -> xoay ngược cho mũi chĩa xuống)
         if (q >= 1 && t < 2.05) { ctx.save(); ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff'; ctx.font = '800 12px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = TT_SW[i][2];
           ctx.strokeText(TT_SW[i][0], c.x, c.y + 18); ctx.fillText(TT_SW[i][0], c.x, c.y + 18); ctx.restore(); }
       }
