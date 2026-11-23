@@ -1946,7 +1946,7 @@ const UR_LAYERS = {
     orbit: { img: 'tl_kimcang', n: 1, rx: 0.5, ry: 0.1, y: 0.42, size: 0.13, spd: 0.7 } },
   // lớp chung: items [{ side: -1 sau | 1 trước, img (ultc) | sheet (sigfx, chạy vòng), x, y (theo chiều cao thân, y đo từ chân lên), w (rộng), spd (xoay vòng/giây), sway (lắc), bob, add, a, ay, spdSheet }]
   nuoa: { ground: { sheet: 'nuoa_cloud', w: 1.2, y: 0.0, spd: 0.15, a: 0.9 },
-    items: [{ side: -1, img: 'nuoa_rainbow', y: 0.66, w: 0.95, spd: 0.04, a: 0.9, glow: '#ffc0f0' }],
+    items: [{ side: -1, img: 'nuoa_rainbow', x: -0.04, y: 0.84, w: 0.5, spd: 0.04, a: 0.85 }],
     orbit: { imgs: ['nuoa_st0', 'nuoa_st1', 'nuoa_st2', 'nuoa_st3', 'nuoa_st4'], n: 5, rx: 0.55, ry: 0.11, y: 0.5, size: 0.1, spd: 0.5, glow: 'rgba(255,220,255,0.9)' },
     float: { img: 'nuoa_ball', x: 0.42, y: 0.62, size: 0.16 } },
   tiepdan: { ground: { sheet: 'td_ground', w: 1.25, y: 0.0, spd: 0.25, a: 0.9 },
@@ -4204,7 +4204,7 @@ function showHeroDetail(id, tab) {
     <div class="hd5-stage" id="hdStage" title="Bấm để xem ra đòn">
       ${DOM_GROUP(id) ? `<img class="hd5-dom" src="art/ur/${DOM_ART[DOM_GROUP(id)]}.webp" onerror="this.remove()" alt="">` : ''}
       <div class="hd5-glow"></div>
-      <img class="hd5-aura" src="art/ssrfx/aura_${id}.webp" onerror="this.remove()" alt="">
+      ${UR_LAYERS[id] ? '' : `<img class="hd5-aura" src="art/ssrfx/aura_${id}.webp" onerror="this.remove()" alt="">`}
       ${TIER_RANK[h.tier] >= 4 ? `<div class="hd5-pts">${Array.from({ length: 14 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--d:${(i * 0.53) % 3.2}s;--s:${0.6 + (i % 4) * 0.25}"></i>`).join('')}</div>` : ''}
       <div class="hd5-hero ${o ? '' : 'off'}" style="--hs:${hdScale(id)}"><img class="p1" src="art/poses/${pd}/idle1.webp" onerror="this.onerror=null;this.src='${fullImg(id, 240)}'" alt=""><img class="p2" src="art/poses/${pd}/idle2.webp" onerror="this.remove()" alt=""><img class="pa" alt=""></div>
     </div>
