@@ -123,7 +123,7 @@ function drawEnemyPose(u, alpha) {
   ctx.filter = 'none'; ctx.restore(); return true;
 }
 const POSE_NAMES = ['windup', 'strike', 'skill', 'ult', 'idle1', 'idle2', 'hit'];
-const POSE_IDS = ['hongquan','nguyenthuy','ngochoang','dilac','quangthanh','kimlinh','chanvu','vuongmau','phohien','daibang','ngocdinh','hoangbao','bachnhan','hattu','moctra','nganggiac','kimmaohong','loicong','ngoctho','linhcam','maonhat','giaochu','khongtuyen','nhiendang','thaisu','hoangmi','vanthu','quynhtieu','hoangthienhoa','viho','thachco','bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
+const POSE_IDS = ['nuoa','tiepdan','chuande','nhulai','hongquan','nguyenthuy','ngochoang','dilac','quangthanh','kimlinh','chanvu','vuongmau','phohien','daibang','ngocdinh','hoangbao','bachnhan','hattu','moctra','nganggiac','kimmaohong','loicong','ngoctho','linhcam','maonhat','giaochu','khongtuyen','nhiendang','thaisu','hoangmi','vanthu','quynhtieu','hoangthienhoa','viho','thachco','bodetosu','tranguyentu','hoangphiho','dienmau','thanhnguutinh','longvuong','dangthienngoc','kimtra','hachhung','thodia','ngokhong','batgioi','nata','ngumavuong','honghainhi','quanam','datky','duongtang','duongtien','khuongtanha','vantieu','trieucongminh','thailaoquan','satang','thietphien','litinh','hangnga','bachcot','loichantu','thohanhton','thaiatchannhan','thancongbao','longnu','kimgiac','tieubachlong','thaibachkimtinh','culinhthan','hoangphongquai'];   // tướng đã có tư thế chính (thêm id khi đã vẽ xong game/art/poses/<id>/)
 const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tướng, chỉ nạp khi tướng ra trận (tiết kiệm ~30 MB lúc khởi động)
 function ensureHeroAssets(ids) {
   try { applySkins(); } catch (e) {}
@@ -1900,7 +1900,7 @@ function poseFor(u) {
 //   Hiển thị = 108px × look.size × SIZE_K × (UR 1,08). SIZE_K bù phần thú cưỡi/toà để NGƯỜI luôn cùng cỡ.
 //   SIZE_K[id] = tổng chiều cao khối / chiều cao người (chỉ tướng cưỡi thú, ngồi toà, áo dài lơ lửng, dáng khom). Kiểm bằng tools/size_sheet.py:
 //   đỉnh đầu NGƯỜI phải chạm vạch đỏ. Vẽ lại tướng có thú cưỡi -> chạy lại size_sheet.py và chỉnh số của tướng đó.
-const SIZE_K = { giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 1.2, hongquan: 1.12, kimgiac: 1.1, thaisu: 1.12 };
+const SIZE_K = { nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
 const heroK = id => (SIZE_K[id] || 1) * (isUR(id) ? 1.08 : 1);
 const HFIX = new Proxy({}, { get: (_, id) => typeof id === 'string' && HEROES[id] ? heroK(id) : undefined });   // tương thích chỗ cũ dùng HFIX[id]
 const _bright = new WeakMap();
@@ -1937,17 +1937,38 @@ const UR_LAYERS = {
   thailaoquan: { halo: { img: 'tl_taiji', qi: 'tl_qi', x: -0.1, y: 0.86, size: 0.8, spd: 0.12 },
     float: { img: 'tl_lo', smoke: 'tl_smoke', x: 0.42, y: 0.74, size: 0.17 },
     orbit: { img: 'tl_kimcang', n: 1, rx: 0.5, ry: 0.1, y: 0.42, size: 0.13, spd: 0.7 } },
+  // lớp chung: items [{ side: -1 sau | 1 trước, img (ultc) | sheet (sigfx, chạy vòng), x, y (theo chiều cao thân, y đo từ chân lên), w (rộng), spd (xoay vòng/giây), sway (lắc), bob, add, a, ay, spdSheet }]
+  nuoa: { ground: { sheet: 'nuoa_cloud', w: 1.2, y: 0.0, spd: 0.15, a: 0.9 },
+    items: [{ side: -1, img: 'nuoa_rainbow', y: 0.66, w: 0.95, spd: 0.04, a: 0.9, glow: '#ffc0f0' }],
+    orbit: { imgs: ['nuoa_st0', 'nuoa_st1', 'nuoa_st2', 'nuoa_st3', 'nuoa_st4'], n: 5, rx: 0.55, ry: 0.11, y: 0.5, size: 0.1, spd: 0.5, glow: 'rgba(255,220,255,0.9)' },
+    float: { img: 'nuoa_ball', x: 0.42, y: 0.62, size: 0.16 } },
+  tiepdan: { ground: { sheet: 'td_ground', w: 1.25, y: 0.0, spd: 0.25, a: 0.9 },
+    items: [{ side: -1, img: 'td_rays', y: 0.72, w: 0.9, spd: 0.02, a: 0.55 }, { side: 1, sheet: 'td_petals', y: 0.55, w: 0.95, spdSheet: 0.35, add: 1, a: 0.8 }] },
+  chuande: { items: [{ side: -1, img: 'cd_tail', y: 0.62, w: 1.15, sway: 0.04, a: 1, glow: '#9fffc0' }, { side: -1, img: 'cd_arms', y: 0.78, w: 0.9, sway: 0.06, a: 0.95 },
+      { side: 1, sheet: 'cd_feathers', y: 0.5, w: 0.9, spdSheet: 0.4, add: 1, a: 0.75 }],
+    float: { img: 'cd_tree', x: -0.42, y: 0.62, size: 0.2 } },
+  nhulai: { ground: { sheet: 'nl_lotus', w: 1.0, y: 0.0, spd: 0.15, a: 0.9 },
+    items: [{ side: -1, img: 'nl_halo', y: 0.68, w: 1.0, spd: 0.015, a: 0.95, glow: '#ffd76a' }, { side: -1, img: 'nl_ring', y: 0.68, w: 1.12, spd: -0.06, add: 1, a: 0.9 },
+      { side: 1, sheet: 'nl_glyphs', x: 0.2, y: 0.6, w: 0.5, spdSheet: 0.5, add: 1, a: 0.8 }] },
+  nguyenthuy: { items: [{ side: -1, img: 'nt_rays', y: 0.7, w: 0.95, spd: 0.02, a: 0.5 }, { side: -1, sheet: 'nt_banner', x: -0.42, y: 0.55, w: 0.75, spdSheet: 0.6, a: 1 }] },
   hongquan: { ground: { sheet: 'hq_galaxy', w: 1.3, y: 0.0, spd: 0.18, a: 0.95 }, orbit: { img: 'hq_tablet', n: 3, rx: 0.62, ry: 0.12, y: 0.62, size: 0.34, spd: 0.45 } },
 };
 function urLayers(g, L, x, y, hb, alpha, side, pose, u) {   // side -1: lớp sau thân; 1: lớp trước thân; pose: dáng đang vẽ
   const T = performance.now() / 1000, c0 = ctx; ctx = g;   // sfxDraw/sigImg vẽ lên ctx toàn cục -> mượn tạm
   try {
+    for (const it of L.items || []) { if ((it.side || -1) !== side) continue;   // lớp chung (hào quang, cờ, cánh tay, lông vũ...)
+      const ult = pose === 'ult' || pose === 'skill', cx = x + hb * (it.x || 0), cy = y - hb * it.y + (it.bob ? Math.sin(T * 1.6) * hb * it.bob : 0), S = hb * it.w * (ult && it.img ? 1.05 : 1);
+      if (it.glow) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (ult ? 0.6 : 0.35); const gr = g.createRadialGradient(cx, cy, S * 0.1, cx, cy, S * 0.6); gr.addColorStop(0, it.glow); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(cx - S, cy - S, S * 2, S * 2); g.restore(); }
+      if (it.sheet) { sfxImg(it.sheet); sfxDraw(it.sheet, T * (it.spdSheet || 0.3), cx, cy, S, { loop: 1, add: it.add, a: alpha * (it.a || 1), ay: it.ay }); continue; }
+      const im = ucImg(it.img); if (!im) continue; const w = S, h = S * im.height / im.width;
+      g.save(); g.translate(cx, cy); g.rotate((it.spd ? T * it.spd * TAU * (ult ? 2 : 1) : 0) + (it.sway ? Math.sin(T * 1.2) * it.sway : 0));
+      if (it.add) g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (it.a || 1); g.drawImage(im, -w / 2, -h / 2, w, h); g.restore(); }
     const HL = L.halo;   // vầng hào quang xoay sau lưng (Thái Thượng: Thái Cực Đồ) + khí âm dương bay ra vào
     if (HL && side < 0) { const im = ucImg(HL.img); if (im) { const S = hb * HL.size, cx = x + hb * HL.x, cy = y - hb * HL.y, ult = pose === 'ult' || pose === 'skill';
-      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (ult ? 0.7 : 0.4);
-      const gr = g.createRadialGradient(cx, cy, S * 0.2, cx, cy, S * 0.75); gr.addColorStop(0, 'rgba(160,255,200,0.6)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(cx - S, cy - S, S * 2, S * 2); g.restore();
-      g.save(); g.translate(cx, cy); g.rotate(T * HL.spd * (ult ? 3 : 1)); g.globalAlpha = alpha * 0.92; g.drawImage(im, -S / 2, -S / 2, S, S); g.restore();
-      if (HL.qi) { sfxImg(HL.qi); sfxDraw(HL.qi, T * 0.35, cx, cy, S * 1.35, { loop: 1, add: 1, a: alpha * (ult ? 1 : 0.75), rot: -T * 0.2 }); } } }
+      g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = alpha * (ult ? 0.35 : 0.15);
+      const gr = g.createRadialGradient(cx, cy, S * 0.2, cx, cy, S * 0.75); gr.addColorStop(0, 'rgba(160,255,200,0.5)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(cx - S, cy - S, S * 2, S * 2); g.restore();
+      g.save(); g.translate(cx, cy); g.rotate(T * HL.spd * (ult ? 3 : 1)); g.globalAlpha = alpha; g.drawImage(im, -S / 2, -S / 2, S, S); g.restore();
+      if (HL.qi) { sfxImg(HL.qi); sfxDraw(HL.qi, T * 0.35, cx, cy, S * 1.35, { loop: 1, add: 1, a: alpha * (ult ? 0.7 : 0.45), rot: -T * 0.2 }); } } }
     const FL = L.float;   // pháp bảo lơ lửng cạnh vai (Thái Thượng: lò Bát Quái phun khói)
     if (FL && side > 0) { const im = ucImg(FL.img); if (im) { const S = hb * FL.size, fx = x + hb * FL.x, fy = y - hb * FL.y + Math.sin(T * 1.6) * hb * 0.015;
       if (FL.smoke) { sfxImg(FL.smoke); sfxDraw(FL.smoke, T * 0.8, fx, fy - S * 0.35, S * 1.3, { loop: 1, ay: 0.95, add: 1, a: alpha * 0.85 }); }
@@ -1964,11 +1985,12 @@ function urLayers(g, L, x, y, hb, alpha, side, pose, u) {   // side -1: lớp sa
         g.globalCompositeOperation = 'source-over'; g.globalAlpha = alpha; g.drawImage(im, -w / 2, -L2 * 0.92, w, L2); g.restore(); }
     }
     if (side < 0 && L.ground) { sfxImg(L.ground.sheet); sfxDraw(L.ground.sheet, T * L.ground.spd, x, y + hb * L.ground.y, hb * L.ground.w, { loop: 1, a: alpha * L.ground.a }); }
-    const O = L.orbit; if (O) { const im = ucImg(O.img); if (im) for (let i = 0; i < O.n; i++) {
+    const busy = u && u.side === 'h' && B && B.fx.some(f => f.k === 'sigx' && f.who === u.id && f.ult);   // tuyệt kỹ đang dùng chính pháp bảo bay -> ẩn vòng bay
+    const O = !busy && L.orbit; if (O) for (let i = 0; i < O.n; i++) { const im = ucImg(O.imgs ? O.imgs[i % O.imgs.length] : O.img); if (!im) continue; {
       const a = T * O.spd + i * TAU / O.n, front = Math.sin(a) > 0; if ((side > 0) !== front) continue;
       const ox = Math.cos(a) * hb * O.rx, oy = y - hb * O.y + Math.sin(a) * hb * O.ry + Math.sin(T * 2 + i) * hb * 0.02, d = 0.82 + 0.18 * Math.sin(a), S = hb * O.size * d;
       g.save(); g.globalAlpha = alpha * (front ? 1 : 0.55);
-      g.globalCompositeOperation = 'lighter'; g.globalAlpha *= 0.35; const gr = g.createRadialGradient(x + ox, oy, 0, x + ox, oy, S * 0.9); gr.addColorStop(0, 'rgba(255,220,140,0.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x + ox - S, oy - S, S * 2, S * 2);
+      g.globalCompositeOperation = 'lighter'; g.globalAlpha *= 0.35; const gr = g.createRadialGradient(x + ox, oy, 0, x + ox, oy, S * 0.9); gr.addColorStop(0, O.glow || 'rgba(255,220,140,0.9)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x + ox - S, oy - S, S * 2, S * 2);
       g.globalCompositeOperation = 'source-over'; g.globalAlpha = alpha * (front ? 1 : 0.55); g.drawImage(im, x + ox - S * 0.5 * im.width / im.height, oy - S / 2, S * im.width / im.height, S); g.restore(); } }
   } finally { ctx = c0; }
 }
@@ -3016,6 +3038,7 @@ const SSR_FX = {
 const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low' && (HEROES[u.id].rar === 'SSR' || ((S.owned[u.id] || {}).star || 0) >= 5); }   // SR có bộ VFX (Ngưu Ma) giữ khi thức tỉnh
 function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
+  if (UR_LAYERS[u.id]) return;   // UR tách lớp đã có hào quang riêng sau đầu -> bỏ vòng lớn quanh người cho đỡ rối
   const im = sfImg('aura_' + u.id); if (!im) return; const full = u.mp >= 100 ? 1 : 0;
   const T = window.AURA_C0 && (AURA_C0[poseDir(u.id)] || AURA_C0[u.id]), tc = T && (T[u.pzN] || T.idle1); if (!tc) return;
   u.auC = u.auC || tc.slice(); u.auC[0] += (tc[0] - u.auC[0]) * 0.25; u.auC[1] += (tc[1] - u.auC[1]) * 0.25;   // trượt mượt theo dáng
@@ -4077,7 +4100,7 @@ const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat
 const HD_FIX = { giaochu: 0.7, thailaoquan: 0.74 };   // màn chi tiết: chừa chỗ cho quạt kiếm sau lưng
 function hdScale(id) {   // màn chi tiết: phóng theo chiều cao THÂN (tướng có kiếm bay / thú cưỡi không bị nhỏ), cùng số đo với trong trận
   const D = window.HPOSE && HPOSE[poseDir(id)]; if (!D) return 1;
-  return Math.max(0.75, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1) * (HD_FIX[id] || 1))).toFixed(3);
+  return Math.max(0.75, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1) * (HD_FIX[id] || (UR_LAYERS[id] ? 0.74 : 1)))).toFixed(3);
 }
 function hdSkill(id, k) { const h = HEROES[id], a = ATK_STYLE[id] || {};
   return k === 'atk' ? { n: a.name || 'Đánh thường', d: a.desc || '' } : k === 'passive' ? { n: h.passive.name, d: h.passive.desc } : k === 'cap' ? capSkill(id) : { n: h[k].name, d: h[k].desc }; }
@@ -4996,7 +5019,7 @@ loadArt().then(() => {
 // =====================================================================
 const SIG = {};
 // [cột, hàng, rộng ô, cao ô] — tools/make_sigfx.py in ra
-const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
+const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } }   // gọi khi tướng ra trận
@@ -5018,7 +5041,7 @@ function sfxDraw(n, p, x, y, S, o) {
 function sfxOnce(n, x, y, S, dur, o) { sigFx({ dur, draw(f, p) { sfxDraw(n, p, x, y, S, o); } }); }
 function sigFx(o) { const f = Object.assign({ k: 'sigx', t: 0, done: {} }, o); B.fx.push(f); return f; }
 function sigOnce(f, k, fn) { if (!f.done[k]) { f.done[k] = 1; fn(); } }
-function sigPt(u, r, tgt) { return bestCluster(r) || (tgt ? { x: tgt.x, y: tgt.y } : { x: u.x + 220 * (u.f || 1), y: u.y }); }
+function sigPt(u, r, tgt) { const P = bestCluster(r) || (tgt ? { x: tgt.x, y: tgt.y } : { x: u.x + 220 * (u.f || 1), y: u.y }); return { x: Math.min(P.x, VIEW_R() - 150), y: P.y }; }   // không sát mép phải (hiệu ứng lớn bị cắt)
 function sigImg(n, x, y, S, rot, a, filter) {
   const im = ucImg(n); if (!im) return; const w = S, h = S * im.height / im.width;
   ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); ctx.globalAlpha = a == null ? 1 : a; if (filter) ctx.filter = filter;
@@ -5187,6 +5210,116 @@ SIG.giaochu = {
     snd('gong');
   },
 };
+
+// ---------------------------------------------------------------- HỒNG QUÂN LÃO TỔ (UR+)
+// Tuyệt kỹ HỒNG MÔNG KHAI THIÊN: (Pháp Tướng mở màn) -> rạch tím xé chéo sân -> khe hư không mở, tinh hà xoáy hút quái (30% sát thương rải đều)
+//   + 3 Ngọc Điệp lao vào khe -> khe khép, tinh hà nổ chiếu tia (70% + choáng). Có vực Thái Cực Đồ: khe mở lâu hơn 0,5 giây, hút mạnh hơn.
+// Tiểu chiêu HƯ KHÔNG CHỈ: vết rạch nhỏ tại chỗ quái đông, khe tí hon hé ra rồi bắn chùm sao.
+SIG.hongquan = {
+  sheets: ['hq_slash', 'hq_rift_open', 'hq_rift_loop', 'hq_pull', 'hq_burst'], need: ['hq_tablet'],
+  small(u, sk, tgt) {
+    const f0 = sk.fx[0], P = sigPt(u, 110, tgt);
+    sigFx({ dur: 1.0, upd(f) { if (f.t >= 0.45) sigOnce(f, 'hit', () => { runFx(u, { ...f0, P }, tgt, 'skill'); B.shake = Math.max(B.shake, 0.35); sfx('boom'); }); },
+      draw(f) { const t = f.t;
+        sfxDraw('hq_slash', t / 0.3, P.x, P.y - 50, 190, { add: 1 });
+        if (t > 0.18 && t < 0.55) sfxDraw('hq_rift_open', (t - 0.18) / 0.3, P.x, P.y - 50, 170, { a: fadeOut(t, 0.42, 0.13) });
+        if (t > 0.4) sfxDraw('hq_burst', (t - 0.4) / 0.6, P.x, P.y - 50, 230, { add: 1 });
+      } });
+    snd('whoosh');
+  },
+  ult(u, sk, tgt) {
+    const f0 = sk.fx.find(f => f.t === 'aoe'), P0 = sigPt(u, 170, tgt), h = spriteH(u);
+    const P = { x: Math.min(P0.x, VIEW_R() - 200), y: clamp(P0.y, LANE_Y0 + 40, LANE_Y1 - 20) }, cy = P.y - 60;
+    const dom = B.dom && B.dom.id === 'tamthanh', T0 = 1.1, OPEN = T0 + 0.25, CLOSE = OPEN + 1.25 + (dom ? 0.5 : 0), END = CLOSE + 1.0;
+    const ticks = 6, tickM = f0.mult * 0.3 / ticks, finM = f0.mult * 0.7;
+    for (const f of sk.fx) if (f.t !== 'aoe') runFx(u, f, tgt, 'ult');   // bùa +30% công cả đội
+    sigFx({ ult: 1, who: u.id, dur: END, upd(f, dt) {
+      const t = f.t;
+      if (t >= T0) sigOnce(f, 'slash', () => { B.hitstop = Math.max(B.hitstop || 0, 0.08); B.shake = Math.max(B.shake, 0.4); snd('whoosh', 1, 0.6); });
+      if (t >= OPEN && t < CLOSE) {   // hút về khe
+        const k = (dom ? 2.6 : 1.8) * dt;
+        for (const e of B.enemies) if (!e.dead) { const m = e.boss ? 0.15 : 1; e.x += (P.x - e.x) * k * m; e.y += (P.y - e.y) * k * m * 0.6; }
+        for (let i = 0; i < ticks; i++) if (t >= OPEN + (CLOSE - OPEN) * (i + 0.5) / ticks) sigOnce(f, 'tk' + i, () => { for (const e of B.enemies) if (!e.dead && Math.hypot(e.x - P.x, (e.y - P.y) * 1.6) < 260) dealDmg(u, e, tickM, 'ult'); });
+      }
+      if (t >= CLOSE + 0.12) sigOnce(f, 'fin', () => { for (const e of B.enemies) if (!e.dead && Math.hypot(e.x - P.x, (e.y - P.y) * 1.4) < 300) { dealDmg(u, e, finM, 'ult'); if (!e.dead) e.stun = Math.max(e.stun || 0, f0.stun || 2.5); }
+        B.shake = 1.1; B.flash = 0.4; sfx('boom'); snd('thunder', 0.9, 0.6); B.decals.push({ x: P.x, y: P.y + 4, r: 180, t: 0, dur: 5 }); particles(P.x, cy, '#d8a0ff', 36, 420, 6); });
+    }, draw(f) {
+      const t = f.t, W2 = 470;
+      sigDim(0.55 * Math.min(1, Math.max(0, (t - T0 + 0.3) / 0.3)) * fadeOut(t, CLOSE + 0.6, 0.5), '#06020f');   // trời tối lại
+      if (t >= T0 && t < T0 + 0.5) sfxDraw('hq_slash', (t - T0) / 0.35, P.x, cy, W2 * 1.1, { add: 1 });
+      if (t >= OPEN && t < OPEN + 0.5) sfxDraw('hq_rift_open', (t - OPEN) / 0.5, P.x, cy, W2);
+      if (t >= OPEN + 0.45 && t < CLOSE + 0.1) {
+        sigGlow(P.x, cy, 260, 'rgba(150,80,255,0.9)', 0.45);
+        sfxDraw('hq_rift_loop', t * 1.2, P.x, cy, W2, { loop: 1, a: fadeOut(t, CLOSE - 0.05, 0.15) });
+        sfxDraw('hq_pull', t * 1.6, P.x, cy, W2 * 1.2, { loop: 1, add: 1, a: 0.85 });
+      }
+      for (let i = 0; i < 3; i++) {   // 3 Ngọc Điệp từ người Hồng Quân lao vào khe
+        const s0 = OPEN + 0.3 + i * 0.15, q = (t - s0) / 0.55; if (q < 0 || q > 1) continue;
+        const e = q * q * (3 - 2 * q), sx = u.x + (i - 1) * 40, sy = u.y - h * 0.8;
+        const x = sx + (P.x - sx) * e, y = sy + (cy - sy) * e - Math.sin(q * Math.PI) * 90;
+        sigGlow(x, y, 50, 'rgba(255,220,140,0.9)', 0.7 * (1 - q * 0.5)); sigImg('hq_tablet', x, y, 26 * (1 - 0.5 * e), (1 - e) * 0.5 + q * 3, 1 - q * 0.3);
+      }
+      if (t >= CLOSE) sfxDraw('hq_burst', (t - CLOSE) / 1.0, P.x, cy, 560, { add: 1 });
+    } });
+    snd('gong');
+  },
+};
+
+// ---------------------------------------------------------------- UR ĐỢT 2 (tuyệt kỹ chạy sau Pháp Tướng mở màn ~1,1 giây; sát thương đúng mô tả qua runFx)
+function sigUltAt(u, sk, tgt, P, hitT) {   // chạy toàn bộ fx của tuyệt kỹ tại điểm P đúng lúc hitT
+  return f => { if (f.t >= hitT) sigOnce(f, 'hit', () => { for (const x of sk.fx) runFx(u, x.at === 'cluster' ? { ...x, P } : x, tgt, 'ult'); B.shake = Math.max(B.shake, 0.9); B.flash = 0.3; sfx('boom'); }); };
+}
+// Nữ Oa — Luyện Thạch Bổ Thiên: trời nứt trên đầu quái -> 5 đá ngũ sắc bay vào -> cầu vồng vá trời, ánh sáng giáng xuống
+SIG.nuoa = { sheets: ['nuoa_sky', 'nuoa_cloud'], need: ['nuoa_st0', 'nuoa_st1', 'nuoa_st2', 'nuoa_st3', 'nuoa_st4'],
+  ult(u, sk, tgt) {
+    const P = sigPt(u, 170, tgt), sy = P.y - 230, h = spriteH(u), T0 = 1.0;
+    sigFx({ ult: 1, who: u.id, dur: T0 + 2.0, upd: sigUltAt(u, sk, tgt, P, T0 + 1.25), draw(f) {
+      const t = f.t - T0; if (t < 0) return;
+      sigDim(0.45 * Math.min(1, t / 0.3) * fadeOut(t, 1.5, 0.5));
+      sfxDraw('nuoa_sky', t / 1.6, P.x, sy, 520, { add: 1 });
+      for (let i = 0; i < 5; i++) { const q = (t - 0.35 - i * 0.08) / 0.5; if (q < 0 || q > 1) continue;
+        const sx = u.x + (i - 2) * 30, s0y = u.y - h * 0.6, x = sx + (P.x - sx) * q, y = s0y + (sy - s0y) * q - Math.sin(q * Math.PI) * 120;
+        sigGlow(x, y, 40, 'rgba(255,230,255,0.9)', 0.8); sigImg('nuoa_st' + i, x, y, 30, q * 6, 1); }
+      if (t > 1.2) { const q = Math.min(1, (t - 1.2) / 0.3); sigGlow(P.x, P.y - 60, 260, 'rgba(255,200,240,0.9)', 0.8 * (1 - Math.max(0, (t - 1.5) / 0.5))); }
+    } });
+    snd('magic');
+  } };
+// Tiếp Dẫn — Thập Nhị Phẩm Kim Liên: sen vàng 12 cánh nở giữa sân, mỗi vòng cánh bừng thêm tia sáng -> hồi máu + khiên + kim quang
+SIG.tiepdan = { sheets: ['td_bloom', 'td_petals', 'td_ground'],
+  ult(u, sk, tgt) {
+    const P = sigPt(u, 170, tgt), cx = (u.x + P.x) / 2, cy = Math.min(u.y, P.y) - 150, T0 = 1.0;
+    sigFx({ ult: 1, who: u.id, dur: T0 + 2.2, upd: sigUltAt(u, sk, tgt, P, T0 + 1.3), draw(f) {
+      const t = f.t - T0; if (t < 0) return;
+      sigDim(0.4 * Math.min(1, t / 0.3) * fadeOut(t, 1.7, 0.5), '#0c0800');
+      sfxDraw('td_bloom', t / 1.4, cx, cy, 440, { add: 1, a: fadeOut(t, 1.6, 0.6) });
+      if (t > 1.2) sfxDraw('td_petals', t * 0.6, cx, cy + 120, 620, { loop: 1, add: 1, a: fadeOut(t, 1.6, 0.6) });
+    } });
+    snd('heal');
+  } };
+// Chuẩn Đề — Ngũ Sắc Thần Quang: đuôi khổng tước bừng sáng, năm dải sáng quét ngang sân
+SIG.chuande = { sheets: ['cd_sweep', 'cd_feathers'],
+  ult(u, sk, tgt) {
+    const P = sigPt(u, 170, tgt), T0 = 1.0, L = Math.max(500, P.x - u.x + 260);
+    sigFx({ ult: 1, who: u.id, dur: T0 + 1.8, upd: sigUltAt(u, sk, tgt, P, T0 + 0.6), draw(f) {
+      const t = f.t - T0; if (t < 0) return;
+      sigDim(0.4 * Math.min(1, t / 0.25) * fadeOut(t, 1.2, 0.5));
+      sfxDraw('cd_sweep', t / 1.1, u.x + L / 2, P.y - 50, L, { add: 1, rot: Math.atan2(P.y - u.y, L) * 0.5 });
+      if (t > 0.5) sfxDraw('cd_feathers', t * 0.8, P.x, P.y - 70, 360, { loop: 1, add: 1, a: fadeOut(t, 1.2, 0.5) });
+    } });
+    snd('whoosh');
+  } };
+// Như Lai — Ngũ Hành Sơn: bàn tay Phật khổng lồ giáng xuống hoá núi đè quái
+SIG.nhulai = { sheets: ['nl_palm', 'nl_glyphs'],
+  ult(u, sk, tgt) {
+    const P = sigPt(u, 170, tgt), T0 = 1.0;
+    sigFx({ ult: 1, who: u.id, dur: T0 + 2.0, upd: sigUltAt(u, sk, tgt, P, T0 + 0.95), draw(f) {
+      const t = f.t - T0; if (t < 0) return;
+      sigDim(0.45 * Math.min(1, t / 0.3) * fadeOut(t, 1.4, 0.5), '#0c0800');
+      sfxDraw('nl_palm', t / 1.6, P.x, P.y + 30, 420, { ay: 0.92 });
+      if (t > 0.9) sfxDraw('nl_glyphs', t * 0.7, P.x, P.y - 40, 360, { loop: 1, add: 1, a: fadeOut(t, 1.4, 0.5) });
+    } });
+    snd('gong');
+  } };
 
 // </SIG>
 // Cho phép chạy thử tự động (không ảnh hưởng game)

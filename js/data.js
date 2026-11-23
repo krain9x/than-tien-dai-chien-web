@@ -1122,7 +1122,7 @@ const DOMAIN = {
 (function urPlus() {
   TIER_ORDER.unshift('UR+'); TIER_RANK['UR+'] = 7; TIER_CLASS['UR+'] = 'SSR'; TIER_BASE['UR+'] = 1.32; GACHA_TIER_W['UR+'] = 0;
   STAR_MUL_R['UR+'] = [1, 1.28, 1.6, 2.05, 2.8, 3.45]; STAR_COST['UR+'] = [20, 40, 60, 90, 130]; DUP_SHARDS['UR+'] = 20;
-  HEROES.hongquan = {"name": "Hồng Quân Lão Tổ", "title": "Đạo Tổ · Sư phụ Tam Thanh", "src": "Phong Thần Diễn Nghĩa", "role": "tran", "el": "tho", "fac": "dao", "rar": "SSR", "tier": "UR+", "hp": 1550, "atk": 112, "def": 70, "aspd": 0.9, "range": 195, "move": 150, "ranged": true, "proj": "light", "look": {"style": "buns", "skin": "#ffe0c8", "hair": "#eeeeee", "outfit": "#5a2a8a", "outfit2": "#2a1040", "belt": "#ffd34d", "weapon": "staff", "wcolor": "#ffd34d"}, "tang": [{"d": "Đòn thường 15% làm choáng", "m": {"stunHit": 0.15}}, {"d": "Tiểu chiêu khống chế lâu hơn 0,5 giây", "m": {"stunPlus": 0.5}}, {"d": "Đòn thường nảy thêm 1 quái", "m": {"bounce": 1}}, {"d": "Tuyệt kỹ +60%", "m": {"ult": 0.6}}], "passive": {"name": "Đạo Tổ", "desc": "Cả đội +12% công.", "atkPct": 0.12}, "small": {"name": "Hồng Mông Tử Khí", "desc": "Tử khí Hồng Mông quấn chỗ quái đông nhất 180% công, choáng 1,5 giây.", "fx": [{"t": "aoe", "at": "cluster", "r": 105, "mult": 1.8, "color": "#d8a0ff", "stun": 1.5}]}, "ult": {"name": "Tạo Hoá Ngọc Điệp", "desc": "Ngọc Điệp Tạo Hoá giáng xuống viết lại trời đất 560% công cả vùng, choáng 2,5 giây; cả đội +30% công 8 giây.", "fx": [{"t": "aoe", "at": "cluster", "r": 185, "mult": 5.6, "color": "#d8a0ff", "stun": 2.5}, {"t": "buff", "k": "atk", "v": 0.3, "dur": 8}]}};
+  HEROES.hongquan = {"name": "Hồng Quân Lão Tổ", "title": "Đạo Tổ · Sư phụ Tam Thanh", "src": "Phong Thần Diễn Nghĩa", "role": "tran", "el": "tho", "fac": "dao", "rar": "SSR", "tier": "UR+", "hp": 1550, "atk": 112, "def": 70, "aspd": 0.9, "range": 195, "move": 150, "ranged": true, "proj": "light", "look": {"style": "buns", "skin": "#ffe0c8", "hair": "#eeeeee", "outfit": "#5a2a8a", "outfit2": "#2a1040", "belt": "#ffd34d", "weapon": "staff", "wcolor": "#ffd34d"}, "tang": [{"d": "Đòn thường 15% làm choáng", "m": {"stunHit": 0.15}}, {"d": "Tiểu chiêu khống chế lâu hơn 0,5 giây", "m": {"stunPlus": 0.5}}, {"d": "Đòn thường nảy thêm 1 quái", "m": {"bounce": 1}}, {"d": "Tuyệt kỹ +60%", "m": {"ult": 0.6}}], "passive": {"name": "Đạo Tổ", "desc": "Cả đội +12% công.", "atkPct": 0.12}, "small": {"name": "Hư Không Chỉ", "desc": "Rạch một khe hư không nhỏ tại chỗ quái đông nhất, chùm sao bắn ra 180% công, choáng 1,5 giây.", "fx": [{"t": "aoe", "at": "cluster", "r": 105, "mult": 1.8, "color": "#d8a0ff", "stun": 1.5}]}, "ult": {"name": "Hồng Mông Khai Thiên", "desc": "Rạch toạc hư không, tinh hà xoáy hút quái vào khe nứt rồi bùng nổ: tổng 560% công cả vùng, choáng 2,5 giây; cả đội +30% công 8 giây. Có Thái Cực Đồ: khe mở lâu hơn, hút mạnh hơn.", "fx": [{"t": "aoe", "at": "cluster", "r": 185, "mult": 5.6, "color": "#d8a0ff", "stun": 2.5}, {"t": "buff", "k": "atk", "v": 0.3, "dur": 8}]}};
   ATK_STYLE.hongquan = {"pat": "bounce", "proj": "light", "name": "Tử Khí", "desc": "Luồng tử khí nảy lan 5 quái.", "bounces": 5};
   TIER_TABLE['UR+'] = ['hongquan']; SSR_POOL.push('hongquan');
   CAP_SPECIAL.hongquan = { n: 'Đạo Tổ Giảng Đạo', d: 'Cả đội +25% công, +25% sát thương chiêu', m: { atkPct: 0.25, skillPct: 0.25 } };
@@ -1132,6 +1132,45 @@ const DOMAIN = {
 })();
 
 // Tướng chưa vẽ xong (thiếu dáng) -> ẩn khỏi chiêu mộ, danh sách, Thánh Điện cho tới khi có hình. Cập nhật bằng tools/patch_hud4.py
+// ===== UR ĐỢT 2: Nữ Oa, Tiếp Dẫn, Chuẩn Đề, Như Lai (concept B, tách lớp — tools/batch_ur_wave.py) =====
+(function urWave2() {
+  const LOOK = (hair, o1, o2) => ({ style: 'buns', skin: '#ffe0c8', hair, outfit: o1, outfit2: o2, belt: '#ffd34d', weapon: 'staff', wcolor: '#ffd34d' });
+  const TANG = [{ d: 'Đòn thường 15% làm choáng', m: { stunHit: 0.15 } }, { d: 'Tiểu chiêu khống chế lâu hơn 0,5 giây', m: { stunPlus: 0.5 } }, { d: 'Đòn thường nảy thêm 1 quái', m: { bounce: 1 } }, { d: 'Tuyệt kỹ +60%', m: { ult: 0.6 } }];
+  const base = { src: 'Phong Thần Diễn Nghĩa', rar: 'SSR', tier: 'UR', hp: 1550, atk: 112, def: 70, aspd: 0.9, range: 195, move: 150, ranged: true, proj: 'light', tang: TANG };
+  Object.assign(HEROES, {
+    nuoa: { ...base, name: 'Nữ Oa Nương Nương', title: 'Thánh nhân Yêu tộc · Luyện Thạch Bổ Thiên', role: 'tran', el: 'tho', fac: 'yeu', look: LOOK('#2a1a10', '#f0a8d0', '#8ad0ff'),
+      passive: { name: 'Thánh Thể Bổ Thiên', desc: 'Nhận ít hơn 15% sát thương.', dr: 0.15 },
+      small: { name: 'Ngũ Sắc Thạch', desc: 'Đá ngũ sắc giáng chỗ quái đông nhất 170% công, choáng 1,4 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 105, mult: 1.7, color: '#ffb0e0', stun: 1.4 }] },
+      ult: { name: 'Luyện Thạch Bổ Thiên', desc: 'Vá trời bằng đá ngũ sắc: 480% công cả vùng, choáng 2 giây; cả đội nhận khiên 15% máu.', fx: [{ t: 'aoe', at: 'cluster', r: 185, mult: 4.8, color: '#ffb0e0', stun: 2.0 }, { t: 'shield', who: 'team', pct: 0.15, dur: 6 }] } },
+    tiepdan: { ...base, name: 'Tiếp Dẫn Đạo Nhân', title: 'Giáo chủ Tây Phương', role: 'dan', el: 'kim', fac: 'phat', hp: 1700, atk: 100, look: LOOK('#eeeeee', '#e8b830', '#2a3a7a'),
+      passive: { name: 'Tiếp Dẫn Vãng Sinh', desc: 'Hồi máu nhận thêm 20%.', healPct: 0.2 },
+      small: { name: 'Kim Liên Hộ Thể', desc: 'Hồi máu cả đội 180% công.', fx: [{ t: 'heal', mult: 1.8 }] },
+      ult: { name: 'Thập Nhị Phẩm Kim Liên', desc: 'Mười hai cánh Kim Liên nở: hồi máu cả đội 480% công, khiên 12% máu, kim quang 380% công cả vùng.', fx: [{ t: 'heal', mult: 4.8 }, { t: 'shield', who: 'team', pct: 0.12, dur: 6 }, { t: 'aoe', at: 'cluster', r: 185, mult: 3.8, color: '#ffd76a' }] } },
+    chuande: { ...base, name: 'Chuẩn Đề Đạo Nhân', title: 'Thánh nhân Tây Phương', role: 'phap', el: 'moc', fac: 'phat', atk: 120, look: LOOK('#eeeeee', '#f0f0ff', '#2a5aaa'),
+      passive: { name: 'Thất Bảo Diệu Thụ', desc: '+15% sát thương chiêu thức.', skillPct: 0.15 },
+      small: { name: 'Gia Trì Thần Xử', desc: 'Thần Xử giáng chỗ quái đông nhất 190% công, choáng 1,2 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 105, mult: 1.9, color: '#9fffc0', stun: 1.2 }] },
+      ult: { name: 'Ngũ Sắc Thần Quang', desc: 'Đuôi khổng tước quét ánh sáng năm màu 540% công cả vùng, choáng 2 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 195, mult: 5.4, color: '#9fffc0', stun: 2.0 }] } },
+    nhulai: { ...base, name: 'Như Lai Phật Tổ', title: 'Thích Ca Mâu Ni', src: 'Tây Du Ký', role: 'tran', el: 'kim', fac: 'phat', hp: 1650, look: LOOK('#2a3a8a', '#c0302a', '#ffd34d'),
+      passive: { name: 'Kim Thân Bất Hoại', desc: 'Nhận ít hơn 15% sát thương, +10% bạo kích.', dr: 0.15, crit: 0.1 },
+      small: { name: 'Vạn Tự Phật Ấn', desc: 'Phật ấn đè chỗ quái đông nhất 170% công, choáng 1,5 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 110, mult: 1.7, color: '#ffd76a', stun: 1.5 }] },
+      ult: { name: 'Ngũ Hành Sơn', desc: 'Bàn tay Phật hoá Ngũ Hành Sơn giáng xuống 560% công cả vùng, choáng 2,5 giây.', fx: [{ t: 'aoe', at: 'cluster', r: 195, mult: 5.6, color: '#ffd76a', stun: 2.5 }] } },
+  });
+  Object.assign(ATK_STYLE, {
+    nuoa: { pat: 'bounce', proj: 'light', name: 'Ngũ Sắc Quang', desc: 'Tia năm màu nảy lan 4 quái.', bounces: 4 },
+    tiepdan: { pat: 'bounce', proj: 'light', name: 'Kim Quang', desc: 'Tia kim quang nảy lan 4 quái.', bounces: 4 },
+    chuande: { pat: 'bounce', proj: 'light', name: 'Lông Khổng Tước', desc: 'Lông vũ năm màu nảy lan 4 quái.', bounces: 4 },
+    nhulai: { pat: 'bounce', proj: 'light', name: 'Phật Quang', desc: 'Phật quang nảy lan 5 quái.', bounces: 5 },
+  });
+  for (const id of ['nuoa', 'tiepdan', 'chuande', 'nhulai']) { TIER_TABLE.UR.push(id); SSR_POOL.push(id); }
+  Object.assign(CAP_SPECIAL, {
+    nuoa: { n: 'Mẫu Nghi Thiên Hạ', d: 'Cả đội +20% máu, +10% công', m: { hpPct: 0.2, atkPct: 0.1 } },
+    tiepdan: { n: 'Tây Phương Tiếp Dẫn', d: 'Cả đội +20% máu, nhận ít hơn 10% sát thương', m: { hpPct: 0.2, kc: 0.1 } },
+    chuande: { n: 'Ngũ Sắc Thần Quang', d: 'Cả đội +20% sát thương chiêu, +10% công', m: { skillPct: 0.2, atkPct: 0.1 } },
+    nhulai: { n: 'Phật Tổ Giảng Kinh', d: 'Cả đội +20% công, +15% thủ', m: { atkPct: 0.2, defPct: 0.15 } },
+  });
+  BONDS.push({ id: 'taiphuong', name: 'Tây Phương Nhị Thánh', members: ['tiepdan', 'chuande'], g: { hpPct: 0.15, skillPct: 0.15 }, desc: 'Tiếp Dẫn và Chuẩn Đề: +15% máu, +15% sát thương chiêu.' });
+  BONDS.push({ id: 'linhson', name: 'Linh Sơn Pháp Hội', members: ['nhulai', 'tiepdan', 'chuande'], g: { atkPct: 0.2, defPct: 0.15 }, desc: 'Ba Thánh nhân Phật môn: +20% công, +15% thủ.' });
+})();
 // ===== VỰC: bỏ vực riêng từng UR. Chỉ còn vực NHÓM khi đủ 3 UR cùng hệ trên sân =====
 //   đủ Tam Thanh -> Thái Cực Đồ; đủ 3 UR Phật giáo (Tiếp Dẫn, Chuẩn Đề, Như Lai) -> Phạn Tự Vực
 const PHAT_UR = ['tiepdan', 'chuande', 'nhulai'];   // Tiếp Dẫn, Chuẩn Đề, Như Lai (theo Bảng Thần Tiên; chưa thêm vào game)
