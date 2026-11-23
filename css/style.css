@@ -1238,3 +1238,4 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .hc2.t-SSRP .hc2-glow { animation: hgRed 1.8s ease-in-out infinite; }
 @keyframes hgRed { 0%, 100% { box-shadow: 0 0 8px 2px rgba(255,40,40,.7); } 50% { box-shadow: 0 0 18px 6px rgba(255,40,40,1); } }
 .hc2.t-UR .hc2-fr { animation: fgRainbow 3s linear infinite; } .hc2.t-URP .hc2-fr { animation: fgRainbow 2s linear infinite; }
+.hd5-hero { scale: var(--hs, 1); transform-origin: 50% 100%; }

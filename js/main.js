@@ -1882,7 +1882,7 @@ function poseFor(u) {
   }
   return null;
 }
-const HFIX = { kimgiac: 1.1, hoangphongquai: 1.06 };   // bù dáng đứng khom / tai nhọn để cao ngang các tướng khác
+const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25 };   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
 function drawPose(u, name, t, h, alpha) {
   h *= HFIX[u.id] || 1;
   if (!POSES[u.id]) return false;
@@ -3991,6 +3991,10 @@ function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + v�
 }
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
 const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
+function hdScale(id) {   // màn chi tiết: phóng theo chiều cao THÂN (tướng có kiếm bay / thú cưỡi không bị nhỏ), cùng số đo với trong trận
+  const D = window.HPOSE && HPOSE[poseDir(id)]; if (!D) return 1;
+  return Math.max(0.85, Math.min(1.4, 1300 / D.H * (HFIX[id] || 1))).toFixed(3);
+}
 function hdSkill(id, k) { const h = HEROES[id], a = ATK_STYLE[id] || {};
   return k === 'atk' ? { n: a.name || 'Đánh thường', d: a.desc || '' } : k === 'passive' ? { n: h.passive.name, d: h.passive.desc } : k === 'cap' ? capSkill(id) : { n: h[k].name, d: h[k].desc }; }
 function showHeroDetail(id, tab) {
@@ -4033,7 +4037,7 @@ function showHeroDetail(id, tab) {
       <div class="hd5-glow"></div>
       <img class="hd5-aura" src="art/ssrfx/aura_${id}.webp" onerror="this.remove()" alt="">
       ${TIER_RANK[h.tier] >= 4 ? `<div class="hd5-pts">${Array.from({ length: 14 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--d:${(i * 0.53) % 3.2}s;--s:${0.6 + (i % 4) * 0.25}"></i>`).join('')}</div>` : ''}
-      <div class="hd5-hero ${o ? '' : 'off'}"><img class="p1" src="art/poses/${pd}/idle1.webp" onerror="this.onerror=null;this.src='${fullImg(id, 240)}'" alt=""><img class="p2" src="art/poses/${pd}/idle2.webp" onerror="this.remove()" alt=""><img class="pa" alt=""></div>
+      <div class="hd5-hero ${o ? '' : 'off'}" style="--hs:${hdScale(id)}"><img class="p1" src="art/poses/${pd}/idle1.webp" onerror="this.onerror=null;this.src='${fullImg(id, 240)}'" alt=""><img class="p2" src="art/poses/${pd}/idle2.webp" onerror="this.remove()" alt=""><img class="pa" alt=""></div>
     </div>
     <div class="hd5-id">
       <div class="hd5-tier">${h.tier}</div>
