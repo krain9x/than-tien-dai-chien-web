@@ -233,6 +233,9 @@
 :root[data-theme="dem"] .lu4 .syn em { color:#d5bba8 }
 :root[data-theme="dem"] .th-opt { background:rgba(23,23,23,.08) }
 :root[data-theme="dem"] .hf-sel { background:#2f2812; color:#ddcbb9 }
+:root[data-theme="dem"] .hc2-shine::before { background:linear-gradient(90deg, transparent, rgba(47,43,18,.55), transparent) }
+:root[data-theme="dem"] .hc2-tw b { background:radial-gradient(circle, #171717 0 15%, rgba(75,64,29,.9) 30%, transparent 70%) }
+:root[data-theme="dem"] .hc2-tw b::before, :root[data-theme="dem"] .hc2-tw b::after { background:linear-gradient(transparent, #171717, transparent) }
 :root[data-theme="mac"] { --ink: #2f3e3a; }
 :root[data-theme="mac"] body { background: #e9efe9; }
 :root[data-theme="mac"] .panel-screen { background: linear-gradient(#eef3ee, #dbe5de); color: #24302c; }
@@ -454,3 +457,6 @@
 :root[data-theme="mac"] .lu4 .syn em { color:#427d73 }
 :root[data-theme="mac"] .th-opt { border:2px solid rgba(71,99,92,.35); background:rgba(255,255,255,.08) }
 :root[data-theme="mac"] .hf-sel { background:#e7f4ee; color:#28423d }
+:root[data-theme="mac"] .hc2-shine::before { background:linear-gradient(90deg, transparent, rgba(231,244,238,.55), transparent) }
+:root[data-theme="mac"] .hc2-tw b { background:radial-gradient(circle, #ffffff 0 15%, rgba(184,221,203,.9) 30%, transparent 70%) }
+:root[data-theme="mac"] .hc2-tw b::before, :root[data-theme="mac"] .hc2-tw b::after { background:linear-gradient(transparent, #ffffff, transparent) }

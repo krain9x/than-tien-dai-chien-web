@@ -1109,3 +1109,53 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .hd5 .hd-body .hs i, .hd5 .hd-body small { color: #c8b89a !important; }
 .hd5-tabs { width: 86px; } .hd5-tabs button { white-space: nowrap; font-size: 12.5px; height: 36px; }
 .hd5-panel { right: 88px; width: 320px; }
+
+/* ===================== Thẻ tướng: khung vẽ tay (hc4) ===================== */
+.hc2 { border: 0 !important; border-radius: 4px; box-shadow: 0 3px 6px rgba(0,0,0,.35) !important; overflow: visible; background: #1a1410; --el: #c8a050; }
+.hc2::after { display: none !important; }
+.hc2 .hc2-img { inset: 3.5% 4.5% 3.5% 4.5%; border-radius: 2px; overflow: hidden; }
+.hc2 .hc2-img::after { height: 42%; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--el) 35%, rgba(10,6,4,.7)) 45%, rgba(10,6,4,.92)); }
+.hc2 .hc2-img::before { content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .32; mix-blend-mode: soft-light; background: var(--elpat); }
+.hc2.el-kim { --el: #e8c040; --elpat: repeating-radial-gradient(circle at 20% 110%, transparent 0 9px, rgba(255,240,180,.9) 10px 11px); }
+.hc2.el-moc { --el: #3fbf6a; --elpat: repeating-linear-gradient(60deg, transparent 0 8px, rgba(200,255,200,.8) 9px 10px); }
+.hc2.el-thuy { --el: #3a9aff; --elpat: repeating-radial-gradient(ellipse at 50% 120%, transparent 0 7px, rgba(190,230,255,.9) 8px 9px); }
+.hc2.el-hoa { --el: #ff5a3a; --elpat: repeating-linear-gradient(-70deg, transparent 0 7px, rgba(255,200,150,.9) 8px 10px); }
+.hc2.el-tho { --el: #c8903a; --elpat: repeating-linear-gradient(0deg, transparent 0 10px, rgba(255,220,170,.8) 11px 12px); }
+.hc2-fr { position: absolute; inset: -2%; z-index: 4; pointer-events: none; background: url(../art/ui/frames/R.webp) center / 100% 100% no-repeat; }
+.hc2.r-SR .hc2-fr { background-image: url(../art/ui/frames/SR.webp); }
+.hc2.r-SSR .hc2-fr { background-image: url(../art/ui/frames/SSR.webp); }
+.hc2.t-SSRP .hc2-fr { background-image: url(../art/ui/frames/SSRP.webp); inset: -6% -2% -2% -2%; }
+.hc2.t-UR .hc2-fr { background-image: url(../art/ui/frames/UR.webp); inset: -5% -2% -2% -2%; }
+.hc2.t-URP .hc2-fr { background-image: url(../art/ui/frames/URP.webp); }
+.hc2.t-UR, .hc2.t-URP { box-shadow: 0 3px 6px rgba(0,0,0,.35), 0 0 12px rgba(255,80,60,.45) !important; } .hc2.t-URP { box-shadow: 0 3px 6px rgba(0,0,0,.35), 0 0 14px rgba(170,90,255,.6) !important; }
+/* thông tin */
+.hc2 .hc2-rar { z-index: 5; top: 6%; left: 7%; background: none !important; padding: 0; border-radius: 0; font: italic 900 14px/1 "Baloo 2", sans-serif; letter-spacing: -.5px; color: #fff !important; -webkit-text-stroke: 3px rgba(20,10,4,.85); paint-order: stroke fill; }
+.hc2.r-R .hc2-rar { color: #9cc8ff !important; } .hc2.r-SR .hc2-rar { color: #d8b0ff !important; } .hc2.r-SSR .hc2-rar { color: #ffd34d !important; } .hc2.t-SSRP .hc2-rar { color: #ffa040 !important; } .hc2.t-UR .hc2-rar { color: #ff6a5a !important; } .hc2.t-URP .hc2-rar { color: #e0a0ff !important; }
+.hc2 .hc2-sys { z-index: 5; top: 6%; right: 7%; background: rgba(12,8,6,.55); border-radius: 50%; padding: 2px; }
+.hc2 .hc2-sys .sys-ico:not(:first-child) { display: none; }
+.hc2 .hc2-sys .sys-ico { width: 17px; height: 17px; }
+.hc2 .hc2-pw { z-index: 5; top: calc(6% + 16px); left: 7%; padding: 0 4px; border-radius: 2px; }
+.hc2 b { z-index: 5; bottom: calc(5% + 13px); left: 6%; right: 6%; font-size: 11.5px; }
+.hc2 small { z-index: 5; bottom: 5%; left: 6%; right: 6%; }
+.hc2 .hc2-st { font-size: 12.5px; letter-spacing: -1px; color: #ffd34d; -webkit-text-stroke: 2px #4a2a08; paint-order: stroke fill; }
+.hc2 .hc2-st i { color: rgba(255,255,255,.22); -webkit-text-stroke: 2px rgba(0,0,0,.5); }
+.hc2 .hc2-lv { position: absolute; z-index: 6; left: 4%; bottom: 3%; min-width: 18px; height: 18px; padding: 0 3px; border-radius: 9px; font: 900 10px/14px "Baloo 2", sans-serif; font-style: normal; color: #fff; text-align: center; background: radial-gradient(circle at 40% 30%, #6a5a4a, #1a1410); border: 2px solid #e8c88a; box-sizing: border-box; }
+.hc2 .hc2-team { z-index: 5; left: 4.5%; bottom: calc(5% + 28px); }
+.hc2 .hc2-in { z-index: 6; top: calc(6% + 20px); right: 7%; }
+.hc2 .dot { z-index: 6; top: 2%; right: 2%; }
+/* vệt sáng SSR+ trở lên, hạt lấp lánh UR/UR+ */
+.hc2-shine { position: absolute; inset: 3.5% 4.5%; z-index: 3; overflow: hidden; pointer-events: none; }
+.hc2-shine::before { content: ''; position: absolute; top: -20%; bottom: -20%; width: 35%; left: -60%; transform: skewX(-20deg); background: linear-gradient(90deg, transparent, rgba(255,250,220,.55), transparent); animation: hcShine 4.5s ease-in-out infinite; }
+.hc2:nth-child(3n) .hc2-shine::before { animation-delay: 1.5s; } .hc2:nth-child(3n+1) .hc2-shine::before { animation-delay: 3s; }
+@keyframes hcShine { 0%, 70% { left: -60%; } 100% { left: 130%; } }
+.hc2-tw { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.hc2-tw b { position: absolute; width: 8px; height: 8px; position: absolute; background: radial-gradient(circle, #fff 0 15%, rgba(255,230,150,.9) 30%, transparent 70%); animation: hcTw 2.2s ease-in-out infinite; }
+.hc2-tw b::before, .hc2-tw b::after { content: ''; position: absolute; left: 50%; top: -6px; bottom: -6px; width: 1.5px; margin-left: -.75px; background: linear-gradient(transparent, #fff, transparent); }
+.hc2-tw b::after { transform: rotate(90deg); }
+.hc2-tw b:nth-child(1) { left: 12%; top: 30%; } .hc2-tw b:nth-child(2) { right: 14%; top: 52%; animation-delay: .8s; } .hc2-tw b:nth-child(3) { left: 30%; top: 12%; animation-delay: 1.5s; }
+@keyframes hcTw { 0%, 100% { opacity: 0; transform: scale(.3); } 50% { opacity: 1; transform: scale(1); } }
+.hc2.locked .hc2-fr { filter: grayscale(.7) brightness(.8); }
+.hc2.can-up { animation: none; } .hc2.can-up .hc2-fr { animation: hc2up2 1.6s ease-in-out infinite; }
+@keyframes hc2up2 { 50% { filter: drop-shadow(0 0 4px #7dff9a) drop-shadow(0 0 2px #7dff9a); } }
+.lu4 .hc2.in { outline: 0; } .lu4 .hc2.in .hc2-fr { filter: drop-shadow(0 0 3px #2eff9c) drop-shadow(0 0 2px #2eff9c); }
+.hero-grid2 { gap: 9px; padding: 4px 2px; }

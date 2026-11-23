@@ -3935,7 +3935,7 @@ function showLineup() {
     <p class="lu-hint">Lực chiến đội <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b> · Đội trưởng ra trận đầu, <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và mở kỹ năng đội trưởng</p>
     <div class="lineup-body">
       <div class="pick-grid2">${owned.sort((a, b) => power(b) - power(a)).map(id => `
-        <button class="hc2 r-${HEROES[id].rar} ${tierCls(tierOf(id))} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}"><span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
+        <button class="hc2 r-${HEROES[id].rar} ${tierCls(tierOf(id))} el-${HEROES[id].el} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}">${hcDeco(id)}<span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
           <span class="hc2-rar">${HEROES[id].tier}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}${sysIco('fac_' + HEROES[id].fac)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
           <b>${esc(HEROES[id].name)}</b><small>⚔${fmt(power(id))}</small></button>`).join('')}</div>
       <div class="synergy">${synergyHTML(lu)}</div>
@@ -3974,15 +3974,19 @@ function showHeroes() {
       <span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div>
     <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
       const li = S.lineup.indexOf(id);
-      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} ${o ? '' : 'locked'} ${canStarUp(id) ? 'can-up' : ''}" data-h="${id}">${li >= 0 && o ? `<span class="hc2-team ${li === 0 ? 'cap' : ''}">${li === 0 ? '♛ Đội trưởng' : 'Ra trận'}</span>` : ''}${o ? `<span class="hc2-pw">⚔${fmt(power(id))}</span>` : ''}<span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
+      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} el-${h.el} ${o ? '' : 'locked'} ${canStarUp(id) ? 'can-up' : ''}" data-h="${id}">${hcDeco(id)}${o ? `<em class="hc2-lv">${o.lv}</em>` : ''}${li >= 0 && o ? `<span class="hc2-team ${li === 0 ? 'cap' : ''}">${li === 0 ? '♛ Đội trưởng' : 'Ra trận'}</span>` : ''}${o ? `<span class="hc2-pw">⚔${fmt(power(id))}</span>` : ''}<span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
         <span class="hc2-rar">${h.tier}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
-        <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(Math.max(0, maxStar(id) - o.star))}</i></span>` : '<span class="hc2-lock">Chưa có</span>'}</small></button>`; }).join('')}</div></div>`;
+        <b>${esc(h.name)}</b><small>${o ? `<span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(Math.max(0, maxStar(id) - o.star))}</i></span>` : '<span class="hc2-lock">Chưa có</span>'}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.f.split(':'); HF[g] = v; showHeroes(); });
   ui.querySelectorAll('[data-fs]').forEach(s => s.onchange = () => { HF[s.dataset.fs] = s.value; showHeroes(); });
   ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.h));
 }
 let HD_TAB = 'info', HD_SKSEL = 'ult';
+function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + vệt sáng + hạt
+  const r = TIER_RANK[HEROES[id].tier] || 0;
+  return '<i class="hc2-fr"></i>' + (r >= 5 ? '<i class="hc2-shine"></i>' : '') + (r >= 6 ? '<i class="hc2-tw"><b></b><b></b><b></b></i>' : '');
+}
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
 const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
 function hdSkill(id, k) { const h = HEROES[id], a = ATK_STYLE[id] || {};
