@@ -1895,7 +1895,7 @@ function poseFor(u) {
   }
   return null;
 }
-const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25 };   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
+const HFIX = { kimgiac: 1.1, vanthu: 1.2, thaisu: 1.2, hoangphiho: 1.2, phohien: 1.25, thailaoquan: 1.22, giaochu: 1.22, nguyenthuy: 1.22, hongquan: 1.25 };   // UR concept A (Thánh Toạ) to hơn để uy   // bù dáng khom; tướng cưỡi thú cho cụm to hơn để người cưỡi không bị bé (chiều cao thân đo bằng tools/remeasure_h.py)
 function drawPose(u, name, t, h, alpha) {
   h *= HFIX[u.id] || 1;
   if (!POSES[u.id]) return false;

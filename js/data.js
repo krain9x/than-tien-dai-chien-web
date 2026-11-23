@@ -1132,7 +1132,7 @@ const DOMAIN = {
 })();
 
 // Tướng chưa vẽ xong (thiếu dáng) -> ẩn khỏi chiêu mộ, danh sách, Thánh Điện cho tới khi có hình. Cập nhật bằng tools/patch_hud4.py
-const NO_ART = new Set(["nguyenthuy","ngochoang","dilac","quangthanh","kimlinh","chanvu","vuongmau","phohien","daibang","ngocdinh","hoangbao","bachnhan","hattu","moctra","nganggiac","kimmaohong","loicong","ngoctho","linhcam","maonhat","hongquan"]);
+const NO_ART = new Set(["kimmaohong"]);
 (function hideNoArt() {
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
   for (const k in TIER_TABLE) TIER_TABLE[k] = TIER_TABLE[k].filter(id => !NO_ART.has(id));
