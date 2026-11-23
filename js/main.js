@@ -2071,7 +2071,7 @@ function rigDraw(c, id, st, h, opt) {
 function drawSprite(u, img, alpha) {
   const h = spriteH(u), w = h * img.width / img.height;
   if (hasRig(u.id)) {
-    if (ssrFxOn(u) && !u.dead) drawSsrAura(u, h);
+    if ((ssrFxOn(u) || auraOn(u)) && !u.dead) drawSsrAura(u, h);
     if (u.urRise > 0) { u.urRise -= 1 / 60; ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(0, -h * 0.5, 4, 0, -h * 0.5, h * 0.9); g.addColorStop(0, 'rgba(255,240,170,0.9)'); g.addColorStop(1, 'rgba(255,200,80,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -h * 0.5, h * 0.9, 0, TAU); ctx.fill(); ctx.restore(); }
     if (u.castT > 0 && !u.dead) {
       const g = ctx.createRadialGradient(0, -h * 0.5, 4, 0, -h * 0.5, h * 0.6);
@@ -3044,10 +3044,11 @@ const SSR_FX = {
 };
 const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low' && (HEROES[u.id].rar === 'SSR' || ((S.owned[u.id] || {}).star || 0) >= 5); }   // SR có bộ VFX (Ngưu Ma) giữ khi thức tỉnh
+function auraOn(u) { const t = u && u.side === 'h' && !u.clone && S.gfx !== 'low' && tierOf(u.id); return (t === 'SSR+' || t === 'SSR') && !!sfImg('aura_' + u.id); }   // SSR+/SSR: vòng sáng quanh người
 function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
   if (UR_LAYERS[u.id]) return;   // UR tách lớp đã có hào quang riêng sau đầu -> bỏ vòng lớn quanh người cho đỡ rối
   const im = sfImg('aura_' + u.id); if (!im) return; const full = u.mp >= 100 ? 1 : 0;
-  const T = window.AURA_C0 && (AURA_C0[poseDir(u.id)] || AURA_C0[u.id]), tc = T && (T[u.pzN] || T.idle1); if (!tc) return;
+  const T = window.AURA_C0 && (AURA_C0[poseDir(u.id)] || AURA_C0[u.id]), tc = (T && (T[u.pzN] || T.idle1)) || [0, 0.48];
   u.auC = u.auC || tc.slice(); u.auC[0] += (tc[0] - u.auC[0]) * 0.25; u.auC[1] += (tc[1] - u.auC[1]) * 0.25;   // trượt mượt theo dáng
   const hh = h * (HFIX[u.id] || 1), cx = u.auC[0] * hh * u.f * (FACE[u.id] || 1), cy = -u.auC[1] * hh;
   const S_ = hh * (1.25 + 0.04 * Math.sin(u.t * 3)) * (1 + 0.12 * full);
@@ -3129,7 +3130,8 @@ function drawSsrHit(f) { const im = sfImg('hit_' + f.id), p = f.t / f.dur; if (!
 // =================== UR ===================
 const urCost = id => (UR_COST.byTier && UR_COST.byTier[HEROES[id].tier]) || UR_COST.unlock;
 const isUR = id => HEROES[id] && (HEROES[id].tier === 'UR' || HEROES[id].tier === 'UR+');
-function skinOn(id) { return isUR(id) && S.owned && S.owned[id] && S.owned[id].star >= 6 && !(S.skin && S.skin[id] === false) && !!(window.HPOSE && HPOSE[id + '_s2']); }
+// Trang phục 6★ TẠM TẮT (2026-11-24): bộ _s2 là thiết kế cũ trước khi tách lớp, thiếu chân dung -> mất hình. Sức mạnh 6★ vẫn giữ.
+function skinOn(id) { return false && isUR(id) && S.owned && S.owned[id] && S.owned[id].star >= 6 && !(S.skin && S.skin[id] === false) && !!(window.HPOSE && HPOSE[id + '_s2']); }
 const _HP0 = {};
 function poseDir(id) { return skinOn(id) ? id + '_s2' : id; }
 function applySkins() { if (!window.HPOSE) return; for (const id in HEROES) if (isUR(id) && HPOSE[id + '_s2']) { if (!_HP0[id]) _HP0[id] = HPOSE[id]; HPOSE[id] = skinOn(id) ? HPOSE[id + '_s2'] : _HP0[id]; } }
@@ -3216,7 +3218,7 @@ function showThanhDien() {
 // (6) màn ra mắt UR: trời tối, sấm sét, Thánh nhân giáng xuống
 function urReveal(id, done, ascend) {
   const h = HEROES[id], el = document.createElement('div'); el.className = 'ssr-rv ur-rv';
-  el.innerHTML = `<div class="rv-bg" style="background-image:url(art/scene/${id}_bg.webp)"></div><div class="ur-bolt b1"></div><div class="ur-bolt b2"></div><div class="rv-rays"></div><div class="rv-card"><i></i><b>UR</b></div>
+  el.innerHTML = `<div class="rv-bg" style="background-image:url(art/scene/${id}_bg.webp), url(art/scene/${FAC_BG[HEROES[id].fac] || 'giaochu'}_bg.webp)"></div><div class="ur-bolt b1"></div><div class="ur-bolt b2"></div><div class="rv-rays"></div><div class="rv-card"><i></i><b>UR</b></div>
     <img class="rv-hero" src="art/scene/${skinOn(id) ? id + '_s2' : id}_hero.webp" alt=""><div class="rv-name"><small>${ascend ? 'THÀNH THÁNH' : 'THÁNH NHÂN GIÁNG THẾ'} · ${esc(h.title)}</small><h2>${esc(h.name)}</h2><em>${esc((DOMAIN[id] || {}).n || '')}</em></div><div class="rv-tap">Chạm để tiếp tục</div>`;
   ui.appendChild(el); snd('thunder'); setTimeout(() => snd('thunder', 1, 0.8), 700);
   setTimeout(() => { el.classList.add('burst'); snd('gong'); setTimeout(() => snd('roar', 1, 0.7), 300); }, 1800);
@@ -4184,7 +4186,7 @@ function showHeroDetail(id, tab) {
           <button class="btn" id="bLv5" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
         <div class="hu-row"><div><b>Sao ${starsHTML(o.star, maxStar(id))}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
           <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= maxStar(id) ? 'disabled' : ''}>Tăng sao</button>${o.star >= maxStar(id) && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh</button>` : ''}</div></div>
-        ${isUR(id) ? `<div class="hu-row ur ${o.star >= 6 ? 'on' : ''}"><div><b>Thành Thánh · 6★</b><small>${o.star >= 6 ? 'Đã Thành Thánh: trang phục Thánh nhân, tuyệt kỹ +50%' : 'Đạt 6★: mở trang phục Thánh nhân vẽ tay, tuyệt kỹ +50%'}</small></div>${o.star >= 6 ? `<div class="hu-btns"><button class="btn" id="bSkin">${skinOn(id) ? 'Mặc trang phục gốc' : 'Mặc trang phục Thánh nhân'}</button></div>` : ''}</div>
+        ${isUR(id) ? `<div class="hu-row ur ${o.star >= 6 ? 'on' : ''}"><div><b>Thành Thánh · 6★</b><small>${o.star >= 6 ? 'Đã Thành Thánh: tuyệt kỹ +50% (trang phục Thánh nhân đang vẽ lại)' : 'Đạt 6★: tuyệt kỹ +50% (trang phục Thánh nhân đang vẽ lại)'}</small></div></div>
           <div class="hu-row ur on"><div><b>Thánh nhân</b><small>${tierOf(id) === 'UR+' ? 'Pháp Tướng khổng lồ sau lưng khi tung tuyệt kỹ · ' : ''}${DOM_GROUP(id) ? `Vực ${esc(DOMAIN[DOM_GROUP(id)].n)} khi ${esc(DOM_NEED[DOM_GROUP(id)].toLowerCase())} · ` : ''}Bất tử một lần mỗi trận · Miễn khống chế</small></div></div>` : ''}
         ${h.rar === 'R' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã thức tỉnh: +15% máu, công, thủ, +10% tốc đánh' : 'Đạt 5 sao: +15% máu, công, thủ, +10% tốc đánh'}</small></div></div>` : ''}
         ${h.rar === 'SR' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã mở cảnh tuyệt kỹ toàn màn hình' : 'Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR'}</small></div></div>` : ''}
