@@ -3973,7 +3973,8 @@ function showHeroes() {
       <select class="hf-sel" data-fs="sort">${[['power', 'Lực chiến'], ['rar', 'Phẩm chất'], ['lv', 'Cấp']].map(([k, n]) => `<option value="${k}" ${HF.sort === k ? 'selected' : ''}>Xếp: ${n}</option>`).join('')}</select>
       <span class="hf-count">Đã có <b>${own.length}</b>/${all.length}</span></div>
     <div class="hero-grid2">${ids.map(id => { const h = HEROES[id], o = S.owned[id];
-      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} ${o ? '' : 'locked'}" data-h="${id}"><span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
+      const li = S.lineup.indexOf(id);
+      return `<button class="hc2 r-${h.rar} ${tierCls(h.tier)} ${o ? '' : 'locked'} ${canStarUp(id) ? 'can-up' : ''}" data-h="${id}">${li >= 0 && o ? `<span class="hc2-team ${li === 0 ? 'cap' : ''}">${li === 0 ? '♛ Đội trưởng' : 'Ra trận'}</span>` : ''}${o ? `<span class="hc2-pw">⚔${fmt(power(id))}</span>` : ''}<span class="hc2-img"><img src="${por(id, 110)}" loading="lazy"></span>
         <span class="hc2-rar">${h.tier}</span><span class="hc2-sys">${sysIco('role_' + h.role)}${sysIco('el_' + h.el)}${sysIco('fac_' + h.fac)}</span>${canStarUp(id) ? '<i class="dot"></i>' : ''}
         <b>${esc(h.name)}</b><small>${o ? `Lv${o.lv} <span class="hc2-st">${'★'.repeat(o.star)}<i>${'★'.repeat(Math.max(0, maxStar(id) - o.star))}</i></span>` : '<span class="hc2-lock">Chưa có</span>'}</small></button>`; }).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
@@ -3981,7 +3982,11 @@ function showHeroes() {
   ui.querySelectorAll('[data-fs]').forEach(s => s.onchange = () => { HF[s.dataset.fs] = s.value; showHeroes(); });
   ui.querySelectorAll('[data-h]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.h));
 }
-let HD_TAB = 'info';
+let HD_TAB = 'info', HD_SKSEL = 'ult';
+const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
+const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
+function hdSkill(id, k) { const h = HEROES[id], a = ATK_STYLE[id] || {};
+  return k === 'atk' ? { n: a.name || 'Đánh thường', d: a.desc || '' } : k === 'passive' ? { n: h.passive.name, d: h.passive.desc } : k === 'cap' ? capSkill(id) : { n: h[k].name, d: h[k].desc }; }
 function showHeroDetail(id, tab) {
   if (tab) HD_TAB = tab;
   const h = HEROES[id], o = S.owned[id], st = heroStats(id);
@@ -3993,12 +3998,7 @@ function showHeroDetail(id, tab) {
   const tabs = [['info', 'Thông tin'], ['up', 'Bồi dưỡng'], ['eq', 'Trang bị'], ['bond', 'Duyên phận']];
   const body = {
     info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
-      <div class="hd-skills">
-        <div class="hs"><i>Đòn thường</i><b>${esc((ATK_STYLE[id] || {}).name || 'Đánh thường')}</b><p>${esc((ATK_STYLE[id] || {}).desc || '')}</p></div>
-        <div class="hs"><i>Nội tại</i><b>${esc(h.passive.name)}</b><p>${esc(h.passive.desc)}</p></div>
-        <div class="hs"><i>Tiểu chiêu · 30 nội công</i><b>${esc(h.small.name)}</b><p>${esc(h.small.desc)}</p></div>
-        <div class="hs ult"><i>Tuyệt kỹ · 60 nội công</i><b>${esc(h.ult.name)}</b><p>${esc(h.ult.desc)}</p></div>
-        <div class="hs"><i>Đội trưởng</i><b>${esc(capSkill(id).n)}</b><p>${esc(capSkill(id).d)}</p></div></div>`,
+      <div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs ${k === 'ult' ? 'ult' : ''}"><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div>`; }).join('')}</div>`,
     up: o ? `<div class="hd-up">
         <div class="hu-row"><div><b>Cấp ${o.lv}/${MAX_LV}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
           <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng 1 cấp<small>${icon('vang')}${fmt(lvCost)}</small></button>
@@ -4017,19 +4017,41 @@ function showHeroDetail(id, tab) {
         return `<div class="hb"><b>${esc(b.name)}</b> <span class="lvl">Cấp ${lv}/10</span><div class="hb-m">${b.members.map(k => `<img class="${S.owned[k] ? '' : 'off'}" src="${por(k, 40)}" title="${esc(HEROES[k].name)}">`).join('')}</div>
           <p>${esc(b.desc)}${lv ? ` · Thêm +${Math.round(BOND_LV[lv] * 100)}% công, máu` : ''}</p><div class="hb-bar"><i style="width:${lv * 10}%"></i></div></div>`; }).join('') + '<small>Cấp duyên phận tăng theo tổng sao và cấp của các thành viên.</small>' : '<p class="hint">Tướng này chưa có duyên phận.</p>',
   };
-  ui.innerHTML = `<div class="screen panel-screen hd2">${topBar('Thần Tướng')}
-    <div class="hd-wrap r-${h.rar} ${tierCls(h.tier)}">
-      <div class="hd-left"><button class="hd-nav" id="hdPrev" ${ix <= 0 ? 'disabled' : ''}>‹</button><button class="hd-nav r" id="hdNext" ${ix < 0 || ix >= list.length - 1 ? 'disabled' : ''}>›</button>
-        <div class="hd-art"><img src="${fullImg(id, 240)}"></div>
-        <div class="hd-name">${rarTag(id)}<h3>${esc(h.name)}</h3></div><small>${esc(h.title)} · ${esc(h.src)}</small>
-        <div class="tags">${roleTag(h.role)}${elTag(h.el)}${facTag(h.fac)}</div>
-        ${o ? `<div class="hd-pw">Lv ${o.lv} · ${starsHTML(o.star, maxStar(id))} · ⚔ ${fmt(power(id))}</div>` : '<div class="hd-pw">Chưa sở hữu</div>'}</div>
-      <div class="hd-right"><div class="hd-tabs">${tabs.map(([k, n]) => `<button class="${HD_TAB === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div><div class="hd-body">${body[HD_TAB] || body.info}</div></div>
-    </div></div>`;
+  const tc = tierCls(h.tier), pd = poseDir(id), urx = isUR(id);
+  const sk = HD_SK.find(x => x[0] === HD_SKSEL) ? HD_SKSEL : 'ult', sel = hdSkill(id, sk);
+  ui.innerHTML = `<div class="screen hd5 ${tc} r-${h.rar}">${topBar('Thần Tướng')}
+    <img class="hd5-bg" src="art/scene/${id}_bg.webp" onerror="this.onerror=null;this.src='art/scene/${FAC_BG[h.fac] || 'khuongtanha'}_bg.webp'" alt="">
+    <div class="hd5-shade"></div>
+    <div class="hd5-stage" id="hdStage" title="Bấm để xem ra đòn">
+      ${urx ? `<img class="hd5-dom" src="art/ur/${id === 'hongquan' ? 'thailaoquan' : id}_domain.webp" onerror="this.remove()" alt="">` : ''}
+      <div class="hd5-glow"></div>
+      <img class="hd5-aura" src="art/ssrfx/aura_${id}.webp" onerror="this.remove()" alt="">
+      ${TIER_RANK[h.tier] >= 4 ? `<div class="hd5-pts">${Array.from({ length: 14 }, (_, i) => `<i style="--x:${(i * 37) % 100}%;--d:${(i * 0.53) % 3.2}s;--s:${0.6 + (i % 4) * 0.25}"></i>`).join('')}</div>` : ''}
+      <div class="hd5-hero ${o ? '' : 'off'}"><img class="p1" src="art/poses/${pd}/idle1.webp" onerror="this.onerror=null;this.src='${fullImg(id, 240)}'" alt=""><img class="p2" src="art/poses/${pd}/idle2.webp" onerror="this.remove()" alt=""><img class="pa" alt=""></div>
+    </div>
+    <div class="hd5-id">
+      <div class="hd5-tier">${h.tier}</div>
+      <div class="hd5-nm"><h2>${esc(h.name)}</h2><small>${esc(h.title)} · ${esc(h.src)}</small>
+        ${o ? starsHTML(o.star, maxStar(id)) : '<em class="hd5-no">Chưa sở hữu</em>'}</div>
+      <div class="hd5-tags">${roleTag(h.role)}${elTag(h.el)}${facTag(h.fac)}</div>
+      ${o ? `<div class="hd5-pw"><small>Lực Chiến</small><b>${fmt(power(id))}</b><span>Lv ${o.lv}</span></div>` : ''}
+    </div>
+    <div class="hd5-sk">${HD_SK.map(([k, lab, ic]) => `<button class="hd5-ski k-${k} ${k === sk ? 'on' : ''}" data-sk="${k}"><span>${ic}</span><small>${lab}</small></button>`).join('')}</div>
+    <div class="hd5-tip k-${sk}"><i>${HD_SK.find(x => x[0] === sk)[1]}${sk === 'small' ? ' · 30 nội công' : sk === 'ult' ? ' · 60 nội công' : ''}</i><b>${esc(sel.n)}</b><p>${esc(sel.d)}</p></div>
+    <div class="hd5-roster">${list.map(k => `<button class="${k === id ? 'on' : ''} ${tierCls(HEROES[k].tier)}" data-ro="${k}"><img src="${por(k, 48)}" alt=""></button>`).join('')}</div>
+    <div class="hd5-panel"><div class="hd-body">${body[HD_TAB] || body.info}</div></div>
+    <div class="hd5-tabs">${tabs.map(([k, n]) => `<button class="${HD_TAB === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>
+  </div>`;
+  { const ro = ui.querySelector('.hd5-roster .on'); if (ro) ro.scrollIntoView({ block: 'nearest', inline: 'center' }); }
+  ui.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => showHeroDetail(b.dataset.ro));
+  ui.querySelectorAll('[data-sk]').forEach(b => b.onclick = () => { HD_SKSEL = b.dataset.sk; showHeroDetail(id); });
+  { let n = 0; const st2 = $('#hdStage'), pa = st2.querySelector('.pa'), hero = st2.querySelector('.hd5-hero');   // bấm: lần lẻ ra đòn, lần chẵn tung tuyệt kỹ
+    st2.onclick = () => { if (hero.classList.contains('act')) return; const seq = n++ % 2 ? [['skill', 260], ['ult', 700]] : [['windup', 200], ['strike', 420]];
+      hero.classList.add('act'); let t = 0; for (const [p, d] of seq) { setTimeout(() => { pa.src = `art/poses/${pd}/${p}.webp`; }, t); t += d; }
+      if (seq[1][0] === 'ult') { st2.classList.add('ultfx'); snd('magic'); } else snd('whoosh');
+      setTimeout(() => { hero.classList.remove('act'); st2.classList.remove('ultfx'); }, t); }; }
   $('#bBack').onclick = showHeroes;
   ui.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showHeroDetail(id, b.dataset.tab));
-  if ($('#hdPrev')) $('#hdPrev').onclick = () => ix > 0 && showHeroDetail(list[ix - 1]);
-  if ($('#hdNext')) $('#hdNext').onclick = () => ix >= 0 && ix < list.length - 1 && showHeroDetail(list[ix + 1]);
   if (!o) return;
   const q = s => $(s);
   if (q('#bLv')) q('#bLv').onclick = () => { if (S.vang < lvCost) { toast('Không đủ vàng'); return; } S.vang -= lvCost; o.lv++; qAdd('lv'); snd('pickup'); save(); showHeroDetail(id); };

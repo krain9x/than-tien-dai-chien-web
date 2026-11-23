@@ -1025,3 +1025,87 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .hf1 .chip { padding: 3px 9px; border-radius: 3px; }
 .hf-sel { height: 26px; border-radius: 3px; border: 1px solid #c08a1a; background: #fff6dc; color: #5a3410; font: 800 12px "Baloo 2", sans-serif; padding: 0 6px; cursor: pointer; }
 .hf1 .hf-count { margin-left: auto; font-size: 12px; }
+
+/* ===================== Chi tiết tướng hd5 ===================== */
+.hd5 { overflow: hidden; background: #0d0a08; color: #f0e6d2; --tc: #e8a820; --tc2: rgba(232,168,32,.45); }
+.hd5.r-R { --tc: #5a9cff; --tc2: rgba(90,156,255,.4); } .hd5.r-SR { --tc: #b07aff; --tc2: rgba(176,122,255,.45); }
+.hd5.t-SSRP { --tc: #ff9a2e; --tc2: rgba(255,154,46,.5); } .hd5.t-UR { --tc: #ff4a4a; --tc2: rgba(255,74,74,.5); } .hd5.t-URP { --tc: #c070ff; --tc2: rgba(192,112,255,.55); } .hd5.t-A { --tc: #b8c0c8; --tc2: rgba(184,192,200,.3); }
+.hd5 .topbar-menu { position: relative; z-index: 5; margin: 0; }
+.hd5-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.9) brightness(.62); z-index: 0; }
+.hd5-shade { position: absolute; inset: 0; z-index: 0; background: linear-gradient(90deg, rgba(8,6,4,.55) 0, rgba(8,6,4,0) 30%, rgba(8,6,4,0) 50%, rgba(8,6,4,.75) 64%), linear-gradient(0deg, rgba(8,6,4,.75) 0, transparent 22%); }
+.hd5-stage { position: absolute; left: 170px; top: 66px; width: 380px; height: 412px; cursor: pointer; }
+.hd5-hero { position: absolute; left: 50%; bottom: 0; width: 300px; height: 400px; transform: translateX(-50%); transform-origin: 50% 100%; animation: hd5breath 3.6s ease-in-out infinite; }
+.hd5-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; filter: drop-shadow(0 0 1px rgba(0,0,0,.5)) drop-shadow(0 8px 10px rgba(0,0,0,.5)); }
+.hd5-hero .p1 { animation: hd5a 3.6s steps(1) infinite; } .hd5-hero .p2 { animation: hd5b 3.6s steps(1) infinite; } .hd5-hero .pa { opacity: 0; }
+.hd5-hero.act .p1, .hd5-hero.act .p2 { animation: none; opacity: 0; } .hd5-hero.act .pa { opacity: 1; }
+.hd5-hero.off img { filter: grayscale(.8) brightness(.55); }
+@keyframes hd5a { 0% { opacity: 1; } 50% { opacity: 0; } } @keyframes hd5b { 0% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes hd5breath { 50% { transform: translateX(-50%) scale(1.012, .99); } }
+.hd5-glow { position: absolute; left: 50%; top: 46%; width: 340px; height: 340px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, var(--tc2) 0, transparent 62%); animation: hd5pulse 3s ease-in-out infinite; }
+.hd5.r-R .hd5-glow, .hd5.r-SR .hd5-glow { opacity: .6; }
+@keyframes hd5pulse { 50% { transform: translate(-50%, -50%) scale(1.08); opacity: .75; } }
+.hd5-aura { position: absolute; left: 50%; top: 44%; width: 400px; height: 400px; transform: translate(-50%, -50%); mix-blend-mode: screen; opacity: .85; animation: hd5spin 26s linear infinite; pointer-events: none; }
+@keyframes hd5spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.hd5-dom { position: absolute; left: 50%; bottom: -70px; width: 420px; height: 420px; margin-left: -210px; mix-blend-mode: screen; opacity: .8; transform: perspective(600px) rotateX(72deg); animation: hd5dom 30s linear infinite; pointer-events: none; }
+@keyframes hd5dom { to { transform: perspective(600px) rotateX(72deg) rotate(360deg); } }
+.hd5-pts { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.hd5-pts i { position: absolute; left: var(--x); bottom: 0; width: 5px; height: 5px; border-radius: 50%; background: var(--tc); box-shadow: 0 0 8px 2px var(--tc); opacity: 0; transform: scale(var(--s)); animation: hd5pt 3.2s linear infinite; animation-delay: var(--d); }
+@keyframes hd5pt { 10% { opacity: .9; } 100% { opacity: 0; transform: translateY(-360px) scale(var(--s)); } }
+.hd5-stage.ultfx .hd5-glow { animation: hd5ult .7s ease-out; } .hd5-stage.ultfx .hd5-aura { opacity: 1; filter: brightness(1.6); }
+@keyframes hd5ult { 0% { transform: translate(-50%, -50%) scale(.6); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; } }
+/* nhận diện */
+.hd5-id { position: absolute; left: 14px; top: 56px; z-index: 3; display: flex; flex-direction: column; gap: 3px; max-width: 300px; pointer-events: none; }
+.hd5-tier { font: italic 900 44px/0.9 "Baloo 2", sans-serif; letter-spacing: -1px; background: linear-gradient(180deg, #fff 10%, var(--tc) 60%, #6a3a0a); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 rgba(0,0,0,.7)) drop-shadow(0 0 10px var(--tc2)); }
+.hd5.t-URP .hd5-tier { background: linear-gradient(90deg, #c070ff, #ff5a9a, #ffcf3f, #3affd0, #c070ff); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; animation: urShift 2.5s linear infinite; }
+.hd5-nm h2 { margin: 0; font-size: 26px; line-height: 1.05; color: #fff; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0,0,0,.7); }
+.hd5-nm small { display: block; font-size: 12px; color: #e8d8b8; text-shadow: 0 1px 2px #000; margin: 1px 0 2px; }
+.hd5-nm .stars { font-size: 17px; } .hd5-no { font-style: normal; color: #ff9a8a; font-weight: 800; font-size: 13px; }
+.hd5-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.hd5-pw { display: flex; align-items: baseline; gap: 6px; margin-top: 2px; padding: 2px 18px 3px 8px; background: linear-gradient(90deg, rgba(8,6,4,.75), transparent); width: max-content; }
+.hd5-pw small { font-size: 11px; color: #e8d8b8; font-weight: 700; } .hd5-pw b { font-size: 24px; color: #ffd34d; text-shadow: 0 2px 0 #000; } .hd5-pw span { font-size: 13px; color: #fff; font-weight: 800; }
+/* kỹ năng */
+.hd5-sk { position: absolute; left: 498px; top: 120px; z-index: 3; display: flex; flex-direction: column; gap: 6px; }
+.hd5-ski { width: 52px; display: flex; flex-direction: column; align-items: center; background: none; border: 0; padding: 0; cursor: pointer; }
+.hd5-ski span { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; border: 2px solid rgba(255,240,200,.75); background: radial-gradient(circle at 35% 30%, #6a6a7a, #22222a); box-shadow: 0 2px 5px rgba(0,0,0,.6); transition: transform .12s; text-shadow: 0 1px 2px #000; }
+.hd5-ski.k-small span { background: radial-gradient(circle at 35% 30%, #5aa0ff, #12306a); } .hd5-ski.k-ult span { background: radial-gradient(circle at 35% 30%, #ffcf5a, #a0300a); }
+.hd5-ski.k-passive span { background: radial-gradient(circle at 35% 30%, #5ad09a, #0e4a34); } .hd5-ski.k-cap span { background: radial-gradient(circle at 35% 30%, #c08aff, #3a1460); }
+.hd5-ski small { font-size: 10px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px #000; white-space: nowrap; }
+.hd5-ski.on span { transform: scale(1.12); border-color: #fff; box-shadow: 0 0 0 2px var(--tc), 0 0 12px var(--tc); }
+.hd5-tip { position: absolute; left: 14px; bottom: 64px; width: 250px; z-index: 3; padding: 6px 10px 7px; border-left: 3px solid var(--tc); background: linear-gradient(90deg, rgba(8,6,4,.85), rgba(8,6,4,.55)); border-radius: 0 4px 4px 0; }
+.hd5-tip i { font-style: normal; font-size: 10.5px; color: #c8b89a; font-weight: 700; } .hd5-tip b { display: block; font-size: 15px; color: #ffe9b0; } .hd5-tip p { margin: 1px 0 0; font-size: 12px; color: #f0e6d2; line-height: 1.3; }
+/* dải chuyển tướng */
+.hd5-roster { position: absolute; left: 10px; bottom: 6px; width: 560px; height: 52px; z-index: 3; display: flex; gap: 4px; overflow-x: auto; overflow-y: hidden; padding: 4px 2px; scrollbar-width: none; }
+.hd5-roster::-webkit-scrollbar { display: none; }
+.hd5-roster button { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 4px; border: 2px solid rgba(255,255,255,.3); background: #2a1e16; overflow: hidden; cursor: pointer; opacity: .8; }
+.hd5-roster button img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.hd5-roster button.t-SSR, .hd5-roster button.t-SSRP { border-color: #e8a820; } .hd5-roster button.t-UR { border-color: #ff4a4a; } .hd5-roster button.t-URP { border-color: #c070ff; } .hd5-roster button.t-SR { border-color: #9a5cff; }
+.hd5-roster button.on { opacity: 1; transform: translateY(-3px); box-shadow: 0 0 0 2px #fff, 0 0 10px var(--tc); }
+/* khung phải + danh mục dọc */
+.hd5-panel { position: absolute; right: 78px; top: 54px; bottom: 8px; width: 330px; z-index: 3; overflow-y: auto; padding: 8px 10px; background: linear-gradient(180deg, rgba(12,10,8,.82), rgba(12,10,8,.7)); border: 1px solid rgba(255,236,190,.18); border-radius: 4px; overscroll-behavior: contain; }
+.hd5-tabs { position: absolute; right: 0; top: 64px; width: 76px; z-index: 3; display: flex; flex-direction: column; gap: 4px; }
+.hd5-tabs button { height: 40px; border: 0; padding: 0 6px 0 12px; text-align: left; font: 800 13px "Baloo 2", sans-serif; color: #e8dcc8; background: rgba(8,6,4,.55); clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); cursor: pointer; }
+.hd5-tabs button.on { color: #fff; background: linear-gradient(90deg, #2e9b7c, #1d6e57); text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.hd5 .hd-body, .hd5 .hd-body b, .hd5 .hd-body p, .hd5 .hd-body small, .hd5 .hd-body i, .hd5 .hd-body .hint { color: #f0e6d2; }
+.hd5 .hd-body small, .hd5 .hd-body i { color: #c8b89a; }
+.hd5 .hd-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 8px; }
+.hd5 .hd-stats div { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 3px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: baseline; }
+.hd5 .hd-stats span { font-size: 11px; color: #c8b89a; } .hd5 .hd-stats b { font-size: 16px; color: #ffe9b0; }
+.hd5 .hs, .hd5 .hu-row, .hd5 .hb, .hd5 .he { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-left: 3px solid rgba(255,236,190,.35); border-radius: 3px; box-shadow: none; }
+.hd5 .hs.ult { border-left-color: #ff7a3a; } .hd5 .hs p { font-size: 11.5px; }
+.hd5 .hu-row { flex-wrap: wrap; gap: 6px; } .hd5 .hu-row.ur { border-left-color: #ff4a4a; background: rgba(255,60,60,.1); }
+.hd5 .hu-btns { flex-wrap: wrap; } .hd5 .hu-btns .btn { font-size: 13px !important; padding: 4px 12px 6px; }
+.hd5 .em.up, .hd5 em.up { color: #7dff9a; }
+/* ===== thẻ danh sách: ruy băng, lực chiến, sáng khi nâng sao được ===== */
+.hc2 .hc2-team { position: absolute; left: 0; bottom: 31px; z-index: 3; padding: 0 7px 0 4px; font-size: 9.5px; font-weight: 800; color: #fff; background: #2e9b7c; clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%); }
+.hc2 .hc2-team.cap { background: linear-gradient(90deg, #c07a0a, #e8a820); }
+.hc2 .hc2-pw { position: absolute; left: 0; top: 17px; z-index: 3; padding: 0 6px 0 4px; font-size: 9.5px; font-weight: 800; color: #ffd34d; background: rgba(12,8,6,.6); border-radius: 0 3px 3px 0; }
+.hc2.can-up { animation: hc2up 1.6s ease-in-out infinite; }
+@keyframes hc2up { 50% { box-shadow: 0 0 0 2px #7dff9a, 0 0 12px rgba(125,255,154,.8); } }
+
+.hd5 .hd-body { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+.hd5 .hd-body .hs, .hd5 .hd-body .hu-row, .hd5 .hd-body .hb, .hd5 .hd-body .he, .hd5 .hd-body .hd-stats > div { background: rgba(255,255,255,.06) !important; }
+.hd5 .hd-body .hs b, .hd5 .hd-body .hu-row b, .hd5 .hd-body .hb b { color: #ffe9b0 !important; }
+.hd5 .hd-body p, .hd5 .hd-body .hu-row small { color: #e6dccb !important; }
+.hd5 .hd-body .hs i, .hd5 .hd-body small { color: #c8b89a !important; }
+.hd5-tabs { width: 86px; } .hd5-tabs button { white-space: nowrap; font-size: 12.5px; height: 36px; }
+.hd5-panel { right: 88px; width: 320px; }
