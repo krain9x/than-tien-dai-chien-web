@@ -483,7 +483,7 @@ function dealDmg(src, tgt, mult, kind) {
   a = Math.max(1, Math.round(a * rand(0.94, 1.06)));
   // cảm giác đánh: đứng hình, đẩy lùi, tia sáng, rung màn hình
   if (src.side === 'h' && tgt.side === 'e' && kind !== 'dot') {
-    if (kind === 'atk' && src.side === 'h' && UR_PROJ[src.id]) urHit(src, tgt, crit);
+    if (kind === 'atk' && src.side === 'h' && UR_PROJ[src.id] && !(UR_PROJ[src.id].ssr && !sfxImg(UR_PROJ[src.id].hit))) urHit(src, tgt, crit);
     else if (kind === 'atk' && ssrFxOn(src)) { ssrHit(src, tgt, crit); if (crit) B.hitstop = Math.max(B.hitstop || 0, 0.06); }
     const strong = crit || kind === 'ult' || src === B.cap;
     if (strong) B.hitstop = Math.max(B.hitstop || 0, kind === 'ult' ? 0.12 : crit ? 0.09 : 0.05);
@@ -1902,7 +1902,7 @@ function poseFor(u) {
 //   Hiển thị = 108px × look.size × SIZE_K × (UR 1,08). SIZE_K bù phần thú cưỡi/toà để NGƯỜI luôn cùng cỡ.
 //   SIZE_K[id] = tổng chiều cao khối / chiều cao người (chỉ tướng cưỡi thú, ngồi toà, áo dài lơ lửng, dáng khom). Kiểm bằng tools/size_sheet.py:
 //   đỉnh đầu NGƯỜI phải chạm vạch đỏ. Vẽ lại tướng có thú cưỡi -> chạy lại size_sheet.py và chỉnh số của tướng đó.
-const SIZE_K = { nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
+const SIZE_K = { namcuc: 0.94, nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
 const heroK = id => (SIZE_K[id] || 1) * (isUR(id) ? 1.08 : 1);
 const HFIX = new Proxy({}, { get: (_, id) => typeof id === 'string' && HEROES[id] ? heroK(id) : undefined });   // tương thích chỗ cũ dùng HFIX[id]
 const _bright = new WeakMap();
@@ -3078,9 +3078,13 @@ const UR_PROJ = {
   chuande: { sheet: 'cd_feather', hit: 'cd_hit', len: 80, col: '#9fffc0' },
   nhulai: { sheet: 'nl_seal', hit: 'nl_hit', len: 56, col: '#ffd76a' },
 };
+// SSR+/SSR: đạn sheet <id>_pj + nổ <id>_ph (tools/ssr_proj_spec.py); chỉ bật khi ảnh đã tải (chưa vẽ thì dùng đạn cũ)
+const SSR_PJ = /*SSRPJ*/{}/*SSRPJ*/;   // id: [màu, xoay?] — tools/patch_ssr_proj.py ghi
+for (const id in SSR_PJ) UR_PROJ[id] = { sheet: id + '_pj', hit: id + '_ph', len: SSR_PJ[id][1] ? 50 : 70, col: SSR_PJ[id][0], spin: 0, ssr: 1 };
 const NUOA_ST = [['hoa', 'Hoả', '#ff6a3a'], ['tho', 'Thổ', '#e8b040'], ['moc', 'Mộc', '#6aff8a'], ['thuy', 'Thuỷ', '#6ac8ff'], ['kim', 'Kim', '#e0b0ff']];   // đá ngũ sắc: đỏ Hoả, vàng Thổ, lục Mộc, lam Thuỷ, tím Kim (theo thứ tự ném)
 function drawUrProj(p) {
   const C = UR_PROJ[p.src.id], a = Math.atan2(p.vy, p.vx), L = C.len * (p.child ? 0.75 : 1);
+  if (C.ssr && !sfxImg(C.sheet)) return false;   // SSR chưa có sheet: đạn cũ
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5;
   const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, L * 0.5); g.addColorStop(0, C.col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, L * 0.5, 0, TAU); ctx.fill(); ctx.restore();
   if (C.sheet) { sfxImg(C.sheet); sfxDraw(C.sheet, p.age * 4, p.x, p.y, L, { loop: 1, rot: C.spin ? p.age * 14 : a }); }
@@ -5101,7 +5105,7 @@ const SIG = {};
 const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"tl_open":[4,2,192,256],"tl_clamp":[3,2,256,256],"tl_finale":[4,2,192,256],"nt_chaos":[4,2,192,256],"nt_ruyi":[4,2,192,256],"nt_rocks":[3,2,256,256],"nl_halo_burst":[4,2,192,256],"nl_land":[4,2,192,256],"nl_talisman":[3,2,256,256],"td_heaven":[4,2,192,256],"td_ray":[3,2,256,256],"cd_tailopen":[4,2,192,256],"cd_vajra":[3,2,256,256],"cd_vajra_hit":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
-function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } }   // gọi khi tướng ra trận
+function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } const C = typeof UR_PROJ !== 'undefined' && UR_PROJ[id]; if (C) { if (C.sheet) sfxImg(C.sheet); if (C.hit) sfxImg(C.hit); } }   // gọi khi tướng ra trận
 // Vẽ sheet n ở tiến độ p (0..1; loop: p tăng mãi, mỗi 1 đơn vị = 1 vòng) — hoà mờ khung trước sang khung sau.
 // o: { a, rot, sx, sy, ay (neo dọc 0 đỉnh .5 giữa 1 đáy), add (ánh sáng cộng), filter, loop }
 function sfxDraw(n, p, x, y, S, o) {

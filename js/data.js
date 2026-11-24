@@ -1215,7 +1215,7 @@ const DOM_NEED = { tamthanh: 'Có Hồng Quân, hoặc đủ Tam Thanh (Thái Th
   setM('thailaoquan', 'small', 0, 2.4); setM('thailaoquan', 'ult', 0, 5.5);
   HEROES.thailaoquan.ult.desc = HEROES.thailaoquan.ult.desc.replace('500% công', '550% công');
 })();
-const NO_ART = new Set(["kimmaohong", "dabao", "lucap", "namcuc", "diatang", "lucnhi", "cuukho"]);   // đợt 6: bỏ khỏi đây khi đủ ảnh (Codex hết lượt 2026-11-24)
+const NO_ART = new Set(["kimmaohong"]);
 (function hideNoArt() {
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
   for (const k in TIER_TABLE) TIER_TABLE[k] = TIER_TABLE[k].filter(id => !NO_ART.has(id));
