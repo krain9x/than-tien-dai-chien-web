@@ -1,0 +1,289 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Bảng Thần Tiên Tây Du – Phong Thần</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@600;800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap">
+<style>
+/* Layout: một cột tra cứu — đầu trang + chú giải 6 phẩm, thanh lọc dính, bảng cuộn ngang trong khung riêng */
+:root {
+  --bg: #f6f1e7; --panel: #fffaf0; --ink: #2a1d14; --muted: #7a6550; --line: #e4d6bd; --accent: #a8321f; --jade: #2f7a5e;
+  --urp: #6a2ad0; --ur: #c0392b; --ssrp: #d4741a; --ssr: #c79a12; --sr: #7b4fc9; --r: #2f6fc0; --a: #6f7a83;
+  --chip: #efe5d2; --chip-on: #2a1d14; --chip-on-fg: #fffaf0;
+  --display: "Noto Serif", Georgia, "Times New Roman", serif; --body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17120e; --panel: #211a14; --ink: #f1e6d3; --muted: #b59f86; --line: #3a2e24; --accent: #e2694f; --jade: #5fc59c;
+  --ur: #ff6b5a; --ssrp: #ff9e4a; --ssr: #f0c443; --sr: #b28cff; --r: #6fa8ff; --a: #9aa5ae;
+  --chip: #2c231b; --chip-on: #f1e6d3; --chip-on-fg: #17120e; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #17120e; --panel: #211a14; --ink: #f1e6d3; --muted: #b59f86; --line: #3a2e24; --accent: #e2694f; --jade: #5fc59c;
+  --ur: #ff6b5a; --ssrp: #ff9e4a; --ssr: #f0c443; --sr: #b28cff; --r: #6fa8ff; --a: #9aa5ae;
+  --chip: #2c231b; --chip-on: #f1e6d3; --chip-on-fg: #17120e; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 20px; }
+header h1 { font-family: var(--display); font-size: clamp(26px, 4vw, 40px); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+header p { margin: 6px 0 0; color: var(--muted); max-width: 72ch; }
+.legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.tier { padding: 10px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+.tier b { font-family: var(--display); font-size: 18px; color: var(--c); }
+.tier span { float: right; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 700; }
+.tier p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.row > i { font-style: normal; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); width: 74px; }
+.chip { border: 0; background: var(--chip); color: var(--ink); font: 500 13px var(--body); padding: 5px 11px; border-radius: 999px; cursor: pointer; }
+.chip.on { background: var(--chip-on); color: var(--chip-on-fg); }
+.chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#q { flex: 1; min-width: 180px; max-width: 320px; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: 14px var(--body); }
+.count { color: var(--muted); font-variant-numeric: tabular-nums; margin-left: auto; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 980px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; position: sticky; top: 0; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.n b { font-family: var(--display); font-size: 15px; }
+td.n small { display: block; color: var(--muted); }
+.t { display: inline-block; min-width: 46px; text-align: center; font: 800 12px var(--display); padding: 2px 6px; border-radius: 6px; color: #fff; background: var(--c); }
+.src { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.g { font-size: 12px; white-space: nowrap; } .g.has { color: var(--jade); font-weight: 700; } .g.no { color: var(--muted); }
+td.w { min-width: 200px; } td.note { color: var(--muted); font-size: 13px; min-width: 240px; }
+.foot { color: var(--muted); font-size: 12.5px; max-width: 90ch; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Bảng Thần Tiên Tây Du – Phong Thần</h1>
+    <p>Tổng hợp nhân vật có tên tuổi trong <b>Tây Du Ký</b> (Ngô Thừa Ân, 100 hồi) và <b>Phong Thần Diễn Nghĩa</b> (Hứa Trọng Lâm, 100 hồi, gồm Phong Thần Bảng). Phẩm chất xếp theo pháp lực và địa vị trong truyện; hệ phái là gợi ý theo vũ khí và lối đánh. Cột cuối so với phẩm hiện tại trong game.</p>
+  </header>
+  <section class="legend" id="legend"></section>
+  <div class="bar">
+    <div class="row"><i>Phẩm</i><span id="fTier" class="row"></span></div>
+    <div class="row"><i>Hệ phái</i><span id="fRole" class="row"></span></div>
+    <div class="row"><i>Phe</i><span id="fFac" class="row"></span></div>
+    <div class="row"><i>Nguồn</i><span id="fSrc" class="row"></span><span id="fGame" class="row"></span><input id="q" type="search" placeholder="Tìm tên, vũ khí, pháp bảo…" aria-label="Tìm"><span class="count" id="count"></span></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Phẩm</th><th>Nhân vật</th><th>Hệ phái</th><th>Phe</th><th>Nguồn</th><th>Vũ khí · pháp bảo</th><th>Lý do xếp hạng</th><th>Trong game</th></tr></thead>
+    <tbody id="tb"></tbody>
+  </table></div>
+  <p class="foot">Phong Thần Bảng có 365 vị chính thần; nhiều vị chỉ là sao trời không có đất diễn (Nhị Thập Bát Tú, Ôn Bộ, Đẩu Bộ…), nên bảng gộp họ thành nhóm. Một số nhân vật xuất hiện ở cả hai bộ (Na Tra, Dương Tiễn, Lý Tịnh, Quan Âm/Từ Hàng Đạo Nhân, Văn Thù, Phổ Hiền, Thái Thượng Lão Quân) được ghi một dòng. Phẩm chất là đánh giá tổng hợp để làm game, các bản truyện và truyền thuyết dân gian có chỗ khác nhau.</p>
+</div>
+
+<script>
+const TIERS = [
+  ['UR+', '--urp', 'Đạo Tổ, thầy của các Thánh nhân. Duy nhất Hồng Quân Lão Tổ.'],
+  ['UR', '--ur', 'Thánh nhân, giáo chủ. Đứng trên tam giới, gần như bất tử bất bại.'],
+  ['SSR+', '--ssrp', 'Đỉnh cao dưới Thánh: Phật, Đại Bồ Tát, Đại La Kim Tiên, nhân vật trung tâm của truyện.'],
+  ['SSR', '--ssr', 'Cao thủ hạng nhất: chủ soái, giáo đồ đầu bảng, nắm pháp bảo cấp cao.'],
+  ['SR', '--sr', 'Tiên tướng, yêu vương có tên tuổi, từng đánh ngang nhân vật chính.'],
+  ['R', '--r', 'Tướng, yêu có pháp bảo hoặc phép riêng nhưng thường thua trận.'],
+  ['A', '--a', 'Nhân vật phụ: phàm nhân, tiểu yêu, thần địa phương.'],
+];
+const ROLE = { the: 'Hộ Pháp', phap: 'Thuật Sĩ', dan: 'Linh Y', sat: 'Chiến Tướng', tran: 'Kỳ Môn' };
+const FAC = { dao: 'Đạo môn', xien: 'Xiển giáo', triet: 'Triệt giáo', phat: 'Phật môn', thien: 'Thiên đình', yeu: 'Yêu giới', nhan: 'Nhân Giới' };
+const SRC = { T: 'Tây Du Ký', P: 'Phong Thần', TP: 'Cả hai' };
+// [tên, phụ đề, nguồn, phe, hệ phái, phẩm, vũ khí/pháp bảo, lý do, phẩm trong game ('' = chưa có)]
+const D = [
+ ['Hồng Quân Lão Tổ', 'Sư tổ Tam Thanh', 'P', 'dao', 'tran', 'UR+', 'Đạo pháp tối cao', 'Thầy của Lão Tử, Nguyên Thuỷ, Thông Thiên; ra mặt giải hoà Vạn Tiên Trận', 'UR+'],
+ ['Nguyên Thuỷ Thiên Tôn', 'Giáo chủ Xiển Giáo', 'P', 'xien', 'tran', 'UR', 'Bàn Cổ Phiên · Tam Bảo Ngọc Như Ý', 'Một trong Tam Thanh, phá Tru Tiên Trận', 'UR'],
+ ['Thông Thiên Giáo Chủ', 'Giáo chủ Triệt Giáo', 'P', 'triet', 'phap', 'UR', 'Tru Tiên Tứ Kiếm · Tru Tiên Trận', 'Một trong Tam Thanh, cần bốn Thánh mới phá được trận', 'UR'],
+ ['Thái Thượng Lão Quân', 'Đạo Đức Thiên Tôn', 'TP', 'dao', 'dan', 'UR', 'Thái Cực Đồ · Kim Cương Trác · lò Bát Quái', 'Một trong Tam Thanh, giáo chủ Nhân Giáo. Ở Tây Du sống tại cung Đâu Suất, là khách quý chứ không phải bề tôi Thiên Đình', 'UR'],
+ ['Nữ Oa Nương Nương', 'Thánh nhân Yêu tộc', 'P', 'yeu', 'tran', 'UR', 'Chiêu Yêu Phiên · Đá ngũ sắc vá trời', 'Giữ Chiêu Yêu Phiên, sai ba yêu Hiên Viên Mộ loạn nhà Thương. Thần thoại gốc coi là mẹ Nhân tộc, truyện Hồng Hoang coi là Thánh nhân Yêu tộc', 'UR'],
+ ['Tiếp Dẫn Đạo Nhân', 'Giáo chủ Tây Phương', 'P', 'phat', 'dan', 'UR', 'Thập Nhị Phẩm Kim Liên', 'Thánh nhân Tây Phương, cùng phá Tru Tiên Trận', 'UR'],
+ ['Chuẩn Đề Đạo Nhân', 'Thánh Tây Phương', 'P', 'phat', 'tran', 'UR', 'Thất Bảo Diệu Thụ · Gia Trì Thần Xử', 'Thu phục Khổng Tuyên, Thánh nhân Tây Phương', 'UR'],
+ ['Như Lai Phật Tổ', 'Thích Ca Mâu Ni', 'T', 'phat', 'tran', 'UR', 'Ngũ Hành Sơn (bàn tay Phật)', 'Trấn áp Ngộ Không dưới Ngũ Hành Sơn 500 năm', 'UR'],
+
+ ['Phục Hy', 'Thiên Hoàng · Tam Hoàng', 'P', 'nhan', 'tran', 'SSR+', 'Bát Quái', 'Đứng đầu Tam Hoàng ở Hoả Vân Động, sáng ra Bát Quái', 'SSR+'],
+ ['Thần Nông', 'Địa Hoàng · Tam Hoàng', 'P', 'nhan', 'dan', 'SSR+', 'Thần dược · roi thần thử thuốc', 'Cho thuốc giải ôn dịch của Lữ Nhạc, cứu quân Chu', 'SSR+'],
+ ['Hiên Viên Hoàng Đế', 'Nhân Hoàng · Tam Hoàng', 'P', 'nhan', 'sat', 'SSR+', 'Hiên Viên Kiếm', 'Nhân Hoàng thứ ba ở Hoả Vân Động; Hiên Viên Mộ là hang của ba yêu Đát Kỷ', 'SSR+'],
+ ['Tôn Ngộ Không', 'Tề Thiên Đại Thánh', 'T', 'yeu', 'sat', 'SSR+', 'Như Ý Kim Cô Bổng · 72 phép biến hoá', 'Đại náo thiên cung, nhân vật trung tâm Tây Du', 'SSR+'],
+ ['Dương Tiễn', 'Nhị Lang Hiển Thánh Chân Quân', 'TP', 'xien', 'sat', 'SSR+', 'Tam Tiêm Lưỡng Nhận Đao · Hao Thiên Khuyển · thiên nhãn', 'Bắt được Ngộ Không; đệ nhất chiến tướng Xiển Giáo', 'SSR+'],
+ ['Na Tra', 'Tam Thái Tử', 'TP', 'xien', 'sat', 'SSR+', 'Hoả Tiêm Thương · Càn Khôn Quyển · Hỗn Thiên Lăng · Phong Hoả Luân', 'Tiên phong cả hai bộ, thân hoa sen bất tử', 'SSR+'],
+ ['Quan Âm Bồ Tát', 'Từ Hàng Đạo Nhân (Phong Thần)', 'TP', 'phat', 'dan', 'SSR+', 'Tịnh bình cành dương liễu · Kim cô', 'Đỡ đầu thỉnh kinh; Kim Tiên Xiển Giáo trong Phong Thần', 'SSR+'],
+ ['Nhiên Đăng Đạo Nhân', 'Phó giáo chủ Xiển Giáo', 'P', 'xien', 'dan', 'SSR+', 'Linh Cữu Cung Đăng · Càn Khôn Xích', 'Thu Định Hải Châu của Triệu Công Minh; sau là Nhiên Đăng Cổ Phật', 'SSR+'],
+ ['Khổng Tuyên', 'Ngũ Sắc Thần Quang', 'P', 'triet', 'tran', 'SSR+', 'Ngũ Sắc Thần Quang', 'Thu sạch pháp bảo cả quân Chu, chỉ Chuẩn Đề hàng được', 'SSR+'],
+ ['Trấn Nguyên Tử', 'Địa Tiên Chi Tổ', 'T', 'dao', 'the', 'SSR+', 'Tay áo Càn Khôn · cây Nhân Sâm Quả', 'Dùng tay áo bắt cả bốn thầy trò Đường Tăng', 'SSR+'],
+ ['Bồ Đề Tổ Sư', 'Tà Nguyệt Tam Tinh Động', 'T', 'dao', 'tran', 'SSR+', 'Giới xích', 'Truyền 72 phép cho Ngộ Không, lai lịch bí ẩn', 'SSR+'],
+ ['Đa Bảo Đạo Nhân', 'Đại đệ tử Triệt Giáo', 'P', 'triet', 'phap', 'SSR+', 'Vô số pháp bảo · Đa Bảo Tháp', 'Đỡ Tru Tiên Trận cùng sư phụ; truyền thuyết sau thành Như Lai', 'SSR+'],
+ ['Kim Linh Thánh Mẫu', 'Đại sư tỷ Triệt Giáo', 'P', 'triet', 'phap', 'SSR+', 'Tứ Tượng Tháp · Long Hổ Như Ý', 'Một mình đấu ba Đại Sĩ; sau phong Đẩu Mẫu', 'SSR+'],
+ ['Quảng Thành Tử', 'Đứng đầu Thập Nhị Kim Tiên', 'P', 'xien', 'sat', 'SSR+', 'Phiên Thiên Ấn · Lạc Hồn Chung', 'Đánh thắng Kim Linh Thánh Mẫu, phá Bích Du Cung', 'SSR+'],
+ ['Lục Áp Đạo Nhân', 'Tán tiên', 'P', 'dao', 'phap', 'SSR+', 'Trảm Tiên Phi Đao (hồ lô) · Đinh Đầu Thất Tiễn Thư', 'Giết Triệu Công Minh bằng bùa bảy mũi tên', 'SSR+'],
+ ['Di Lặc Phật', 'Đông Lai Phật Tổ', 'T', 'phat', 'tran', 'SSR+', 'Nhân Chủng Đại (túi)', 'Thu Hoàng Mi khi cả trời Phật bó tay', 'SSR+'],
+ ['Ngọc Hoàng Đại Đế', 'Hạo Thiên Thượng Đế', 'T', 'thien', 'tran', 'SSR+', 'Ngọc tỷ · quyền điều động thiên binh', 'Chí tôn Thiên Đình. Địa vị cao nhất nhưng phải mời Như Lai hàng Ngộ Không, nên chưa tới bậc Thánh nhân', 'SSR+'],
+ ['Chân Vũ Đại Đế', 'Đãng Ma Thiên Tôn', 'T', 'thien', 'sat', 'SSR+', 'Thất Tinh Kiếm · Quy Xà nhị tướng', 'Trấn bắc phương, trừ ma', 'SSR+'],
+
+ ['Khương Tử Nha', 'Phong Thần chủ soái', 'P', 'xien', 'tran', 'SSR', 'Đả Thần Tiên · Hạnh Hoàng Kỳ · Phong Thần Bảng', 'Thống lĩnh quân Chu, chủ trì phong thần', 'SSR'],
+ ['Vân Tiêu', 'Tam Tiêu Nương Nương', 'P', 'triet', 'phap', 'SSR', 'Hỗn Nguyên Kim Đấu · Cửu Khúc Hoàng Hà Trận', 'Nhốt cả 12 Kim Tiên Xiển Giáo', 'SSR'],
+ ['Triệu Công Minh', 'Thần Tài', 'P', 'triet', 'sat', 'SSR', 'Định Hải Châu · Phược Long Tác · Thiết Tiên', 'Đánh bại liên tiếp nhiều Kim Tiên', 'SSR'],
+ ['Văn Thù Bồ Tát', 'Văn Thù Quảng Pháp Thiên Tôn', 'TP', 'phat', 'phap', 'SSR', 'Kiếm trí tuệ · Độn Long Thung · Thanh Mao Sư', 'Kim Tiên Xiển Giáo, sau là Đại Trí Bồ Tát', 'SSR'],
+ ['Phổ Hiền Bồ Tát', 'Phổ Hiền Chân Nhân', 'TP', 'phat', 'the', 'SSR', 'Ngô Câu Kiếm · voi trắng sáu ngà', 'Kim Tiên Xiển Giáo, sau là Đại Hạnh Bồ Tát', 'SSR'],
+ ['Thái Ất Chân Nhân', 'Càn Nguyên Sơn', 'P', 'xien', 'phap', 'SSR', 'Cửu Long Thần Hoả Tráo', 'Sư phụ Na Tra, thiêu chết Thạch Cơ', 'SSR'],
+ ['Ngọc Đỉnh Chân Nhân', 'Ngọc Tuyền Sơn', 'P', 'xien', 'sat', 'SSR', 'Trảm Tiên Kiếm', 'Sư phụ Dương Tiễn', 'SSR'],
+ ['Văn Trọng', 'Văn Thái Sư', 'P', 'triet', 'sat', 'SSR', 'Thư Hùng Kim Tiên · mắt thứ ba · Mặc Kỳ Lân', 'Trụ cột nhà Thương, phong Lôi Bộ chính thần', ''],
+ ['Nam Cực Tiên Ông', 'Thọ Tinh', 'TP', 'xien', 'dan', 'SSR', 'Gậy đầu rồng · hươu trắng', 'Phá Thập Tuyệt Trận; trong Tây Du thu Lộc Tinh', 'SSR'],
+ ['Địa Tạng Bồ Tát', 'U Minh giáo chủ', 'T', 'phat', 'dan', 'SSR', 'Tích trượng · Đế Thính', 'Cai quản âm phủ, Đế Thính phân biệt thật giả Ngộ Không', 'SSR'],
+ ['Lục Nhĩ Mi Hầu', 'Ngộ Không giả', 'T', 'yeu', 'sat', 'SSR', 'Thiết bổng giống hệt Kim Cô Bổng', 'Đánh ngang Ngộ Không từ trời xuống đất', 'SSR'],
+ ['Kim Sí Đại Bằng', 'Vân Trình Vạn Lý Bằng', 'T', 'yeu', 'sat', 'SSR', 'Âm Dương Nhị Khí Bình · đôi cánh vàng', 'Bay chín vạn dặm một cái vỗ cánh, phải nhờ Như Lai', 'SSR'],
+ ['Thanh Ngưu Tinh', 'Độc Giác Hủy Đại Vương', 'T', 'yeu', 'the', 'SSR', 'Kim Cương Trác (trộm của Lão Quân)', 'Thu sạch binh khí chư thần', 'SSR'],
+ ['Ngưu Ma Vương', 'Bình Thiên Đại Thánh', 'T', 'yeu', 'the', 'SSR', 'Hỗn Thiết Côn · Tị Thuỷ Kim Tinh Thú', 'Ngang tay Ngộ Không, cần cả Thiên Binh mới hàng', 'SSR'],
+ ['Thái Ất Cứu Khổ Thiên Tôn', 'Đông Cực Thanh Hoa', 'T', 'thien', 'dan', 'SSR', 'Cửu Linh Nguyên Thánh (sư tử chín đầu)', 'Thu phục Cửu Linh Nguyên Thánh', 'SSR'],
+
+ ['Lý Tịnh', 'Thác Tháp Thiên Vương', 'TP', 'thien', 'the', 'SR', 'Linh Lung Bảo Tháp', 'Đại nguyên soái thiên binh, cha Na Tra', 'SR'],
+ ['Trư Bát Giới', 'Thiên Bồng Nguyên Soái', 'T', 'phat', 'the', 'SR', 'Cửu Xỉ Đinh Ba · 36 phép', 'Đệ tử thứ hai, từng thống lĩnh thuỷ quân Thiên Hà', 'SR'],
+ ['Sa Tăng', 'Quyển Liêm Đại Tướng', 'T', 'phat', 'the', 'SR', 'Hàng Yêu Bảo Trượng (nguyệt sạn)', 'Đệ tử thứ ba, giữ hành lý, đánh khá', 'SR'],
+ ['Tiểu Bạch Long', 'Bạch Long Mã', 'T', 'phat', 'the', 'SR', 'Hoá rồng · kiếm', 'Con Tây Hải Long Vương, hoá ngựa thỉnh kinh', 'SR'],
+ ['Đường Tăng', 'Huyền Trang', 'T', 'phat', 'tran', 'SR', 'Cửu Hoàn Tích Trượng · áo cà sa · Khẩn Cô Chú', 'Không biết võ, nhưng là trung tâm đoàn thỉnh kinh', 'SR'],
+ ['Hồng Hài Nhi', 'Thánh Anh Đại Vương', 'T', 'yeu', 'phap', 'SR', 'Hoả Tiêm Thương · Tam Muội Chân Hoả', 'Lửa Tam Muội suýt thiêu chết Ngộ Không', 'SR'],
+ ['Thiết Phiến Công Chúa', 'La Sát Nữ', 'T', 'yeu', 'phap', 'SR', 'Ba Tiêu Phiến', 'Một quạt thổi Ngộ Không bay năm vạn dặm', 'SR'],
+ ['Kim Giác Đại Vương', 'Liên Hoa Động', 'T', 'yeu', 'phap', 'SR', 'Tử Kim Hồng Hồ Lô · Thất Tinh Kiếm', 'Đồng tử của Lão Quân, giữ năm bảo vật', 'SR'],
+ ['Ngân Giác Đại Vương', 'Liên Hoa Động', 'T', 'yeu', 'tran', 'SR', 'Dương Chi Ngọc Tịnh Bình · Hoảng Kim Thằng', 'Em Kim Giác, dùng dây trói Ngộ Không', 'SR'],
+ ['Đát Kỷ', 'Cửu Vĩ Hồ Ly', 'P', 'yeu', 'phap', 'SR', 'Mị thuật · chín đuôi', 'Mê hoặc Trụ Vương, gây loạn nhà Thương', 'SR'],
+ ['Bạch Cốt Tinh', 'Bạch Cốt Phu Nhân', 'T', 'yeu', 'tran', 'SR', 'Thi Ma biến hoá', 'Ba lần lừa Đường Tăng đuổi Ngộ Không', 'SR'],
+ ['Hoàng Mi Đại Vương', 'Tiểu Lôi Âm Tự', 'T', 'yeu', 'tran', 'SR', 'Kim Nạo · Nhân Chủng Đại', 'Đồng tử của Di Lặc, nhốt cả thiên binh vào túi', 'SR'],
+ ['Hoàng Bào Quái', 'Khuê Mộc Lang', 'T', 'yeu', 'sat', 'SR', 'Cương đao', 'Một trong Nhị Thập Bát Tú xuống trần', 'SR'],
+ ['Bách Nhãn Ma Quân', 'Đa Mục Quái (rết)', 'T', 'yeu', 'phap', 'SR', 'Nghìn mắt phóng kim quang', 'Kim quang vây khốn Ngộ Không, phải nhờ Bì Lam Bồ Tát', 'SR'],
+ ['Hạt Tử Tinh', 'Bò cạp tinh', 'T', 'yeu', 'sat', 'SR', 'Đảo Mã Độc · tam xoa kích', 'Từng chích cả Như Lai, Ngộ Không phải nhờ Mão Nhật Tinh Quan', 'SR'],
+ ['Kim Mao Hống', 'Tái Thái Tuế', 'T', 'yeu', 'phap', 'SR', 'Tử Kim Linh (chuông lửa, khói, cát)', 'Thú cưỡi của Quan Âm xuống trần', ''],
+ ['Thanh Sư Tinh', 'Sư Đà Lĩnh', 'T', 'yeu', 'the', 'SR', 'Há miệng nuốt mười vạn thiên binh', 'Thú cưỡi Văn Thù, đại ca Sư Đà Lĩnh', ''],
+ ['Bạch Tượng Tinh', 'Sư Đà Lĩnh', 'T', 'yeu', 'the', 'SR', 'Vòi voi quấn trói', 'Thú cưỡi Phổ Hiền, nhị ca Sư Đà Lĩnh', ''],
+ ['Cửu Linh Nguyên Thánh', 'Sư tử chín đầu', 'T', 'yeu', 'the', 'SR', 'Chín đầu ngậm người', 'Ngậm cả Ngộ Không và Bát Giới', ''],
+ ['Cửu Đầu Trùng', 'Phò mã Bích Ba Đàm', 'T', 'yeu', 'sat', 'SR', 'Thân chín đầu', 'Bị Hao Thiên Khuyển cắn đứt một đầu', ''],
+ ['Hoàng Phong Quái', 'Hoàng Phong Lĩnh', 'T', 'yeu', 'sat', 'SR', 'Tam Muội Thần Phong · đinh ba', 'Gió Tam Muội làm Ngộ Không suýt mù', 'SR'],
+ ['Lôi Chấn Tử', 'Đệ tử Vân Trung Tử', 'P', 'xien', 'sat', 'SR', 'Hoàng Kim Côn · đôi cánh gió sấm', 'Con nuôi Cơ Xương, bay đánh từ trên cao', 'SR'],
+ ['Hoàng Phi Hổ', 'Võ Thành Vương', 'P', 'xien', 'sat', 'SR', 'Thương bạc · Ngũ Sắc Thần Ngưu', 'Phản Thương về Chu, phong Đông Nhạc Đại Đế', 'SR'],
+ ['Quỳnh Tiêu', 'Tam Tiêu Nương Nương', 'P', 'triet', 'sat', 'SR', 'Kim Giao Tiễn', 'Kéo vàng hai rồng chém đứt pháp bảo', 'SR'],
+ ['Bích Tiêu', 'Tam Tiêu Nương Nương', 'P', 'triet', 'phap', 'SR', 'Cửu Khúc Hoàng Hà Trận', 'Em út Tam Tiêu, cùng giữ trận', ''],
+ ['Ma Gia Tứ Tướng', 'Tứ Đại Thiên Vương', 'TP', 'thien', 'the', 'SR', 'Thanh Vân Kiếm · Tỳ Bà · Hỗn Nguyên Tán · Hoa Hồ Điêu', 'Bốn anh em nhà Ma, sau giữ bốn cửa trời', ''],
+ ['Ân Giao', 'Thái tử nhà Thương', 'P', 'xien', 'sat', 'SR', 'Phiên Thiên Ấn · Lạc Hồn Chung', 'Ba đầu sáu tay, phản sư môn, chết dưới cày', ''],
+ ['Dương Nhậm', 'Mắt mọc trong tay', 'P', 'xien', 'phap', 'SR', 'Ngũ Hoả Thất Linh Phiến', 'Quạt lửa phá Ôn Hoàng Trận', ''],
+ ['Viên Hồng', 'Mai Sơn Thất Quái', 'P', 'yeu', 'sat', 'SR', 'Thiết côn · 72 phép', 'Vượn trắng đấu ngang Dương Tiễn', ''],
+ ['Xích Tinh Tử', 'Thập Nhị Kim Tiên', 'P', 'xien', 'tran', 'SR', 'Âm Dương Kính · Bát Quái Tử Thọ Tiên Y', 'Sư phụ Ân Hồng', ''],
+ ['Thanh Hư Đạo Đức Chân Quân', 'Thập Nhị Kim Tiên', 'P', 'xien', 'phap', 'SR', 'Ngũ Hoả Thất Linh Phiến · Mạc Tà Bảo Kiếm', 'Sư phụ Dương Nhậm, Hoàng Thiên Hoá', ''],
+ ['Cụ Lưu Tôn', 'Thập Nhị Kim Tiên', 'P', 'xien', 'tran', 'SR', 'Khổn Tiên Thằng', 'Sư phụ Thổ Hành Tôn, bắt Thân Công Báo', ''],
+ ['Linh Cát Bồ Tát', 'Tu Di Sơn', 'T', 'phat', 'tran', 'SR', 'Phi Long Bảo Trượng · Định Phong Đan', 'Thu Hoàng Phong Quái', ''],
+ ['Bì Lam Bồ Tát', 'Tử Vân Sơn', 'T', 'phat', 'tran', 'SR', 'Tú Hoa Châm (kim thêu)', 'Một cây kim phá kim quang của Bách Nhãn Ma Quân', ''],
+ ['Đông Hải Long Vương', 'Ngao Quảng', 'TP', 'thien', 'dan', 'SR', 'Hốt ngọc · gọi mưa', 'Bị Ngộ Không lấy Định Hải Thần Châm', 'SR'],
+ ['Điện Mẫu', 'Kim Quang Thánh Mẫu', 'TP', 'thien', 'phap', 'SR', 'Hai gương sét', 'Lôi Bộ, cùng làm mưa ở Xa Trì Quốc', 'SR'],
+ ['Lôi Công', 'Lôi Bộ', 'T', 'thien', 'sat', 'SR', 'Chuỳ và đục sấm', 'Đánh sấm theo lệnh Thiên Đình', 'SR'],
+ ['Mộc Tra', 'Huệ Ngạn Hành Giả', 'TP', 'phat', 'sat', 'SR', 'Ngô Câu Song Kiếm', 'Anh thứ của Na Tra, đệ tử Quan Âm trong Tây Du', 'SR'],
+ ['Vi Hộ', 'Hộ Pháp Vi Đà', 'P', 'xien', 'the', 'SR', 'Hàng Ma Xử', 'Hộ pháp chùa chiền về sau, đánh Thương nhiều trận', 'SR'],
+ ['Hằng Nga', 'Nguyệt cung Tiên Tử', 'T', 'thien', 'dan', 'R', 'Ngọc Thố · ánh trăng', 'Nổi tiếng nhưng ít đánh trận', 'R'],
+
+ ['Kim Tra', 'Anh cả Na Tra', 'TP', 'xien', 'tran', 'R', 'Độn Long Thung', 'Đệ tử Văn Thù, sau là Tiền Bộ Hộ Pháp', 'R'],
+ ['Thổ Hành Tôn', 'Địa Hành Tiên', 'P', 'xien', 'tran', 'R', 'Khổn Tiên Thằng · độn thổ', 'Lùn, độn thổ giỏi, nhiều lần bị bắt', 'R'],
+ ['Đặng Thiền Ngọc', 'Ngũ Quang nữ tướng', 'P', 'xien', 'sat', 'R', 'Song đao · Ngũ Quang Thạch', 'Ném đá trúng mặt hàng loạt tướng, vợ Thổ Hành Tôn', 'R'],
+ ['Hoàng Thiên Hoá', 'Bỉnh Linh Công', 'P', 'xien', 'sat', 'R', 'Toản Tâm Đinh · Hoả Long Tiêu', 'Con Hoàng Phi Hổ, tử trận dưới tay Cao Kế Năng', 'R'],
+ ['Thân Công Báo', 'Đạo nhân cưỡi hổ', 'P', 'triet', 'tran', 'R', 'Tự chặt đầu bay · hổ đen', 'Chuyên đi xúi các tiên chống Chu', 'R'],
+ ['Thạch Cơ Nương Nương', 'Khô Lâu Sơn', 'P', 'yeu', 'phap', 'R', 'Bát Quái Long Tu Khăn · Thái A Kiếm', 'Đá thành tinh, bị Thái Ất thiêu', 'R'],
+ ['Cự Linh Thần', 'Tiên phong Thiên Binh', 'T', 'thien', 'the', 'R', 'Tuyên Hoa Phủ (rìu lớn)', 'Bị Ngộ Không đánh gãy rìu ngay trận đầu', 'R'],
+ ['Long Nữ', 'Long Cát nữ', 'T', 'phat', 'dan', 'R', 'Minh châu', 'Thị nữ của Quan Âm', 'R'],
+ ['Thái Bạch Kim Tinh', 'Sứ giả Thiên Đình', 'T', 'thien', 'dan', 'R', 'Phất trần', 'Hai lần chiêu an Ngộ Không', 'R'],
+ ['Hắc Hùng Tinh', 'Hắc Phong Sơn', 'T', 'yeu', 'the', 'R', 'Hắc Anh Thương · áo cà sa trộm', 'Sau làm thần giữ núi Lạc Già', 'R'],
+ ['Như Ý Chân Tiên', 'Em Ngưu Ma Vương', 'T', 'yeu', 'sat', 'R', 'Như Ý Câu', 'Giữ Lạc Thai Tuyền', ''],
+ ['Linh Cảm Đại Vương', 'Cá vàng tinh', 'T', 'yeu', 'sat', 'R', 'Cửu Biện Đồng Chuỳ', 'Cá vàng trong hồ sen Quan Âm', 'R'],
+ ['Hổ Lực · Lộc Lực · Dương Lực', 'Tam Đại Tiên Xa Trì', 'T', 'yeu', 'phap', 'R', 'Đấu phép cầu mưa, chặt đầu, nồi dầu', 'Thua Ngộ Không ở các cuộc đấu phép', ''],
+ ['Ngọc Thố Tinh', 'Công chúa giả', 'T', 'thien', 'sat', 'R', 'Chày giã thuốc', 'Thỏ ngọc của Hằng Nga xuống trần', 'R'],
+ ['Địa Dũng Phu Nhân', 'Chuột tinh', 'T', 'yeu', 'phap', 'R', 'Đôi kiếm', 'Con nuôi Lý Tịnh, ép cưới Đường Tăng', ''],
+ ['Thất Nhện Tinh', 'Bàn Ti Động', 'T', 'yeu', 'tran', 'R', 'Tơ nhện trói', 'Bảy chị em nhện, em của Bách Nhãn Ma Quân', ''],
+ ['Tê Ngưu Tam Quái', 'Huyền Anh Động', 'T', 'yeu', 'the', 'R', 'Sừng tê giác', 'Bị Tứ Mộc Cầm Tinh thu', ''],
+ ['Lộc Tinh', 'Quốc trượng Tì Khâu', 'T', 'yeu', 'phap', 'R', 'Gậy bàn long', 'Hươu cưỡi của Thọ Tinh', ''],
+ ['Hắc Thuỷ Hà Long', 'Đà Long', 'T', 'yeu', 'sat', 'R', 'Roi trúc tiết', 'Cháu Tây Hải Long Vương', ''],
+ ['Cửu Vĩ Hồ Ly', 'Áp Long Động', 'T', 'yeu', 'phap', 'R', 'Hoảng Kim Thằng', 'Mẹ nuôi Kim Giác, Ngân Giác', ''],
+ ['Hoàng Sư Tinh', 'Báo Đầu Sơn', 'T', 'yeu', 'sat', 'R', 'Bốn minh trượng', 'Trộm binh khí của ba anh em Ngộ Không', ''],
+ ['Mão Nhật Tinh Quan', 'Gà trống thần', 'T', 'thien', 'sat', 'R', 'Tiếng gáy', 'Gáy một tiếng diệt Hạt Tử Tinh', 'R'],
+ ['Nhị Thập Bát Tú', '28 chòm sao', 'TP', 'thien', 'sat', 'R', 'Mỗi vị một binh khí', 'Nhóm sao trời, nhiều vị trong Phong Thần Bảng', ''],
+ ['Mai Sơn Lục Thánh', 'Huynh đệ Dương Tiễn', 'T', 'xien', 'sat', 'R', 'Đao kích', 'Cùng Dương Tiễn bắt Ngộ Không', ''],
+ ['Thập Thiên Quân', 'Thập Tuyệt Trận', 'P', 'triet', 'tran', 'R', 'Mười tuyệt trận', 'Mười tiên Triệt Giáo, mỗi người giữ một trận', ''],
+ ['Cửu Long Đảo Tứ Thánh', 'Vương Ma, Dương Sâm…', 'P', 'triet', 'sat', 'R', 'Cưỡi kỳ thú', 'Bốn đạo nhân cưỡi thú dữ giúp Thương', ''],
+ ['Vô Đương Thánh Mẫu', 'Triệt Giáo', 'P', 'triet', 'phap', 'R', 'Pháp bảo Triệt Giáo', 'Đệ tử thân truyền Thông Thiên', ''],
+ ['Quy Linh Thánh Mẫu', 'Rùa tinh', 'P', 'triet', 'the', 'R', 'Mai rùa', 'Bị Tiếp Dẫn thả muỗi hút chết', ''],
+ ['Dư Hoá', 'Thất Thủ Tướng Quân', 'P', 'triet', 'sat', 'R', 'Hoá Huyết Thần Đao', 'Đao làm máu hoá nước', ''],
+ ['Lữ Nhạc', 'Ôn Hoàng Trận', 'P', 'triet', 'phap', 'R', 'Ôn dịch · bốn mặt tám tay', 'Rải ôn dịch quân Chu, sau làm Ôn Bộ', ''],
+ ['Hoả Linh Thánh Mẫu', 'Khâu Minh Sơn', 'P', 'triet', 'phap', 'R', 'Kim Hà Quán', 'Nón vàng phóng hào quang', ''],
+ ['La Tuyên', 'Hoả Đức Tinh Quân', 'P', 'triet', 'phap', 'R', 'Vạn Nha Hồ · Ngũ Long Luân', 'Phóng hoả đốt Tây Kỳ, sau làm Hoả Bộ', ''],
+ ['Trịnh Luân · Trần Kỳ', 'Hanh Ha nhị tướng', 'P', 'nhan', 'tran', 'R', 'Mũi phun ánh trắng · miệng phun khí vàng', 'Hai thần giữ cửa chùa về sau', ''],
+ ['Trương Khuê · Cao Lan Anh', 'Thằng Trì', 'P', 'nhan', 'sat', 'R', 'Ô Yên Thú · Thái Dương Thần Châm', 'Vợ chồng giữ thành Thằng Trì', ''],
+ ['Hồng Cẩm · Long Cát Công Chúa', 'Kỳ Môn Độn', 'P', 'nhan', 'tran', 'R', 'Kỳ Môn Độn · Vụ Lộ Càn Khôn Võng', 'Vợ chồng, phép Kỳ Môn Độn', ''],
+ ['Đặng Cửu Công', 'Tổng binh Tam Sơn Quan', 'P', 'nhan', 'sat', 'R', 'Đại đao', 'Cha Đặng Thiền Ngọc', ''],
+ ['Ân Hồng', 'Nhị thái tử', 'P', 'xien', 'tran', 'R', 'Âm Dương Kính · Thuỷ Hoả Phong', 'Phản sư môn, hoá tro', ''],
+ ['Sùng Hắc Hổ', 'Bắc Bá Hầu', 'P', 'nhan', 'phap', 'R', 'Hồ lô thần ưng', 'Phong Ngũ Nhạc', ''],
+ ['Thập Điện Diêm Vương', 'Âm phủ', 'T', 'thien', 'tran', 'R', 'Sổ sinh tử', 'Bị Ngộ Không xoá tên', ''],
+ ['Đế Thính', 'Thú của Địa Tạng', 'T', 'phat', 'tran', 'R', 'Nghe khắp tam giới', 'Nhận ra Ngộ Không thật giả', ''],
+ ['Ngụy Trưng', 'Thừa tướng nhà Đường', 'T', 'nhan', 'sat', 'R', 'Chém rồng trong mộng', 'Chém Kính Hà Long Vương', ''],
+ ['Phúc Lộc Thọ', 'Tam Tinh', 'T', 'thien', 'dan', 'R', 'Quả đào · gậy · bảng', 'Ba sao chúc phúc, ghé Ngũ Trang Quán', ''],
+
+ ['Vương Mẫu Nương Nương', 'Tây Vương Mẫu', 'T', 'thien', 'dan', 'SSR', 'Vườn Bàn Đào · trâm vàng', 'Chủ hội Bàn Đào; Ngộ Không phá hội rồi đại náo thiên cung', 'SSR'],
+ ['Đông Hoa Đế Quân', 'Đông Vương Công', 'T', 'thien', 'tran', 'SR', 'Tiên tịch', 'Cai quản sổ tiên nam giới', ''],
+ ['Vân Trung Tử', 'Chung Nam Sơn', 'P', 'xien', 'tran', 'SR', 'Thông Thiên Thần Hoả Trụ', 'Sư phụ Lôi Chấn Tử, dựng cột lửa vây Văn Trọng', ''],
+ ['Đạo Hạnh Thiên Tôn', 'Thập Nhị Kim Tiên', 'P', 'xien', 'tran', 'R', 'Bảo vật hộ thân', 'Sư phụ Vi Hộ, Hàn Độc Long, Tiết Ác Hổ', ''],
+ ['Linh Bảo Đại Pháp Sư', 'Thập Nhị Kim Tiên', 'P', 'xien', 'phap', 'R', 'Pháp bảo Xiển Giáo', 'Phá Phong Hống Trận', ''],
+ ['Hoàng Long Chân Nhân', 'Thập Nhị Kim Tiên', 'P', 'xien', 'tran', 'R', 'Cưỡi hạc vàng', 'Kim Tiên yếu nhất, hay bị bắt', ''],
+ ['Trường Nhĩ Định Quang Tiên', 'Phản đồ Triệt Giáo', 'P', 'triet', 'tran', 'R', 'Lục Hồn Phiên', 'Mang Lục Hồn Phiên quy hàng Tây Phương', ''],
+ ['Ô Vân Tiên', 'Kim ngao tinh', 'P', 'triet', 'sat', 'R', 'Hỗn Nguyên Chuỳ', 'Cá kình vàng thành tinh, bị Chuẩn Đề thu', ''],
+ ['Thiên Lý Nhãn · Thuận Phong Nhĩ', 'Cao Minh · Cao Giác', 'TP', 'thien', 'tran', 'R', 'Mắt thấy nghìn dặm · tai nghe theo gió', 'Đào tinh liễu tinh Kỳ Bàn Sơn, sau làm tai mắt Ngọc Hoàng', ''],
+ ['Trương Quế Phương', 'Tổng binh Thanh Long Quan', 'P', 'nhan', 'tran', 'R', 'Gọi tên rớt ngựa', 'Gọi đúng tên ai thì người đó ngã ngựa', ''],
+ ['Mã Nguyên', 'Đạo nhân ăn tim', 'P', 'yeu', 'sat', 'R', 'Bàn tay khổng lồ', 'Hiện thân ba đầu tám tay, bị Chuẩn Đề hoá giải', ''],
+ ['Ô Văn Hoá', 'Người khổng lồ', 'P', 'nhan', 'the', 'R', 'Chày lớn', 'Thân cao mấy trượng, bị lửa thiêu', ''],
+ ['Long Tu Hổ', 'Đệ tử Khương Tử Nha', 'P', 'xien', 'sat', 'R', 'Ném đá liên hoàn', 'Đầu hổ thân rồng, một chân', ''],
+ ['Tỷ Can', 'Á tướng nhà Thương', 'P', 'nhan', 'dan', 'A', 'Tâm Thất Khiếu', 'Bị Đát Kỷ moi tim, phong Văn Khúc Tinh', ''],
+ ['Tô Hộ', 'Ký Châu Hầu', 'P', 'nhan', 'the', 'A', 'Thương', 'Cha Đát Kỷ thật', ''],
+ ['Hoàng Cổn', 'Cha Hoàng Phi Hổ', 'P', 'nhan', 'the', 'A', 'Đao', 'Lão tướng giữ Giới Bài Quan', ''],
+ ['Tây Hải Long Vương', 'Ngao Nhuận', 'T', 'thien', 'phap', 'R', 'Gọi mưa', 'Cha Tiểu Bạch Long', ''],
+ ['Nam Hải · Bắc Hải Long Vương', 'Ngao Khâm · Ngao Thuận', 'T', 'thien', 'phap', 'R', 'Gọi mưa', 'Bị Ngộ Không đòi giáp trụ', ''],
+ ['Tứ Đại Nguyên Soái', 'Mã · Triệu · Ôn · Quan', 'T', 'thien', 'sat', 'R', 'Binh khí riêng', 'Bốn nguyên soái giữ Linh Tiêu Bảo Điện', ''],
+ ['Cửu Diệu Tinh Quân', 'Chín sao', 'T', 'thien', 'phap', 'R', 'Sức sao trời', 'Vây bắt Ngộ Không ở Hoa Quả Sơn', ''],
+ ['Thập Bát La Hán', 'Mười tám La Hán', 'T', 'phat', 'the', 'R', 'Pháp khí Phật môn', 'Hộ pháp Linh Sơn', ''],
+ ['Lục Đinh Lục Giáp · Ngũ Phương Yết Đế', 'Thần hộ pháp', 'T', 'phat', 'the', 'R', 'Âm thầm hộ tống', 'Theo sau bảo vệ Đường Tăng', ''],
+ ['Ô Sào Thiền Sư', 'Phù Đồ Sơn', 'T', 'phat', 'dan', 'R', 'Tâm Kinh', 'Truyền Bát Nhã Tâm Kinh cho Đường Tăng', ''],
+ ['Thanh Mao Sư Tử', 'Yêu đạo Ô Kê Quốc', 'T', 'yeu', 'phap', 'R', 'Đẩy vua xuống giếng', 'Thú cưỡi Văn Thù, giả làm vua Ô Kê Quốc', ''],
+ ['Báo Tinh', 'Nam Sơn Đại Vương', 'T', 'yeu', 'sat', 'A', 'Thiết xử', 'Báo hoa thành tinh ở Ẩn Vụ Sơn', ''],
+ ['Hùng Sơn Quân · Đặc Xử Sĩ', 'Gấu và trâu tinh', 'T', 'yeu', 'the', 'A', 'Thân thú', 'Ăn thịt tuỳ tùng Đường Tăng ở đầu truyện', ''],
+ ['Thập Bát Công · Hạnh Tiên', 'Mộc Tiên Am', 'T', 'yeu', 'dan', 'A', 'Thơ phú', 'Cây cối thành tinh mời Đường Tăng ngâm thơ', ''],
+ ['Thôi Phán Quan', 'Âm phủ', 'T', 'thien', 'tran', 'A', 'Sổ sinh tử · bút', 'Thêm 20 năm tuổi thọ cho Đường Thái Tông', ''],
+ ['Đường Thái Tông', 'Lý Thế Dân', 'T', 'nhan', 'tran', 'A', 'Quyền vua', 'Cử Huyền Trang đi thỉnh kinh', ''],
+ ['Nữ Vương Tây Lương', 'Nữ Nhi Quốc', 'T', 'nhan', 'dan', 'A', 'Ngọc tỷ', 'Muốn giữ Đường Tăng làm chồng', ''],
+ ['Thổ Địa Công', 'Phúc Đức Chính Thần', 'T', 'thien', 'dan', 'A', 'Gậy chống · nén vàng', 'Thần địa phương, hay bị Ngộ Không gọi lên', 'A'],
+ ['Sơn Thần', 'Thần núi', 'T', 'thien', 'the', 'A', 'Gậy', 'Thần địa phương', ''],
+ ['Phong Bà · Vũ Sư', 'Phong Vũ', 'T', 'thien', 'phap', 'A', 'Túi gió · bình mưa', 'Cùng Lôi Công, Điện Mẫu làm mưa', ''],
+ ['Kính Hà Long Vương', 'Rồng sông Kính', 'T', 'thien', 'phap', 'A', 'Làm mưa', 'Sửa giờ mưa nên bị chém, mở đầu thỉnh kinh', ''],
+ ['Trụ Vương', 'Đế Tân', 'P', 'nhan', 'sat', 'A', 'Sức khoẻ phàm nhân', 'Vua cuối nhà Thương', ''],
+ ['Cơ Xương', 'Chu Văn Vương', 'P', 'nhan', 'tran', 'A', 'Bát Quái', 'Diễn Chu Dịch, phàm nhân', ''],
+ ['Cơ Phát', 'Chu Vũ Vương', 'P', 'nhan', 'tran', 'A', 'Quyền vương', 'Khởi binh phạt Trụ', ''],
+ ['Bá Ấp Khảo', 'Trưởng tử Cơ Xương', 'P', 'nhan', 'dan', 'A', 'Đàn', 'Bị Trụ Vương giết, phong Tử Vi Đại Đế', ''],
+ ['Hỉ Mỵ · Tỳ Bà Tinh', 'Hồ ly tỷ muội', 'P', 'yeu', 'phap', 'A', 'Mị thuật', 'Hai yêu tinh cùng Đát Kỷ', ''],
+ ['Phí Trọng · Vưu Hồn', 'Gian thần', 'P', 'nhan', 'tran', 'A', 'Lời gièm', 'Gian thần nhà Thương', ''],
+ ['Mai Sơn Thất Quái (còn lại)', 'Ngô Long, Thường Hạo…', 'P', 'yeu', 'sat', 'A', 'Rết, rắn, chó, trâu, heo, dê', 'Bị Dương Tiễn diệt từng con', ''],
+ ['Hỗn Thế Ma Vương', 'Thuỷ Tạng Động', 'T', 'yeu', 'sat', 'A', 'Đại đao', 'Yêu đầu tiên Ngộ Không đánh chết', ''],
+ ['Ngọc Diện Công Chúa', 'Hồ ly tinh', 'T', 'yeu', 'dan', 'A', 'Kiếm', 'Vợ lẽ Ngưu Ma Vương', ''],
+ ['Thanh Phong · Minh Nguyệt', 'Đồng tử Ngũ Trang Quán', 'T', 'dao', 'dan', 'A', 'Quả Nhân Sâm', 'Giữ vườn Nhân Sâm Quả', ''],
+ ['Lăng Hư Tử · Bạch Hoa Xà', 'Thuộc hạ Hắc Hùng', 'T', 'yeu', 'sat', 'A', 'Kiếm', 'Tiểu yêu núi Hắc Phong', ''],
+ ['Lưu Bá Khâm', 'Thợ săn', 'T', 'nhan', 'sat', 'A', 'Đinh ba săn', 'Hộ tống Đường Tăng đoạn đầu', ''],
+];
+const TC = Object.fromEntries(TIERS.map(t => [t[0], t[1]]));
+const F = { tier: 'all', role: 'all', fac: 'all', src: 'all', game: 'all', q: '' };
+try { Object.assign(F, JSON.parse(localStorage.getItem('btt-f') || '{}')); } catch (e) {}
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function chips(el, key, opts) { el.innerHTML = opts.map(([v, l]) => `<button class="chip ${F[key] === v ? 'on' : ''}" data-k="${key}" data-v="${v}">${l}</button>`).join(''); }
+function render() {
+  try { localStorage.setItem('btt-f', JSON.stringify(F)); } catch (e) {}
+  chips($('#fTier'), 'tier', [['all', 'Tất cả'], ...TIERS.map(t => [t[0], t[0]])]);
+  chips($('#fRole'), 'role', [['all', 'Mọi hệ'], ...Object.entries(ROLE)]);
+  chips($('#fFac'), 'fac', [['all', 'Mọi phe'], ...Object.entries(FAC)]);
+  chips($('#fSrc'), 'src', [['all', 'Cả hai bộ'], ['T', 'Tây Du Ký'], ['P', 'Phong Thần']]);
+  chips($('#fGame'), 'game', [['all', 'Mọi trạng thái'], ['in', 'Đã có trong game'], ['out', 'Chưa có']]);
+  const q = F.q.trim().toLowerCase();
+  const rows = D.filter(r => (F.tier === 'all' || r[5] === F.tier) && (F.role === 'all' || r[4] === F.role) && (F.fac === 'all' || r[3] === F.fac)
+    && (F.src === 'all' || r[2].includes(F.src)) && (F.game === 'all' || (F.game === 'in') === !!r[8]) && (!q || (r[0] + ' ' + r[1] + ' ' + r[6] + ' ' + r[7]).toLowerCase().includes(q)));
+  $('#count').textContent = rows.length + ' / ' + D.length + ' nhân vật';
+  $('#tb').innerHTML = rows.map(r => `<tr><td><span class="t" style="--c:var(${TC[r[5]]})">${r[5]}</span></td><td class="n"><b>${esc(r[0])}</b><small>${esc(r[1])}</small></td>
+    <td>${ROLE[r[4]]}</td><td>${FAC[r[3]]}</td><td class="src">${SRC[r[2]]}</td><td class="w">${esc(r[6])}</td><td class="note">${esc(r[7])}</td>
+    <td class="g ${r[8] ? 'has' : 'no'}">${r[8] ? 'Có · ' + r[8] : 'Chưa'}</td></tr>`).join('');
+}
+$('#legend').innerHTML = TIERS.map(([t, c, d]) => `<div class="tier" style="--c:var(${c})"><b>${t}</b><span>${D.filter(r => r[5] === t).length}</span><p>${d}</p></div>`).join('');
+document.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (!b) return; F[b.dataset.k] = b.dataset.v; render(); });
+$('#q').value = F.q; $('#q').addEventListener('input', e => { F.q = e.target.value; render(); });
+render();
+</script>
+
+</body></html>
