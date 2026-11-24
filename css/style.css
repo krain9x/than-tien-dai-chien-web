@@ -1263,3 +1263,10 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 /* màn chi tiết: nâng tướng lên khỏi thanh danh sách tướng phía dưới (đài sen / chân thú không bị che) */
 .hd5-hero { bottom: 40px; }
 .hd5-dom { bottom: -30px; }
+
+/* Đội Hình: thanh lọc phẩm chất / hệ phái / phe (giống Thần Tướng), gọn một hàng */
+.lu4 .lu-filter { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 4px; }
+.lu4 .lu-filter .hf-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.lu4 .lu-filter .hf-sel { width: auto; min-width: 104px; }
+.lu4 .lu-cnt { margin-left: auto; font-size: 12px; font-weight: 700; opacity: .75; }
+.lu4 .lu-empty { grid-column: 1 / -1; text-align: center; opacity: .7; padding: 20px 0; }

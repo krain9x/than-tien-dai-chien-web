@@ -127,7 +127,7 @@ const POSE_IDS = ['phuchy','thannong','hienvien','dabao','lucap','namcuc','diata
 const _heroLoaded = {};   // id → Promise: rig xương + tư thế của tướng, chỉ nạp khi tướng ra trận (tiết kiệm ~30 MB lúc khởi động)
 function ensureHeroAssets(ids) {
   try { applySkins(); } catch (e) {}
-  try { for (const c of COMBOS) if (ids.includes(c.a) && ids.includes(c.b)) cxArt(c.a + '+' + c.b); } catch (e) {}   // tranh mở màn hợp kích
+  try { for (const c of COMBOS) if (cxMem(c).every(m => ids.includes(m))) cxArt(cxKey(c)); } catch (e) {}   // tranh mở màn hợp kích
   return Promise.all([...new Set(ids)].map(id => {
     if (_heroLoaded[id]) return _heroLoaded[id];
     try { if (sceneUnlocked(id) || SRX[id]) ['_bg', '_hero', '_fx'].forEach(s => scImg(id + s)); ({ datky: ['fx_ninetails'], quanam: ['fx_halo'], tieubachlong: ['fx_waterpillar'] }[id] || []).forEach(scImg); ({ duongtien: ['sky_eye'], loichantu: ['loi_dive'], thaiatchannhan: ['firedragon_head'] }[id] || []).forEach(ucImg); sigPreload(id); (ULTC[id] && ULTC[id].need || []).forEach(ucImg); for (const k in CX) if (k.split('+').includes(id)) (CX[k].need || []).forEach(ucImg); } catch (e) {}
@@ -2718,28 +2718,31 @@ ULTC.ngokhong = { dur: 1.9, hit: 0.6, need: ['staff', 'ngk_jump', 'cloud'], draw
 } };
 
 // ===================== HỢP KÍCH CHỦ ĐỘNG =====================
+const cxKey = c => c.a + '+' + c.b + (c.c ? '+' + c.c : '');   // khoá hợp kích (cặp hoặc bộ ba)
+const cxMem = c => c.c ? [c.a, c.b, c.c] : [c.a, c.b];
 function comboHero(id) { return B && B.heroes.find(h => h.id === id && !h.dead && !h.clone); }
 function comboList() {   // các hợp kích có thể dùng ngay
   if (!B || B.over) return []; B.comboCd = B.comboCd || {};
-  return COMBOS.filter(c => { const a = comboHero(c.a), b = comboHero(c.b); return a && b && CX[c.a + '+' + c.b] && canCast(a, 'ult') && canCast(b, 'ult') && (B.comboCd[c.name] || 0) <= B.time && cxReady(c); });
+  return COMBOS.filter(c => { const L = cxMem(c).map(comboHero); return L.every(Boolean) && CX[cxKey(c)] && L.every(u => canCast(u, 'ult')) && (B.comboCd[c.name] || 0) <= B.time && cxReady(c); });
 }
 function comboFor(u) {   // hợp kích của u: đã sẵn chưa / đồng đội sắp đầy nộ
   B.comboCd = B.comboCd || {};
-  for (const c of COMBOS) { const o = c.a === u.id ? c.b : c.b === u.id ? c.a : null; if (!o || !CX[c.a + '+' + c.b]) continue;
-    const p = comboHero(o); if (!p || (B.comboCd[c.name] || 0) > B.time) continue;
-    return { c, ready: canCast(u, 'ult') && canCast(p, 'ult') && cxReady(c), near: p.mp >= 40 && p.dk <= 0 }; }
+  for (const c of COMBOS) { const M = cxMem(c); if (!M.includes(u.id) || !CX[cxKey(c)]) continue;
+    const O = M.filter(m => m !== u.id).map(comboHero); if (!O.every(Boolean) || (B.comboCd[c.name] || 0) > B.time) continue;
+    return { c, ready: canCast(u, 'ult') && O.every(p => canCast(p, 'ult')) && cxReady(c), near: O.every(p => p.mp >= 40 && p.dk <= 0) }; }
   return null;
 }
-const cxReady = c => (CX[c.a + '+' + c.b].need || []).every(n => ucImg(n));
+const cxReady = c => (CX[cxKey(c)].need || []).every(n => ucImg(n));
 function castCombo(c) {
-  const a = comboHero(c.a), b = comboHero(c.b); if (!a || !b) return;
-  const X = CX[c.a + '+' + c.b], lead = 0.95;
-  for (const u of [a, b]) { u.mp -= 60; u.cdU = 12; const sk_ = typeof Skel !== 'undefined' && Skel.has(u.id); u.castDur = sk_ ? 1.0 : 0.35; u.castT = u.castDur; u.castUlt = true; u.atkAnim = sk_ ? -1 : 0; }
+  const a = comboHero(c.a), b = comboHero(c.b), c3 = c.c ? comboHero(c.c) : null; if (!a || !b || (c.c && !c3)) return;
+  const X = CX[cxKey(c)], lead = 0.95;
+  for (const u of c3 ? [a, b, c3] : [a, b]) { u.mp -= 60; u.cdU = 12; const sk_ = typeof Skel !== 'undefined' && Skel.has(u.id); u.castDur = sk_ ? 1.0 : 0.35; u.castT = u.castDur; u.castUlt = true; u.atkAnim = sk_ ? -1 : 0; }
   B.comboCd[c.name] = B.time + 25;
   const P = clusterPoint() || { x: W * 0.65, y: H * 0.6 }, tx = clamp(P.x, 160, W - 140), ty = clamp(P.y, 290, H - 60);
-  for (const u of [a, b]) u.f = tx >= u.x ? 1 : -1;
-  B.fx.push({ k: 'cx', key: c.a + '+' + c.b, c, a: { x: a.x, y: a.y - 34 * sizeOf(a) }, b: { x: b.x, y: b.y - 34 * sizeOf(b) }, x: a.x, y: a.y, tx, ty, t: -lead, dur: X.dur, sub: {}, done: {} });
-  B.banner = { text: 'HỢP KÍCH · ' + c.name, sub: HEROES[c.a].name + ' × ' + HEROES[c.b].name, t: 0, boss: true };
+  for (const u of c3 ? [a, b, c3] : [a, b]) u.f = tx >= u.x ? 1 : -1;
+  B.fx.push({ k: 'cx', key: cxKey(c), c, c3: c3 && { x: c3.x, y: c3.y - 34 * sizeOf(c3) }, a: { x: a.x, y: a.y - 34 * sizeOf(a) }, b: { x: b.x, y: b.y - 34 * sizeOf(b) }, x: a.x, y: a.y, tx, ty, t: -lead, dur: X.dur, sub: {}, done: {} });
+  B.banner = { text: 'HỢP KÍCH · ' + c.name, sub: cxMem(c).map(m => HEROES[m].name).join(' × '), t: 0, boss: true };
+  if (X.cast) { B.later.push({ t: lead, fn: () => { if (B && !B.over) X.cast(c, a, b, c3, tx, ty); } }); B.slowmo = 0.35; sfx('ult'); return; }   // biên đạo riêng (tự gây sát thương)
   B.slowmo = 0.35; sfx('ult'); B.stat && (B.stat.combo = (B.stat.combo || 0) + 1);
   const hits = X.hits, src = a, R = X.r || 240;
   hits.forEach((h, i) => B.later.push({ t: lead + X.dur * h, fn: () => {
@@ -2768,7 +2771,7 @@ function updateComboBtn() {
   let btn = $('#cxBtn'); const L = comboList(), c = L[0];
   if (!c) { if (btn) btn.remove(); return; }
   if (!btn) { btn = document.createElement('button'); btn.id = 'cxBtn'; btn.className = 'cx-btn'; bar.appendChild(btn); btn.onclick = () => { const k = btn.dataset.k, cc = comboList().find(x => x.name === k); if (cc) castCombo(cc); }; }
-  if (btn.dataset.k !== c.name) { btn.dataset.k = c.name; btn.innerHTML = `<span class="cx-faces"><img src="${porB(c.a, 64)}"><img src="${porB(c.b, 64)}"></span><b>HỢP KÍCH</b><small>${esc(c.name)}</small>`; }
+  if (btn.dataset.k !== c.name) { btn.dataset.k = c.name; btn.innerHTML = `<span class="cx-faces">${cxMem(c).map(m => `<img src="${porB(m, 64)}">`).join('')}</span><b>HỢP KÍCH</b><small>${esc(c.name)}</small>`; }
 }
 const CXA = {}; function cxArt(key) { let i = CXA[key]; if (!i) { i = CXA[key] = new Image(); i.src = 'art/combo/' + key + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 const CXI = {}; function cxPor(id) { let i = CXI[id]; if (!i) { i = CXI[id] = new Image(); i.src = (ULTX[id] && ULTX[id].cut) ? 'art/ultx/' + ULTX[id].cut + '.webp' : porB(id, 256); } return i.complete && i.naturalWidth ? i : null; }
@@ -2811,7 +2814,38 @@ function cxArc(img, x0, y0, x1, y1, q, hgt, w, flip, col) {   // nhân vật/v�
   for (let k = 1; k <= 3; k++) { const qq = Math.max(0, q - k * 0.06); ucObj(img, x0 + (x1 - x0) * qq, y0 + (y1 - y0) * qq - Math.sin(qq * Math.PI) * hgt, w, 0, 0.15, null, 0, flip); }
   ucObj(img, x, y, w, (q - 0.5) * 0.5, 1, col, 0.5, flip); return [x, y];
 }
+// ===== HỢP KÍCH BỘ BA: TAM HOÀNG — NHÂN HOÀNG PHÁ GIỚI =====
+// 1 Phục Hy hoạ bát quái khoá không gian thành mặt kính (quái đứng im) -> 2 Hiên Viên chém 3 nhát vòng cung (vệt rạch + mảnh kính)
+// -> 3 nhát bổ dọc rạch hư không lộ trời sao + cột sáng -> 4 cả màn hình nứt mạng nhện rồi vỡ vụn (sát thương chính, choáng)
+// -> 5 mảnh vỡ hoá lá thuốc Thần Nông rơi xuống hồi máu cả đội, giải khống chế
+function tamHoangCast(c, fh, hv, tn, tx, ty) {
+  const P = { x: clamp(tx, GATE_X + 260, VIEW_R() - 300), y: ty }, SX = (GATE_X + VIEW_R()) / 2 + 30, SY = (LANE_Y0 + LANE_Y1) / 2 - 20, SW = (VIEW_R() - GATE_X) * 1.1;
+  const all = () => B.enemies.filter(e => !e.dead), near = r => all().filter(e => Math.hypot(e.x - P.x, (e.y - P.y) * 1.3) < r);
+  const arcs = [[-0.5, -40], [0.45, 10], [-0.15, 50]];
+  sigFx({ ult: 1, who: 'phuchy', dur: 5.2, upd(f) {
+    const t = f.t;
+    if (t >= 0.5) sigOnce(f, 'lock', () => { for (const e of all()) { e.stun = Math.max(e.stun || 0, e.boss ? 0.6 : 1.6); e.hitT = 0.2; } floater(fh.x, fh.y - 90, 'Tiên Thiên Bát Quái', '#9fffc0', 16); snd('magic'); });
+    for (let i = 0; i < 3; i++) if (t >= 1.25 + i * 0.28) sigOnce(f, 'arc' + i, () => { for (const e of near(260)) dealDmg(hv, e, 0.6, 'ult'); B.shake = Math.max(B.shake, 0.45); B.hitstop = Math.max(B.hitstop || 0, 0.05); sfx('hit'); });
+    if (t >= 2.25) sigOnce(f, 'rift', () => { for (const e of near(200)) dealDmg(hv, e, 2.0, 'ult'); B.shake = 1.0; B.flash = 0.3; sfx('boom'); snd('thunder', 0.8, 0.6); });
+    if (t >= 3.15) sigOnce(f, 'shatter', () => { for (const e of all()) { dealDmg(hv, e, 3.5, 'ult'); if (!e.dead && !e.boss) e.stun = Math.max(e.stun || 0, 1.5); } B.shake = 1.3; B.flash = 0.45; sfx('boom'); B.hitstop = Math.max(B.hitstop || 0, 0.12); });
+    if (t >= 3.9) sigOnce(f, 'heal', () => { for (const al of alliesAlive()) { healAmD(tn, al, getAtk(tn) * 3.0); al.stun = 0; } snd('heal'); floater(tn.x, tn.y - 90, 'Bách Thảo Hồi Xuân', '#9fff9a', 16); });
+  }, draw(f) {
+    const t = f.t;
+    sigDim(0.55 * Math.min(1, t / 0.3) * fadeOut(t, 4.4, 0.6), '#04060a');
+    if (t < 3.3) { const a = Math.min(1, t / 0.3) * fadeOut(t, 3.1, 0.2);   // 1 bát quái khoá kính
+      sfxDraw('th_lock', Math.min(1, t / 1.0), P.x, SY, 500, { add: 1, a: 0.45 * a }); }
+    for (let i = 0; i < 3; i++) { const t0 = 1.15 + i * 0.28, q = (t - t0) / 0.5; if (q < 0 || t > 3.15) continue;   // 2 ba nhát chém + vệt rạch còn lại trên kính
+      const [rot, dy] = arcs[i]; sfxDraw('th_arc', Math.min(1, q), P.x, P.y - 60 + dy, 360, { rot, add: 1 });
+      if (q < 1) sfxDraw('th_shards', q, P.x, P.y - 60 + dy, 220, { add: 1 }); }
+    if (t >= 2.1 && t < 3.25) { sfxDraw('th_rift', (t - 2.1) / 0.6, P.x, P.y - 90, 230, { a: fadeOut(t, 3.1, 0.15) });   // 3 rạch hư không
+      sfxDraw('th_pillar', (t - 2.15) / 0.7, P.x, P.y + 20, 260, { ay: 0.95, add: 1 }); }
+    if (t >= 2.6 && t < 3.2) sfxDraw('th_crack', (t - 2.6) / 0.55, P.x, P.y - 80, SW * 1.1, { add: 1, a: 0.85 });      // 4 nứt mạng nhện
+    if (t >= 3.15 && t < 4.3) sfxDraw('th_shatter', (t - 3.15) / 1.1, P.x, P.y - 60, SW * 1.05, { add: 1, a: 0.6 });           //   vỡ vụn
+    if (t >= 3.7) for (const al of alliesAlive()) sfxDraw('th_herbs', t * 0.7 + al.x * 0.01, al.x, al.y - 50, 170, { loop: 1, add: 1, a: fadeOut(t, 4.7, 0.5) });   // 5 lá thuốc
+  } });
+}
 const CX = {
+  'phuchy+hienvien+thannong': { dur: 4.6, hits: [], cast: tamHoangCast, need: [], draw() {} },
   // Thiên Nhãn Thần Hầu: thiên nhãn mở giữa trời, tia quét đánh dấu MỌI quái; phân thân Ngộ Không giáng xuống từng con
   'ngokhong+duongtien': { dur: 3.3, hits: [0.6, 0.72, 0.84, 0.93], need: ['sky_eye', 'ngk_jump', 'staff'], draw(f, p) {
     const ex = W * 0.55, ey = 105, op = p < 0.2 ? ease3(p / 0.2) : p > 0.9 ? (1 - p) / 0.1 : 1, im = ucImg('sky_eye');
@@ -4102,10 +4136,13 @@ function synergyHTML(ids) {
   const cb = COMBOS.filter(c => ids.includes(c.a) && ids.includes(c.b)).map(c => `<div class="syn on"><b>${esc(c.name)}</b> <small>${HEROES[c.a].name} + ${HEROES[c.b].name}</small><em>Hai người tung tuyệt kỹ cách nhau ≤3 giây → hợp kích</em></div>`).join('');
   return `${cs ? `<h4>Kỹ năng đội trưởng</h4><div class="syn on"><b>${esc(cs.n)}</b> <em>${esc(cs.d)}</em></div>` : ''}<h4>Cộng hưởng phe</h4>${facs || '<small>Chưa có</small>'}${cb ? `<h4>Hợp kích</h4>${cb}` : ''}<h4>Duyên phận</h4>${bonds || '<small>Chưa có duyên phận nào</small>'}`;
 }
+const LF = { rar: 'all', role: 'all', fac: 'all' };   // bộ lọc màn Đội Hình (giống Thần Tướng)
 function showLineup() {
   const keep = ui.querySelector('.lu4') ? [ui.querySelector('.lu4 .pick-grid2').scrollTop, ui.querySelector('.lu4 .synergy').scrollTop] : null;   // giữ vị trí cuộn khi chọn tướng
   const lu = S.lineup.filter(id => S.owned[id]);
-  const owned = Object.keys(HEROES).filter(id => S.owned[id] && !NO_ART.has(id));
+  const own0 = Object.keys(HEROES).filter(id => S.owned[id] && !NO_ART.has(id));
+  const owned = own0.filter(id => (LF.rar === 'all' || HEROES[id].tier === LF.rar) && (LF.role === 'all' || HEROES[id].role === LF.role) && (LF.fac === 'all' || HEROES[id].fac === LF.fac));
+  const lchip = (v, label) => `<button class="chip ${LF.rar === v ? 'on' : ''}" data-lf="rar:${v}">${label}</button>`;
   ui.innerHTML = `<div class="screen panel-screen lu4">${topBar('Đội Hình')}
     <div class="lineup-slots">${[0, 1, 2, 3, 4].map(i => {
       const id = lu[i];
@@ -4117,8 +4154,12 @@ function showLineup() {
       </div>`;
     }).join('')}</div>
     <p class="lu-hint">Lực chiến đội <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b> · Đội trưởng ra trận đầu, <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và mở kỹ năng đội trưởng</p>
+    <div class="hf-bar hf1 lu-filter"><div class="hf-chips">${lchip('all', 'Tất cả')}${TIER_ORDER.filter(t => own0.some(id => HEROES[id].tier === t)).map(t => lchip(t, t)).join('')}</div>
+      <select class="hf-sel" data-lfs="role"><option value="all">Mọi hệ</option>${Object.keys(ROLES).map(r => `<option value="${r}" ${LF.role === r ? 'selected' : ''}>${ROLES[r].name}</option>`).join('')}</select>
+      <select class="hf-sel" data-lfs="fac"><option value="all">Mọi phe</option>${Object.keys(FACTIONS).filter(f => own0.some(id => HEROES[id].fac === f)).map(f => `<option value="${f}" ${LF.fac === f ? 'selected' : ''}>${FACTIONS[f]}</option>`).join('')}</select>
+      <span class="lu-cnt">${owned.length}/${own0.length}</span></div>
     <div class="lineup-body">
-      <div class="pick-grid2">${owned.sort((a, b) => power(b) - power(a)).map(id => `
+      <div class="pick-grid2">${owned.length ? '' : '<p class="lu-empty">Không có tướng khớp bộ lọc</p>'}${owned.sort((a, b) => power(b) - power(a)).map(id => `
         <button class="hc2 r-${HEROES[id].rar} ${tierCls(tierOf(id))} el-${HEROES[id].el} ${lu.includes(id) ? 'in' : ''}" data-pick="${id}">${hcDeco(id)}<span class="hc2-img"><img src="${por(id, 80)}" loading="lazy"></span>
           <span class="hc2-rar">${HEROES[id].tier}</span><span class="hc2-sys">${sysIco('role_' + HEROES[id].role)}${sysIco('el_' + HEROES[id].el)}${sysIco('fac_' + HEROES[id].fac)}</span>${lu.includes(id) ? `<span class="hc2-in">${lu.indexOf(id) === 0 ? '👑' : lu.indexOf(id) + 1}</span>` : ''}
           <b>${esc(HEROES[id].name)}</b><small>⚔${fmt(power(id))}</small></button>`).join('')}</div>
@@ -4127,6 +4168,8 @@ function showLineup() {
   </div>`;
   if (keep) { ui.querySelector('.lu4 .pick-grid2').scrollTop = keep[0]; ui.querySelector('.lu4 .synergy').scrollTop = keep[1]; }
   $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.lf.split(':'); LF[g] = v; showLineup(); ui.querySelector('.lu4 .pick-grid2').scrollTop = 0; });
+  ui.querySelectorAll('[data-lfs]').forEach(sel => sel.onchange = () => { LF[sel.dataset.lfs] = sel.value; showLineup(); ui.querySelector('.lu4 .pick-grid2').scrollTop = 0; });
   ui.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
     const id = b.dataset.pick;
     if (S.lineup.includes(id)) S.lineup = S.lineup.filter(x => x !== id);
@@ -5012,6 +5055,9 @@ function route() {
         const u = B.heroes.find(x => x.id === um[1] && !x.dead);
         if (u) { u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; cast(u, 'ult'); for (let i = 0; i < +um[2] * 60; i++) update(1 / 60); }
       }
+      const tri = h.match(/(?:^|&)trio=([\d.]+)/);   // (chụp thử) hợp kích bộ ba đầu tiên đủ người, dừng sau N giây
+      if (tri) { for (const u of B.deploy.slice()) { takeSlot(u); B.heroes.push(u); B.deploy = B.deploy.filter(x => x !== u); }
+        const c = COMBOS.find(x => x.c && cxMem(x).every(m => B.heroes.find(hh => hh.id === m))); if (c) { for (const m of cxMem(c)) { const u = B.heroes.find(hh => hh.id === m); u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; } for (const e of B.enemies) e.hp = Math.max(e.hp, 1e7); castCombo(c); for (let i = 0; i < +tri[1] * 60; i++) update(1 / 60); } }
       const pj = h.match(/(?:^|&)pj=(\w+)/);   // (chụp thử) đạn đánh thường: kéo quái lại gần, bắn 3 loạt rồi dừng giữa đường bay
       if (pj) { const u = B.heroes.find(x => x.id === pj[1]); if (u) { for (const e of B.enemies) { e.x = u.x + 330 + Math.random() * 80; }
         for (let k = 0; k < 3; k++) { const e = B.enemies.find(x => !x.dead); if (e) fireStyle(u, e); for (let i = 0; i < 10; i++) update(1 / 60); } } }
@@ -5102,7 +5148,7 @@ loadArt().then(() => {
 // =====================================================================
 const SIG = {};
 // [cột, hàng, rộng ô, cao ô] — tools/make_sigfx.py in ra
-const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"tl_open":[4,2,192,256],"tl_clamp":[3,2,256,256],"tl_finale":[4,2,192,256],"nt_chaos":[4,2,192,256],"nt_ruyi":[4,2,192,256],"nt_rocks":[3,2,256,256],"nl_halo_burst":[4,2,192,256],"nl_land":[4,2,192,256],"nl_talisman":[3,2,256,256],"td_heaven":[4,2,192,256],"td_ray":[3,2,256,256],"cd_tailopen":[4,2,192,256],"cd_vajra":[3,2,256,256],"cd_vajra_hit":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256],"ngokhong_pj":[3,2,256,256],"ngokhong_ph":[3,2,256,256],"nata_pj":[3,2,256,256],"nata_ph":[3,2,256,256],"ngumavuong_pj":[3,2,256,256],"ngumavuong_ph":[3,2,256,256],"quanam_pj":[3,2,256,256],"quanam_ph":[3,2,256,256],"duongtien_pj":[3,2,256,256],"duongtien_ph":[3,2,256,256],"khuongtanha_pj":[3,2,256,256],"khuongtanha_ph":[3,2,256,256],"vantieu_pj":[3,2,256,256],"vantieu_ph":[3,2,256,256],"trieucongminh_pj":[3,2,256,256],"trieucongminh_ph":[3,2,256,256],"thaiatchannhan_pj":[3,2,256,256],"thaiatchannhan_ph":[3,2,256,256],"bodetosu_pj":[3,2,256,256],"bodetosu_ph":[3,2,256,256],"tranguyentu_pj":[3,2,256,256],"tranguyentu_ph":[3,2,256,256],"thanhnguutinh_pj":[3,2,256,256],"thanhnguutinh_ph":[3,2,256,256],"khongtuyen_pj":[3,2,256,256],"khongtuyen_ph":[3,2,256,256],"nhiendang_pj":[3,2,256,256],"nhiendang_ph":[3,2,256,256],"thaisu_pj":[3,2,256,256],"thaisu_ph":[3,2,256,256],"vanthu_pj":[3,2,256,256],"vanthu_ph":[3,2,256,256],"ngochoang_pj":[3,2,256,256],"ngochoang_ph":[3,2,256,256],"dilac_pj":[3,2,256,256],"dilac_ph":[3,2,256,256],"quangthanh_pj":[3,2,256,256],"quangthanh_ph":[3,2,256,256],"kimlinh_pj":[3,2,256,256],"kimlinh_ph":[3,2,256,256],"chanvu_pj":[3,2,256,256],"chanvu_ph":[3,2,256,256],"vuongmau_pj":[3,2,256,256],"vuongmau_ph":[3,2,256,256],"phohien_pj":[3,2,256,256],"phohien_ph":[3,2,256,256],"daibang_pj":[3,2,256,256],"daibang_ph":[3,2,256,256],"ngocdinh_pj":[3,2,256,256],"ngocdinh_ph":[3,2,256,256],"phuchy_pj":[3,2,256,256],"phuchy_ph":[3,2,256,256],"thannong_pj":[3,2,256,256],"thannong_ph":[3,2,256,256],"hienvien_pj":[3,2,256,256],"hienvien_ph":[3,2,256,256],"dabao_pj":[3,2,256,256],"dabao_ph":[3,2,256,256],"lucap_pj":[3,2,256,256],"lucap_ph":[3,2,256,256],"namcuc_pj":[3,2,256,256],"namcuc_ph":[3,2,256,256],"diatang_pj":[3,2,256,256],"diatang_ph":[3,2,256,256],"lucnhi_pj":[3,2,256,256],"lucnhi_ph":[3,2,256,256],"cuukho_pj":[3,2,256,256],"cuukho_ph":[3,2,256,256]}/*SFX*/;
+const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"th_lock":[4,2,192,256],"th_arc":[3,2,256,256],"th_shards":[3,2,256,256],"th_rift":[4,2,192,256],"th_pillar":[3,2,256,256],"th_crack":[4,2,192,256],"th_shatter":[4,2,192,256],"th_herbs":[3,2,256,256],"tl_open":[4,2,192,256],"tl_clamp":[3,2,256,256],"tl_finale":[4,2,192,256],"nt_chaos":[4,2,192,256],"nt_ruyi":[4,2,192,256],"nt_rocks":[3,2,256,256],"nl_halo_burst":[4,2,192,256],"nl_land":[4,2,192,256],"nl_talisman":[3,2,256,256],"td_heaven":[4,2,192,256],"td_ray":[3,2,256,256],"cd_tailopen":[4,2,192,256],"cd_vajra":[3,2,256,256],"cd_vajra_hit":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256],"ngokhong_pj":[3,2,256,256],"ngokhong_ph":[3,2,256,256],"nata_pj":[3,2,256,256],"nata_ph":[3,2,256,256],"ngumavuong_pj":[3,2,256,256],"ngumavuong_ph":[3,2,256,256],"quanam_pj":[3,2,256,256],"quanam_ph":[3,2,256,256],"duongtien_pj":[3,2,256,256],"duongtien_ph":[3,2,256,256],"khuongtanha_pj":[3,2,256,256],"khuongtanha_ph":[3,2,256,256],"vantieu_pj":[3,2,256,256],"vantieu_ph":[3,2,256,256],"trieucongminh_pj":[3,2,256,256],"trieucongminh_ph":[3,2,256,256],"thaiatchannhan_pj":[3,2,256,256],"thaiatchannhan_ph":[3,2,256,256],"bodetosu_pj":[3,2,256,256],"bodetosu_ph":[3,2,256,256],"tranguyentu_pj":[3,2,256,256],"tranguyentu_ph":[3,2,256,256],"thanhnguutinh_pj":[3,2,256,256],"thanhnguutinh_ph":[3,2,256,256],"khongtuyen_pj":[3,2,256,256],"khongtuyen_ph":[3,2,256,256],"nhiendang_pj":[3,2,256,256],"nhiendang_ph":[3,2,256,256],"thaisu_pj":[3,2,256,256],"thaisu_ph":[3,2,256,256],"vanthu_pj":[3,2,256,256],"vanthu_ph":[3,2,256,256],"ngochoang_pj":[3,2,256,256],"ngochoang_ph":[3,2,256,256],"dilac_pj":[3,2,256,256],"dilac_ph":[3,2,256,256],"quangthanh_pj":[3,2,256,256],"quangthanh_ph":[3,2,256,256],"kimlinh_pj":[3,2,256,256],"kimlinh_ph":[3,2,256,256],"chanvu_pj":[3,2,256,256],"chanvu_ph":[3,2,256,256],"vuongmau_pj":[3,2,256,256],"vuongmau_ph":[3,2,256,256],"phohien_pj":[3,2,256,256],"phohien_ph":[3,2,256,256],"daibang_pj":[3,2,256,256],"daibang_ph":[3,2,256,256],"ngocdinh_pj":[3,2,256,256],"ngocdinh_ph":[3,2,256,256],"phuchy_pj":[3,2,256,256],"phuchy_ph":[3,2,256,256],"thannong_pj":[3,2,256,256],"thannong_ph":[3,2,256,256],"hienvien_pj":[3,2,256,256],"hienvien_ph":[3,2,256,256],"dabao_pj":[3,2,256,256],"dabao_ph":[3,2,256,256],"lucap_pj":[3,2,256,256],"lucap_ph":[3,2,256,256],"namcuc_pj":[3,2,256,256],"namcuc_ph":[3,2,256,256],"diatang_pj":[3,2,256,256],"diatang_ph":[3,2,256,256],"lucnhi_pj":[3,2,256,256],"lucnhi_ph":[3,2,256,256],"cuukho_pj":[3,2,256,256],"cuukho_ph":[3,2,256,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } const C = typeof UR_PROJ !== 'undefined' && UR_PROJ[id]; if (C) { if (C.sheet) sfxImg(C.sheet); if (C.hit) sfxImg(C.hit); } }   // gọi khi tướng ra trận
@@ -5520,6 +5566,24 @@ SIG.nguyenthuy = { sheets: ['nt_chaos', 'nt_axe', 'nt_split', 'nt_rocks', 'nt_ru
       if (t > RUYI + 0.4) sfxDraw('nt_slam', (t - RUYI - 0.4) / 0.6, P.x, P.y - 30, 330, { add: 1 });
     } });
     snd('gong');
+  } };
+
+// ---------------------------------------------------------------- HIÊN VIÊN HOÀNG ĐẾ (SSR+): bản rút gọn của Nhân Hoàng Phá Giới
+// 3 nhát chém vòng cung (3 × 80%) -> nhát bổ dọc rạch hư không lộ trời sao + cột sáng giáng (320%) = 560%
+SIG.hienvien = { sheets: ['th_arc', 'th_shards', 'th_rift', 'th_pillar'],
+  ult(u, sk, tgt) {
+    const P = sigPt(u, 170, tgt), arcs = [[-0.5, -40], [0.45, 10], [-0.15, 50]], f0 = sk.fx.find(x => x.t === 'aoe' || x.t === 'line') || { mult: 5.6 };
+    const near = r => B.enemies.filter(e => !e.dead && Math.hypot(e.x - P.x, (e.y - P.y) * 1.3) < r);
+    sigFx({ ult: 1, who: u.id, dur: 2.4, upd(f) {
+      for (let i = 0; i < 3; i++) if (f.t >= 0.3 + i * 0.25) sigOnce(f, 'a' + i, () => { for (const e of near(240)) dealDmg(u, e, f0.mult * 0.8 / 5.6, 'ult'); B.shake = Math.max(B.shake, 0.4); sfx('hit'); });
+      if (f.t >= 1.25) sigOnce(f, 'rift', () => { for (const e of near(220)) dealDmg(u, e, f0.mult * 3.2 / 5.6, 'ult'); B.shake = 1.0; B.flash = 0.3; sfx('boom'); });
+    }, draw(f) {
+      const t = f.t; sigDim(0.5 * Math.min(1, t / 0.25) * fadeOut(t, 1.9, 0.5));
+      for (let i = 0; i < 3; i++) { const q = (t - 0.2 - i * 0.25) / 0.5; if (q < 0 || t > 1.9) continue; const [rot, dy] = arcs[i];
+        sfxDraw('th_arc', Math.min(1, q), P.x, P.y - 60 + dy, 340, { rot, add: 1 }); if (q < 1) sfxDraw('th_shards', q, P.x, P.y - 60 + dy, 200, { add: 1 }); }
+      if (t >= 1.05 && t < 2.2) { sfxDraw('th_rift', (t - 1.05) / 0.6, P.x, P.y - 90, 220, { a: fadeOut(t, 2.0, 0.2) }); sfxDraw('th_pillar', (t - 1.1) / 0.7, P.x, P.y + 20, 250, { ay: 0.95, add: 1 }); }
+    } });
+    snd('whoosh');
   } };
 
 // </SIG>

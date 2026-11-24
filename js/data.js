@@ -751,6 +751,7 @@ const COMBOS_ALL = [   // hợp kích (kiểu Dual Tech): mỗi tướng tối �
 COMBOS_ALL.push(
   { a: 'dienmau', b: 'longvuong', name: 'Hô Phong Hoán Vũ', mult: 4.2, all: 1, stun: 1.2, heal: 2.5, col: '#b8a0ff', desc: 'Mây giông phủ cả sân: sét giáng từng quái (choáng 1,2 giây), mưa hồi máu cả đội.' },
   { a: 'tranguyentu', b: 'thodia', name: 'Địa Mạch Trường Sinh', mult: 5, r: 260, heal: 3, shield: 0.12, col: '#ffd890', desc: 'Tay áo Càn Khôn thu quái một vùng, địa mạch dâng vàng hồi máu và cho khiên cả đội.' });
+COMBOS_ALL.push({ a: 'phuchy', b: 'hienvien', c: 'thannong', name: 'Nhân Hoàng Phá Giới', mult: 0, col: '#ffd34d', desc: 'Hợp kích bộ ba Tam Hoàng: Phục Hy hoạ bát quái khoá không gian, Hiên Viên chém vỡ hư không (180% + 200% vùng giữa + 350% cả sân, choáng), mảnh vỡ hoá thần dược của Thần Nông hồi máu cả đội 300% công.' });
 const COMBOS = COMBOS_ALL;   // hợp kích: chỉ hiện nút khi CẢ HAI tướng của cặp cùng trên sân và cùng đầy nộ
 // ĐỘI TRƯỞNG: mỗi tướng làm đội trưởng mang một hiệu ứng riêng (theo hệ, vài tướng có hiệu ứng đặc biệt)
 const CAP_ROLE = {
