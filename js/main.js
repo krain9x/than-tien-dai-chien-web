@@ -1083,7 +1083,7 @@ function fireProj(u, tgt, o) {
     splitN: o.splitN || 0, spin: !!o.spin, boom: o.boom || 0, stun: o.stun || 0, child: !!o.child, spinT: 0, tickT: 0,
     dt: u.side === 'h' && !u.clone && trongOf(u) >= 5,
   });
-  if (u.side === 'h' && B.fxb.length < 40) { fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70); sfx('shoot'); }   // chớp nòng
+  if (u.side === 'h' && B.fxb.length < 40) { if (!UR_PROJ[u.id]) fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70); sfx('shoot'); }   // chớp nòng (tướng có đạn vẽ tay riêng thì bỏ: tránh ám vàng người)
   return B.projs[B.projs.length - 1];
 }
 // đòn đánh thường theo kiểu riêng của tướng (ATK_STYLE trong data.js)
@@ -2022,10 +2022,18 @@ function drawRigUnit(u, h, alpha) {
     if (u.pzN !== nm) { u.pzPrev = u.pzN ? { n: u.pzN, t: u.pzT || 0, at: u.t } : null; u.pzN = nm; u.pzAt = u.t; }
     u.pzT = pz[1];
     const fade = u.pzPrev ? Math.max(0, 1 - (u.t - u.pzPrev.at) / 0.07) : 0;   // chuyển dáng chồng mờ 70 ms cho mượt
-    if (fade > 0) drawPose(u, u.pzPrev.n, u.pzPrev.t, h, alpha * fade);
+    const XF = window.__xf == null ? 1 : window.__xf;   // kiểu chuyển dáng: 0 cũ (chồng mờ cả hai) · 1 dáng mới đục, dáng cũ mờ dưới · 2 đổi tức thì · 3 dáng mới hiện dần từ tâm
+    if (fade > 0 && XF !== 2) drawPose(u, u.pzPrev.n, u.pzPrev.t, h, alpha * (XF === 1 || XF === 3 ? fade * 0.8 : fade));
     const pop = Math.max(0, 1 - (u.t - u.pzAt) / 0.12);   // nảy nhẹ khi đổi dáng
     if (pop > 0 && nm !== 'idle1' && nm !== 'idle2') { ctx.translate(0, -3 * pop); ctx.scale(1 + 0.02 * pop, 1 - 0.02 * pop); }
-    ok = drawPose(u, nm, pz[1], h, alpha * (fade > 0 ? 1 - fade * 0.35 : 1));
+    if (XF === 3 && fade > 0) {   // dáng mới hiện dần từ tâm thân ra ngoài (giữa đục, viền mờ), vẽ trên lớp riêng rồi chồng lên
+      const main = ctx, m = main.getTransform(); if (!window._xfC) window._xfC = document.createElement('canvas'); const oc = window._xfC; if (oc.width !== cv.width || oc.height !== cv.height) { oc.width = cv.width; oc.height = cv.height; }
+      const g2 = oc.getContext('2d'); g2.setTransform(1, 0, 0, 1, 0, 0); g2.clearRect(0, 0, oc.width, oc.height); g2.setTransform(m); ctx = g2;
+      try { ok = drawPose(u, nm, pz[1], h, 1); } finally { ctx = main; }
+      const r = h * (0.35 + 1.1 * (1 - fade)); g2.setTransform(m); g2.globalCompositeOperation = 'destination-in';
+      const gr = g2.createRadialGradient(0, -h * 0.5, r * 0.6, 0, -h * 0.5, r); gr.addColorStop(0, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g2.fillStyle = gr; g2.fillRect(-h * 3, -h * 3, h * 6, h * 6); g2.globalCompositeOperation = 'source-over';
+      main.save(); main.setTransform(1, 0, 0, 1, 0, 0); main.globalAlpha = alpha; main.drawImage(oc, 0, 0); main.restore(); }
+    else ok = drawPose(u, nm, pz[1], h, alpha * (fade > 0 && XF === 0 ? 1 - fade * 0.35 : 1));
     ctx.restore(); if (ok) return;
   }
   if (!u.rphys) u.rphys = Rig.newPhys();
@@ -5102,6 +5110,14 @@ function route() {
       const tri = h.match(/(?:^|&)trio=([\d.]+)/);   // (chụp thử) hợp kích bộ ba đầu tiên đủ người, dừng sau N giây
       if (tri) { for (const u of B.deploy.slice()) { takeSlot(u); B.heroes.push(u); B.deploy = B.deploy.filter(x => x !== u); }
         const c = COMBOS.find(x => x.c && cxMem(x).every(m => B.heroes.find(hh => hh.id === m))); if (c) { for (const m of cxMem(c)) { const u = B.heroes.find(hh => hh.id === m); u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; } for (const e of B.enemies) e.hp = Math.max(e.hp, 1e7); castCombo(c); for (let i = 0; i < +tri[1] * 60; i++) update(1 / 60); } }
+      const rec = h.match(/(?:^|&)rec=(\w+):(\d)/);   // (quay video thử) &rec=<tướng>:<kiểu chuyển dáng> — 150 khung 30 hình/giây quanh tướng, gửi về rec_server
+      if (rec) { window.__xf = +rec[2]; const u = B.heroes.find(x => x.id === rec[1]); if (u) { for (const e of B.enemies) { e.x = u.x + 250 + Math.random() * 80; e.hp = Math.max(e.hp, 1e7); }
+        const oc = document.createElement('canvas'); oc.width = 480; oc.height = 360; const og = oc.getContext('2d'); let k = 0;
+        const step = () => { if (k >= 150) { console.log('RECDONE'); return; } update(1 / 30); render(); const m = B.worldM, p = m.transformPoint(new DOMPoint(u.x + 110, u.y - 60)), sc = m.a;
+          og.drawImage(cv, p.x - 240 * sc, p.y - 180 * sc, 480 * sc, 360 * sc, 0, 0, 480, 360); og.fillStyle = 'rgba(0,0,0,.55)'; og.fillRect(0, 0, 480, 26); og.fillStyle = '#fff'; og.font = '700 16px sans-serif';
+          og.fillText(['Kiểu cũ (chồng mờ cả hai)', 'Kiểu 1: dáng mới đục', 'Kiểu 2: đổi tức thì', 'Kiểu 3: hiện dần từ tâm'][window.__xf], 10, 19);
+          const n = k++; oc.toBlob(b => fetch('/frame/' + rec[1] + rec[2] + '/' + n, { method: 'POST', body: b }).then(() => setTimeout(step, 0))); };
+        B.paused = true; setTimeout(step, 300); } }
       const pj = h.match(/(?:^|&)pj=(\w+)/);   // (chụp thử) đạn đánh thường: kéo quái lại gần, bắn 3 loạt rồi dừng giữa đường bay
       if (pj) { const u = B.heroes.find(x => x.id === pj[1]); if (u) { for (const e of B.enemies) { e.x = u.x + 330 + Math.random() * 80; }
         for (let k = 0; k < 3; k++) { const e = B.enemies.find(x => !x.dead); if (e) fireStyle(u, e); for (let i = 0; i < 10; i++) update(1 / 60); } } }
