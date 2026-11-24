@@ -5676,13 +5676,13 @@ const dimT = (t, end, c) => sigDim(0.5 * Math.min(1, t / 0.3) * fadeOut(t, end, 
 
 // Na Tra — K: Hoả Tiêm Thương Vạn Ảnh: lao tới, đâm liên hoàn hàng chục ảnh thương -> nhát cuối đâm thủng không trung, thương lửa xuyên cả sân
 SIG.nata.ult = function (u, sk, tgt) {
-  const P = sigPt(u, 160, tgt), x0 = u.x;
+  const P = sigPt(u, 160, tgt);   // đứng tại chỗ: ảnh thương lửa phóng từ tay Na Tra tới quái
   ssrUlt(u, sk, tgt, 2.4, [[0.45, 0.1, 160], [0.6, 0.1, 160], [0.75, 0.1, 160], [0.9, 0.1, 160], [1.05, 0.1, 160], [1.45, 0.5, 2000]], (t, P, h) => {
     dimT(t, 1.9, '#1a0400');
-    const tx = P.x - 120 * (u.f || 1), ty = P.y - h * 0.5;
-    if (t > 0.3 && t < 1.3) sfxDraw('nt4_thrusts', t * 4, tx + 90 * (u.f || 1), ty, 300, { loop: 1, add: 1, sx: u.f || 1 });
+    const tx = u.x + 30 * (u.f || 1), ty = u.y - h * 0.5, L = Math.max(260, P.x - tx + 80), a = Math.atan2((P.y - 40) - ty, P.x - tx);
+    if (t > 0.3 && t < 1.3) sfxDraw('nt4_thrusts', t * 4, tx + Math.cos(a) * L / 2, ty + Math.sin(a) * L / 2, L, { loop: 1, add: 1, rot: a });   // ảnh thương dồn dập phủ từ tay tới quái
     if (t > 1.3) sfxDraw('nt4_lance', (t - 1.3) / 0.9, (tx + VIEW_R()) / 2, ty, Math.max(300, VIEW_R() - tx + 120), { add: 1, sx: u.f || 1 });
-  }, { P, upd(f) { const t = f.t; if (t < 0.3) u.x = x0 + (P.x - 130 * (u.f || 1) - x0) * (t / 0.3); else if (t > 1.9) u.x += (x0 - u.x) * 0.3; u.atkAnim = t > 0.35 && t < 1.5 ? (t * 6) % 1 : u.atkAnim; } });
+  }, { P, upd(f) { const t = f.t; u.atkAnim = t > 0.35 && t < 1.5 ? (t * 6) % 1 : u.atkAnim; } });
   snd('whoosh');
 };
 // Quan Âm — A: Tịnh bình nghiêng, cam lộ chảy thành sông -> dương liễu rắc mưa -> sen trắng nở dưới chân đồng đội (hồi máu)
