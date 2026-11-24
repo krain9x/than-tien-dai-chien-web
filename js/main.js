@@ -3099,7 +3099,7 @@ function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && 
 function auraOn(u) { const t = u && u.side === 'h' && !u.clone && S.gfx !== 'low' && tierOf(u.id); return (t === 'SSR+' || t === 'SSR') && !!sfImg('aura_' + u.id); }   // SSR+/SSR: vòng sáng quanh người
 function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
   if (UR_LAYERS[u.id]) return;   // UR tách lớp đã có hào quang riêng sau đầu -> bỏ vòng lớn quanh người cho đỡ rối
-  const im = sfImg('aura_' + u.id); if (!im) return; const full = 0;   // đầy nộ không đổi vòng sáng / hạt (tránh loé khi vào trận)
+  const im = sfImg('aura_' + u.id); if (!im) return; const full = 0;   // đầy nộ không làm vòng sáng sáng lên / hạt quanh người nhiều hơn (người dùng chốt 2026-11-24)
   const T = window.AURA_C0 && (AURA_C0[poseDir(u.id)] || AURA_C0[u.id]), tc = (T && (T[u.pzN] || T.idle1)) || [0, 0.48];
   u.auC = u.auC || tc.slice(); u.auC[0] += (tc[0] - u.auC[0]) * 0.25; u.auC[1] += (tc[1] - u.auC[1]) * 0.25;   // trượt mượt theo dáng
   const hh = h * (HFIX[u.id] || 1), cx = u.auC[0] * hh * u.f * (FACE[u.id] || 1), cy = -u.auC[1] * hh;
