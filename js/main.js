@@ -1083,7 +1083,7 @@ function fireProj(u, tgt, o) {
     splitN: o.splitN || 0, spin: !!o.spin, boom: o.boom || 0, stun: o.stun || 0, child: !!o.child, spinT: 0, tickT: 0,
     dt: u.side === 'h' && !u.clone && trongOf(u) >= 5,
   });
-  if (u.side === 'h' && B.fxb.length < 40) { if (!UR_PROJ[u.id] && !(u.mzT > B.time)) { u.mzT = B.time + 0.25; fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70); } sfx('shoot'); }   // chớp nòng (tướng có đạn riêng thì bỏ: tránh loé)
+  if (u.side === 'h' && B.fxb.length < 40) { fxBurst(u.x + u.f * 22, u.y - 30 * sizeOf(u), 'flare', 70); sfx('shoot'); }   // chớp nòng
   return B.projs[B.projs.length - 1];
 }
 // đòn đánh thường theo kiểu riêng của tướng (ATK_STYLE trong data.js)
@@ -3095,11 +3095,10 @@ function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm
   const T = window.AURA_C0 && (AURA_C0[poseDir(u.id)] || AURA_C0[u.id]), tc = (T && (T[u.pzN] || T.idle1)) || [0, 0.48];
   u.auC = u.auC || tc.slice(); u.auC[0] += (tc[0] - u.auC[0]) * 0.25; u.auC[1] += (tc[1] - u.auC[1]) * 0.25;   // trượt mượt theo dáng
   const hh = h * (HFIX[u.id] || 1), cx = u.auC[0] * hh * u.f * (FACE[u.id] || 1), cy = -u.auC[1] * hh;
-  u.auF = (u.auF || 0) + (full - (u.auF || 0)) * 0.05;   // đầy nộ sáng lên từ từ (không bật phụt)
-  const S_ = hh * (1.25 + 0.02 * Math.sin(u.t * 3)) * (1 + 0.08 * u.auF);
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.36 + 0.04 * Math.sin(u.t * 2.2) + 0.16 * u.auF;   // cộng sáng nhưng nhạt, nhịp thở chậm
+  const S_ = hh * (1.25 + 0.04 * Math.sin(u.t * 3)) * (1 + 0.12 * full);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.45 + 0.1 * Math.sin(u.t * 2.2) + 0.25 * full;
   ctx.drawImage(im, cx - S_ / 2, cy - S_ / 2, S_, S_); ctx.restore();
-  if (B.parts.length < 160 && Math.random() < 0.04 + 0.06 * u.auF) ssrPart(u.id, u.x + cx + rand(-30, 30), u.y + cy + rand(-40, 40), rand(-20, 20), -rand(20, 60), 0.9);
+  if (Math.random() < 0.05 + 0.1 * full) ssrPart(u.id, u.x + cx + rand(-30, 30), u.y + cy + rand(-40, 40), rand(-20, 20), -rand(20, 60), 0.9);
 }
 const PT_FX = {   // hạt bay quanh người cho SSR+/SSR chưa có bộ SSR_FX (pt: [loại hạt], col: màu)
   trieucongminh: { col: '#ffe08a', pt: [6] }, thaiatchannhan: { col: '#ff6a2a', pt: [2] }, thanhnguutinh: { col: '#7fa8ff', pt: [11] }, nhiendang: { col: '#ffe08a', pt: [2] },
@@ -3128,8 +3127,8 @@ const NUOA_ST = [['hoa', 'Hoả', '#ff6a3a'], ['tho', 'Thổ', '#e8b040'], ['moc
 function drawUrProj(p) {
   const C = UR_PROJ[p.src.id], a = Math.atan2(p.vy, p.vx), L = C.len * (p.child ? 0.75 : 1);
   if (C.ssr && !sfxImg(C.sheet)) return false;   // SSR chưa có sheet: đạn cũ
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.28;
-  const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, L * 0.4); g.addColorStop(0, C.col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, L * 0.5, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5;
+  const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, L * 0.5); g.addColorStop(0, C.col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, L * 0.5, 0, TAU); ctx.fill(); ctx.restore();
   if (C.sheet) { sfxImg(C.sheet); sfxDraw(C.sheet, p.age * 4, p.x, p.y, L, { loop: 1, rot: C.spin ? p.age * 14 : a }); }
   else if (C.swords) {   // Thông Thiên: lần lượt 4 thanh kiếm
     if (p.swI == null) p.swI = p.src.swN = ((p.src.swN || 0) + 1) % 4;
@@ -3144,7 +3143,7 @@ function drawUrProj(p) {
 }
 function urHit(src, tgt, crit) {
   const C = UR_PROJ[src.id], x = tgt.x, y = tgt.y - 34 * sizeOf(tgt);
-  if (C.hit && !(tgt.phT > B.time)) { tgt.phT = B.time + 0.15; sfxImg(C.hit); sfxOnce(C.hit, x, y, crit ? 130 : 90, 0.3, { add: 1, a: 0.8 }); }   // giới hạn nổ chồng (đánh nhanh)
+  if (C.hit) { sfxImg(C.hit); sfxOnce(C.hit, x, y, crit ? 150 : 110, 0.35, { add: 1 }); }
   if (crit) B.hitstop = Math.max(B.hitstop || 0, 0.05);
   if (tgt.dead) return;
   if (src.id === 'giaochu') {   // hiệu ứng phụ theo thanh kiếm
