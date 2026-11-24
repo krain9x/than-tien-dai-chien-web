@@ -5748,14 +5748,27 @@ SIG.dilac = { sheets: ['dl_laugh', 'dl_coins', 'dl_coinhit'], ult(u, sk, tgt) {
     if (t > 1.1 && t < 2.6) sfxDraw('dl_coins', t * 0.8, P.x, P.y - 120, 360, { loop: 1, a: fadeOut(t, 2.3, 0.3) });
     for (const t0 of [1.55, 2.05]) { const q = (t - t0) / 0.5; if (q >= 0 && q <= 1) sfxDraw('dl_coinhit', q, P.x, P.y - 30, 240, { add: 1 }); }
   }); snd('magic'); } };
-// Ngọc Hoàng — A: ngọc tỷ đóng dấu lên trời -> Nam Thiên Môn mở -> thiên binh ném giáo mưa xuống
-SIG.ngochoang = { sheets: ['nh_seal', 'nh_gate', 'nh_spears'], ult(u, sk, tgt) {
-  ssrUlt(u, sk, tgt, 3.2, [[1.6, 0.25, 230], [1.95, 0.25, 230], [2.3, 0.5, 230]], (t, P) => {
-    dimT(t, 2.8, '#100c00'); const gx = P.x - 40, gy = LANE_Y0 - 70;
-    if (t < 0.9) sfxDraw('nh_seal', t / 0.7, gx, gy, 180, { add: 1 });
-    if (t > 0.6 && t < 2.9) sfxDraw('nh_gate', Math.min(1, (t - 0.6) / 0.9), gx, gy, 260, { add: 1, a: fadeOut(t, 2.6, 0.3) });
-    if (t > 1.4 && t < 2.8) sfxDraw('nh_spears', t * 1.2, P.x, P.y - 110, 360, { loop: 1, add: 1, a: fadeOut(t, 2.5, 0.3) });
-  }, { restAt: 1.0 }); snd('gong'); } };
+// Ngọc Hoàng — ngọc tỷ đóng dấu lên trời -> Nam Thiên Môn mở trên cao giữa trời -> từng cây giáo thiên binh bay ra từ cổng lao vào từng con quái
+SIG.ngochoang = { sheets: ['nh_seal', 'nh_gate', 'nh_spears', 'dl_coinhit'], need: ['nh_spear'], ult(u, sk, tgt) {
+  const f0 = sk.fx.find(x => x.t === 'aoe'), GX = (GATE_X + VIEW_R()) / 2 + 40, GY = LANE_Y0 - 30, sp = [];
+  sigFx({ ult: 1, who: u.id, dur: 3.4, upd(f) {
+    if (f.t >= 1.3) sigOnce(f, 'aim', () => { const L = B.enemies.filter(e => !e.dead); const n = Math.max(6, Math.min(14, L.length * 2));
+      for (let i = 0; i < n; i++) { const e = L[i % Math.max(1, L.length)]; if (!e) break; sp.push({ e, d: i * 0.07, sx: GX + (Math.random() - 0.5) * 120, done: 0, hx: e.x, hy: e.y }); }
+      f.cnt = new Map(); for (const q of sp) f.cnt.set(q.e, (f.cnt.get(q.e) || 0) + 1); });
+    for (const q of sp) if (!q.done && f.t >= 1.3 + q.d + 0.45) { q.done = 1; q.hx = q.e.x; q.hy = q.e.y;
+      if (!q.e.dead) { dealDmg(u, q.e, f0.mult / f.cnt.get(q.e), 'ult'); sfxOnce('dl_coinhit', q.e.x, q.e.y - 30, 130, 0.4, { add: 1 }); B.shake = Math.max(B.shake, 0.3); sfx('hit'); } }
+    if (f.t >= 0.9) sigOnce(f, 'buff', () => { for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult'); });
+  }, draw(f) {
+    const t = f.t; dimT(t, 2.9, '#100c00');
+    if (t < 0.9) sfxDraw('nh_seal', t / 0.7, GX, GY, 170, { add: 1 });
+    if (t > 0.6 && t < 3.0) { const a = fadeOut(t, 2.7, 0.3); sfxDraw('nh_gate', Math.min(1, (t - 0.6) / 0.9), GX, GY, 230, { a: 0.6 * a }); sfxDraw('nh_gate', Math.min(1, (t - 0.6) / 0.9), GX, GY, 230, { add: 1, a: 0.6 * a }); }
+    if (t > 1.3 && t < 2.8) // (bỏ nền mưa giáo: từng cây giáo đã rõ)
+    for (const q of sp) { const k = (t - 1.3 - q.d) / 0.45; if (k < 0 || k > 1) continue;   // từng cây giáo bay từ cổng tới quái
+      const ex = q.e.dead ? q.hx : q.e.x, ey = (q.e.dead ? q.hy : q.e.y) - 30, x = q.sx + (ex - q.sx) * k, y = GY + 30 + (ey - GY - 30) * k * k;
+      const k2 = Math.min(1, k + 0.05), x2 = q.sx + (ex - q.sx) * k2, y2 = GY + 30 + (ey - GY - 30) * k2 * k2, ang = Math.atan2(y2 - y, x2 - x) + Math.PI / 2;
+      sigGlow(x, y, 34, 'rgba(255,220,120,0.9)', 0.6); sigImg('nh_spear', x, y, 22, ang, 1); }
+  } });
+  snd('gong'); } };
 // Chân Vũ — B: nước đen bắc phương dâng thành biển -> Thất Tinh kiếm khí rạch mặt nước -> nổ 7 cột nước
 SIG.chanvu = { sheets: ['cv_sea', 'cv_starslash', 'cv_geyser'], ult(u, sk, tgt) {
   const cols = Array.from({ length: 7 }, (_, i) => [(i - 3) * 50, Math.sin(i * 1.7) * 40]);
