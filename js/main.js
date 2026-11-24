@@ -1813,7 +1813,7 @@ function drawTierAura(u) {   // tầng tướng trên sân: vạch tầng dướ
 function drawUnit(u) {
   const s = 1.0;
   ctx.save();
-  ctx.translate(u.x, u.y);
+  ctx.translate(u.x, u.y - (u.liftY || 0));   // liftY: biên đạo nhấc tướng lên (vd Ngộ Không nhảy lên nện gậy)
   let alpha = 1;
   if (u.dead) {
     if (u.side === 'e') { alpha = Math.max(0, 1 - u.deathT * 2.2); ctx.translate(0, -u.deathT * 30); }
@@ -5184,7 +5184,7 @@ loadArt().then(() => {
 // =====================================================================
 const SIG = {};
 // [cột, hàng, rộng ô, cao ô] — tools/make_sigfx.py in ra
-const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"th_void":[4,2,192,256],"th_lock":[4,2,192,256],"th_arc":[3,2,256,256],"th_shards":[3,2,256,256],"th_rift":[4,2,192,256],"th_pillar":[3,2,256,256],"th_crack":[4,2,192,256],"th_shatter":[4,2,192,256],"th_herbs":[3,2,256,256],"tl_open":[4,2,192,256],"tl_clamp":[3,2,256,256],"tl_finale":[4,2,192,256],"nt_chaos":[4,2,192,256],"nt_ruyi":[4,2,192,256],"nt_rocks":[3,2,256,256],"nl_halo_burst":[4,2,192,256],"nl_land":[4,2,192,256],"nl_talisman":[3,2,256,256],"td_heaven":[4,2,192,256],"td_ray":[3,2,256,256],"cd_tailopen":[4,2,192,256],"cd_vajra":[3,2,256,256],"cd_vajra_hit":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256],"ngokhong_pj":[3,2,256,256],"ngokhong_ph":[3,2,256,256],"nata_pj":[3,2,256,256],"nata_ph":[3,2,256,256],"ngumavuong_pj":[3,2,256,256],"ngumavuong_ph":[3,2,256,256],"quanam_pj":[3,2,256,256],"quanam_ph":[3,2,256,256],"duongtien_pj":[3,2,256,256],"duongtien_ph":[3,2,256,256],"khuongtanha_pj":[3,2,256,256],"khuongtanha_ph":[3,2,256,256],"vantieu_pj":[3,2,256,256],"vantieu_ph":[3,2,256,256],"trieucongminh_pj":[3,2,256,256],"trieucongminh_ph":[3,2,256,256],"thaiatchannhan_pj":[3,2,256,256],"thaiatchannhan_ph":[3,2,256,256],"bodetosu_pj":[3,2,256,256],"bodetosu_ph":[3,2,256,256],"tranguyentu_pj":[3,2,256,256],"tranguyentu_ph":[3,2,256,256],"thanhnguutinh_pj":[3,2,256,256],"thanhnguutinh_ph":[3,2,256,256],"khongtuyen_pj":[3,2,256,256],"khongtuyen_ph":[3,2,256,256],"nhiendang_pj":[3,2,256,256],"nhiendang_ph":[3,2,256,256],"thaisu_pj":[3,2,256,256],"thaisu_ph":[3,2,256,256],"vanthu_pj":[3,2,256,256],"vanthu_ph":[3,2,256,256],"ngochoang_pj":[3,2,256,256],"ngochoang_ph":[3,2,256,256],"dilac_pj":[3,2,256,256],"dilac_ph":[3,2,256,256],"quangthanh_pj":[3,2,256,256],"quangthanh_ph":[3,2,256,256],"kimlinh_pj":[3,2,256,256],"kimlinh_ph":[3,2,256,256],"chanvu_pj":[3,2,256,256],"chanvu_ph":[3,2,256,256],"vuongmau_pj":[3,2,256,256],"vuongmau_ph":[3,2,256,256],"phohien_pj":[3,2,256,256],"phohien_ph":[3,2,256,256],"daibang_pj":[3,2,256,256],"daibang_ph":[3,2,256,256],"ngocdinh_pj":[3,2,256,256],"ngocdinh_ph":[3,2,256,256],"phuchy_pj":[3,2,256,256],"phuchy_ph":[3,2,256,256],"thannong_pj":[3,2,256,256],"thannong_ph":[3,2,256,256],"hienvien_pj":[3,2,256,256],"hienvien_ph":[3,2,256,256],"dabao_pj":[3,2,256,256],"dabao_ph":[3,2,256,256],"lucap_pj":[3,2,256,256],"lucap_ph":[3,2,256,256],"namcuc_pj":[3,2,256,256],"namcuc_ph":[3,2,256,256],"diatang_pj":[3,2,256,256],"diatang_ph":[3,2,256,256],"lucnhi_pj":[3,2,256,256],"lucnhi_ph":[3,2,256,256],"cuukho_pj":[3,2,256,256],"cuukho_ph":[3,2,256,256]}/*SFX*/;
+const SFX = /*SFX*/{"nmv_spikes":[3,2,256,256],"nmv_crack":[3,2,256,256],"nmv_roar":[3,2,256,256],"nmv_pillar":[4,2,192,256],"nt_ring":[3,2,256,256],"nt_spear":[3,2,256,256],"nt_wheel":[3,2,256,256],"nt_burst":[3,2,256,256],"nt_trail":[4,2,192,256],"hq_galaxy":[4,2,192,256],"tl_qi":[4,2,192,256],"tl_smoke":[3,2,256,256],"wk_grow":[3,2,256,256],"wk_slam":[4,2,192,256],"wk_crack":[3,2,256,256],"nt3_bind":[3,2,256,256],"nt3_cage":[4,2,192,256],"th_void":[4,2,192,256],"th_lock":[4,2,192,256],"th_arc":[3,2,256,256],"th_shards":[3,2,256,256],"th_rift":[4,2,192,256],"th_pillar":[3,2,256,256],"th_crack":[4,2,192,256],"th_shatter":[4,2,192,256],"th_herbs":[3,2,256,256],"tl_open":[4,2,192,256],"tl_clamp":[3,2,256,256],"tl_finale":[4,2,192,256],"nt_chaos":[4,2,192,256],"nt_ruyi":[4,2,192,256],"nt_rocks":[3,2,256,256],"nl_halo_burst":[4,2,192,256],"nl_land":[4,2,192,256],"nl_talisman":[3,2,256,256],"td_heaven":[4,2,192,256],"td_ray":[3,2,256,256],"cd_tailopen":[4,2,192,256],"cd_vajra":[3,2,256,256],"cd_vajra_hit":[3,2,256,256],"nuoa_fuse":[4,2,192,256],"nuoa_pillar":[4,2,192,256],"nuoa_rain":[3,2,256,256],"hq_bolt":[3,2,256,256],"hq_hit":[3,2,256,256],"tl_pill":[3,2,256,256],"tl_hit":[3,2,256,256],"nt_beam":[3,2,256,256],"nt_hit":[3,2,256,256],"nuoa_hit":[3,2,256,256],"td_petal":[3,2,256,256],"td_hit":[3,2,256,256],"cd_feather":[3,2,256,256],"cd_hit":[3,2,256,256],"nl_seal":[3,2,256,256],"nl_hit":[3,2,256,256],"tl_yang":[4,2,192,256],"tl_yin":[4,2,192,256],"nt_axe":[4,2,192,256],"nt_split":[4,2,192,256],"nt_slam":[3,2,256,256],"tt_corner":[3,2,256,256],"nuoa_clay":[3,2,256,256],"td_revive":[4,2,192,256],"cd_silence":[3,2,256,256],"nl_burst":[3,2,256,256],"hq_slash":[3,2,256,256],"hq_rift_open":[4,2,192,256],"hq_rift_loop":[4,2,192,256],"hq_pull":[3,2,256,256],"hq_burst":[4,2,192,256],"nuoa_cloud":[4,2,192,256],"nuoa_sky":[4,2,192,256],"td_petals":[3,2,256,256],"td_ground":[4,2,192,256],"td_bloom":[4,2,192,256],"cd_feathers":[3,2,256,256],"cd_sweep":[4,2,192,256],"nl_glyphs":[3,2,256,256],"nl_lotus":[4,2,192,256],"nl_palm":[4,2,192,256],"nt_banner":[4,2,192,256],"tt_slash":[3,2,256,256],"tt_cuts":[3,2,256,256],"tt_land":[3,2,256,256],"tt_array":[4,2,192,256],"tt_final":[4,2,192,256],"ngokhong_pj":[3,2,256,256],"ngokhong_ph":[3,2,256,256],"nata_pj":[3,2,256,256],"nata_ph":[3,2,256,256],"ngumavuong_pj":[3,2,256,256],"ngumavuong_ph":[3,2,256,256],"quanam_pj":[3,2,256,256],"quanam_ph":[3,2,256,256],"duongtien_pj":[3,2,256,256],"duongtien_ph":[3,2,256,256],"khuongtanha_pj":[3,2,256,256],"khuongtanha_ph":[3,2,256,256],"vantieu_pj":[3,2,256,256],"vantieu_ph":[3,2,256,256],"trieucongminh_pj":[3,2,256,256],"trieucongminh_ph":[3,2,256,256],"thaiatchannhan_pj":[3,2,256,256],"thaiatchannhan_ph":[3,2,256,256],"bodetosu_pj":[3,2,256,256],"bodetosu_ph":[3,2,256,256],"tranguyentu_pj":[3,2,256,256],"tranguyentu_ph":[3,2,256,256],"thanhnguutinh_pj":[3,2,256,256],"thanhnguutinh_ph":[3,2,256,256],"khongtuyen_pj":[3,2,256,256],"khongtuyen_ph":[3,2,256,256],"nhiendang_pj":[3,2,256,256],"nhiendang_ph":[3,2,256,256],"thaisu_pj":[3,2,256,256],"thaisu_ph":[3,2,256,256],"vanthu_pj":[3,2,256,256],"vanthu_ph":[3,2,256,256],"ngochoang_pj":[3,2,256,256],"ngochoang_ph":[3,2,256,256],"dilac_pj":[3,2,256,256],"dilac_ph":[3,2,256,256],"quangthanh_pj":[3,2,256,256],"quangthanh_ph":[3,2,256,256],"kimlinh_pj":[3,2,256,256],"kimlinh_ph":[3,2,256,256],"chanvu_pj":[3,2,256,256],"chanvu_ph":[3,2,256,256],"vuongmau_pj":[3,2,256,256],"vuongmau_ph":[3,2,256,256],"phohien_pj":[3,2,256,256],"phohien_ph":[3,2,256,256],"daibang_pj":[3,2,256,256],"daibang_ph":[3,2,256,256],"ngocdinh_pj":[3,2,256,256],"ngocdinh_ph":[3,2,256,256],"phuchy_pj":[3,2,256,256],"phuchy_ph":[3,2,256,256],"thannong_pj":[3,2,256,256],"thannong_ph":[3,2,256,256],"hienvien_pj":[3,2,256,256],"hienvien_ph":[3,2,256,256],"dabao_pj":[3,2,256,256],"dabao_ph":[3,2,256,256],"lucap_pj":[3,2,256,256],"lucap_ph":[3,2,256,256],"namcuc_pj":[3,2,256,256],"namcuc_ph":[3,2,256,256],"diatang_pj":[3,2,256,256],"diatang_ph":[3,2,256,256],"lucnhi_pj":[3,2,256,256],"lucnhi_ph":[3,2,256,256],"cuukho_pj":[3,2,256,256],"cuukho_ph":[3,2,256,256]}/*SFX*/;
 const SGI = {};
 function sfxImg(n) { let i = SGI[n]; if (!i) { i = SGI[n] = new Image(); i.src = 'art/sigfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function sigPreload(id) { const S = SIG[id]; if (S) { (S.sheets || []).forEach(sfxImg); (S.need || []).forEach(ucImg); } const C = typeof UR_PROJ !== 'undefined' && UR_PROJ[id]; if (C) { if (C.sheet) sfxImg(C.sheet); if (C.hit) sfxImg(C.hit); } }   // gọi khi tướng ra trận
@@ -5282,43 +5282,41 @@ SIG.nata = {
     }
     sfx('shoot'); snd('whoosh');
   },
-  // Tuyệt kỹ: Tam Đầu Lục Tý (2 thân phụ hiện hai bên) → 6 Hoả Tiêm Thương phóng liên tiếp → Phong Hoả Luân lăn dọc đường lửa
+  // Tuyệt kỹ TAM ĐẦU LỤC TÝ: hiện ba đầu sáu tay -> sáu tay lần lượt tung sáu pháp bảo:
+  //   Hoả Tiêm Thương (đâm) · Càn Khôn Quyển (nện, choáng) · Hỗn Thiên Lăng (trói) · Kim Chuyên (đập từ trên) · Âm Dương Kiếm (chém) · Cửu Long Thần Hoả Tráo (lồng lửa chốt, thiêu)
   ult(u, sk, tgt) {
-    const f0 = sk.fx[0], ty = tgt ? tgt.y : u.y, a0 = tgt ? Math.atan2(ty - u.y, tgt.x - u.x) : 0, len = f0.len;
-    const x2 = u.x + Math.cos(a0) * len, y2 = u.y + Math.sin(a0) * len, h = spriteH(u);
-    const segN = Math.max(3, Math.round(len / 150)), segL = len / segN;   // vệt cháy: từng đoạn bùng lên khi bánh xe lăn qua
-    B.slowmo = 0.3; B.cam = { x: u.x + 120, y: u.y - 60, t: 0, dur: 0.7 };
-    sigFx({ ult: 1, dur: 2.6, upd(f) {
-      for (let i = 0; i < 6; i++) if (f.t >= 0.5 + i * 0.09) sigOnce(f, 's' + i, () => { sfx('shoot'); });
-      if (f.t >= 1.1) sigOnce(f, 'hit', () => { runFx(u, f0, tgt, 'ult'); B.shake = Math.max(B.shake, 0.9); B.flash = 0.25; sfx('boom'); });
+    const P = sigPt(u, 160, tgt), h = spriteH(u), M = (sk.fx[0] && sk.fx[0].mult) || 5;
+    const near = r => B.enemies.filter(e => !e.dead && Math.hypot(e.x - P.x, (e.y - P.y) * 1.3) < r);
+    const T = [   // [ảnh, kiểu bay, lúc phóng, phần sát thương]
+      ['spear_fire', 'line', 0.55, 0.12], ['golden_ring', 'arc', 0.75, 0.12], ['nt_sash', 'arc', 0.95, 0.08],
+      ['nt_brick', 'drop', 1.15, 0.14], ['nt_ysword', 'line', 1.35, 0.14]];
+    sigFx({ ult: 1, who: u.id, dur: 3.0, upd(f) {
+      T.forEach(([img, , t0, part], k) => { if (f.t >= t0 + 0.32) sigOnce(f, 'h' + k, () => {
+        const L = near(img === 'nt_sash' ? 220 : 170); for (const e of L) { dealDmg(u, e, M * part, 'ult'); if (e.dead) continue;
+          if (img === 'golden_ring' && !e.boss) e.stun = Math.max(e.stun || 0, 0.6);
+          if (img === 'nt_sash') { e.stun = Math.max(e.stun || 0, e.boss ? 0.4 : 1.8); e.x += (P.x - e.x) * 0.4; e.y += (P.y - e.y) * 0.4; } }
+        B.shake = Math.max(B.shake, img === 'nt_brick' ? 0.8 : 0.4); sfx(img === 'nt_brick' ? 'boom' : 'hit'); }); });
+      if (f.t >= 1.9) sigOnce(f, 'cage', () => { for (const e of near(200)) { dealDmg(u, e, M * 0.4, 'ult'); if (!e.dead) { e.burn = 4; e.burnDps = Math.max(e.burnDps || 0, getAtk(u) * 0.5); } }
+        B.shake = 1.1; B.flash = 0.3; sfx('boom'); snd('thunder', 0.7, 0.7); B.decals.push({ x: P.x, y: P.y + 4, r: 160, t: 0, dur: 5 }); });
     }, draw(f) {
-      const t = f.t;
-      sigDim(0.35 * Math.sin(Math.PI * Math.min(1, t / 2.6)));
-      if (t < 1.2) {   // ba đầu sáu tay: hai thân phụ hiện hai bên
-        const e = Math.min(1, t / 0.3), fade = t > 0.9 ? 1 - (t - 0.9) / 0.3 : 1;
-        sigGlow(u.x, u.y - h * 0.5, h * 0.9, 'rgba(255,90,30,0.85)', 0.7 * e * fade);
-        for (const s of [-1, 1]) { ctx.save(); ctx.translate(u.x + s * 30 * e, u.y); ctx.rotate(s * 0.28 * e); ctx.scale(u.f * 1.12, 1.12); ctx.filter = 'sepia(1) saturate(4) hue-rotate(-20deg) brightness(1.2)';
+      const t = f.t; sigDim(0.5 * Math.min(1, t / 0.3) * fadeOut(t, 2.5, 0.5), '#1a0400');
+      if (t < 2.0) {   // ba đầu sáu tay: hai thân phụ đỏ lửa hai bên
+        const e = Math.min(1, t / 0.3), fade = fadeOut(t, 1.7, 0.3);
+        sigGlow(u.x, u.y - h * 0.5, h * 1.1, 'rgba(255,90,30,0.85)', 0.7 * e * fade);
+        for (const s of [-1, 1]) { ctx.save(); ctx.translate(u.x + s * 34 * e, u.y); ctx.rotate(s * 0.3 * e); ctx.scale(u.f * 1.15, 1.15); ctx.filter = 'sepia(1) saturate(4) hue-rotate(-20deg) brightness(1.2)';
           drawPose({ id: u.id, hurt: 0 }, 'ult', 0, h, 0.5 * e * fade); ctx.restore(); }
       }
-      if (t >= 1.05) for (let k = 0; k < segN; k++) {   // vệt lửa trên đất
-        const t0 = 1.05 + (k + 0.5) / segN * 0.9; if (t < t0) continue;
-        const d = (k + 0.5) * segL; sfxDraw('nt_trail', (t - t0) / 1.2, u.x + Math.cos(a0) * d, u.y + Math.sin(a0) * d + 4, segL * 1.6, { ay: 0.57, add: 1, a: 0.95 });
-      }
-      for (let i = 0; i < 6; i++) {   // giáo lửa bay vòng cung rồi nổ
-        const s0 = 0.5 + i * 0.09, q = (t - s0) / 0.32; if (q < 0) continue;
-        const tx = u.x + (x2 - u.x) * (0.25 + i * 0.13), tyy = u.y + (y2 - u.y) * (0.25 + i * 0.13) + (i % 2 ? 22 : -22);
-        const sx = u.x + 10 * u.f, sy = u.y - h * 0.7 - (i % 3) * 16;
-        if (q <= 1) { const px = sx + (tx - sx) * q, py = sy + (tyy - 30 - sy) * q - Math.sin(q * Math.PI) * 40, q2 = Math.min(1, q + 0.05);
-          const ang = Math.atan2(sy + (tyy - 30 - sy) * q2 - Math.sin(q2 * Math.PI) * 40 - py, sx + (tx - sx) * q2 - px);
-          sfxDraw('nt_spear', t * 4 + i * 0.3, px, py, 150, { loop: 1, rot: ang, add: 1 }); }
-        else if (q < 2.3) sfxDraw('nt_burst', (q - 1) / 1.3, tx, tyy - 34, 170, { add: 1 });
-      }
-      if (t >= 1.05 && t < 2.1) {   // Phong Hoả Luân lăn
-        const q = Math.min(1, (t - 1.05) / 0.9), wx = u.x + (x2 - u.x) * q, wy = u.y + (y2 - u.y) * q - 40, a = fadeOut(t, 1.9, 0.2);
-        sigGlow(wx, wy, 100, 'rgba(255,140,40,0.9)', 0.7 * a);
-        sfxDraw('nt_wheel', t * 5, wx, wy, 140, { loop: 1, a });
-        if (Math.random() < 0.5) particles(wx, wy + 30, '#ff9a3a', 2, 160, 4);
-      }
+      T.forEach(([img, kind, t0], k) => { const q = (t - t0) / 0.32; if (q < 0) return;
+        const sx = u.x + (k % 3 - 1) * 30 * (u.f || 1), sy = u.y - h * (0.6 + (k % 2) * 0.35), ex = P.x + (k - 2) * 14, ey = P.y - 40;
+        if (q <= 1) { let x, y, rot = 0, S = 70;
+          if (kind === 'drop') { x = ex; y = ey - 260 * (1 - q * q); S = 80; }
+          else { x = sx + (ex - sx) * q; y = sy + (ey - sy) * q - (kind === 'arc' ? Math.sin(q * Math.PI) * 90 : 0); rot = Math.atan2(ey - sy, ex - sx) + (img === 'golden_ring' ? t * 18 : 0); }
+          if (img === 'spear_fire' || img === 'nt_ysword') { S = 120; rot += Math.PI / 2; }
+          sigGlow(x, y, 46, 'rgba(255,140,40,0.9)', 0.7); sigImg(img, x, y, img === 'spear_fire' ? 90 : S, rot, 1);
+        } else if (q < 2.3) { const p = (q - 1) / 1.3;
+          if (img === 'nt_sash') sfxDraw('nt3_bind', p, P.x, P.y - 50, 220, { add: 1 });
+          else sfxDraw('nt_burst', p, ex, ey, img === 'nt_brick' ? 220 : 150, { add: 1 }); } });
+      if (t >= 1.7) sfxDraw('nt3_cage', (t - 1.7) / 1.1, P.x, P.y + 30, 300, { ay: 0.95, add: 1 });   // Cửu Long Thần Hoả Tráo
     } });
     snd('magic');
   },
@@ -5620,6 +5618,39 @@ SIG.hienvien = { sheets: ['th_arc', 'th_shards', 'th_void'],
         sfxDraw('th_arc', Math.min(1, q), P.x, P.y - 60 + dy, 340, { rot, add: 1 }); if (q < 1) sfxDraw('th_shards', q, P.x, P.y - 60 + dy, 200, { add: 1 }); }
       if (t >= 1.0 && t < 1.3) sfxDraw('th_arc', (t - 1.0) / 0.3, P.x, P.y - 80, 480, { rot: -1.25 - Math.PI / 2 + 0.6, add: 1 });
       if (t >= 1.85 && t < 2.4) sfxDraw('th_shards', (t - 1.85) / 0.5, P.x, P.y - 80, 300, { add: 1 });
+    } });
+    snd('whoosh');
+  } };
+
+// ---------------------------------------------------------------- TÔN NGỘ KHÔNG (SSR+): NHƯ Ý ĐỊNH HẢI — gậy trong tay lớn dần (ánh vàng chạy dọc thân)
+//   -> vung ra sau lưng thành cột trời -> nện thẳng xuống chỗ quái đông nhất (sát thương + nứt đất) -> gậy thu nhỏ về tay; 2 phân thân như cũ
+SIG.ngokhong = { sheets: ['wk_grow', 'wk_slam', 'wk_crack', 'th_shards'], need: ['staff'],
+  ult(u, sk, tgt) {
+    const P = sigPt(u, 160, tgt), h = spriteH(u), f0 = sk.fx.find(x => x.t === 'aoe');
+    const GROW = 1.0, SLAM = 1.45, BACK = 2.0, JUMP = Math.min(h * 1.1, u.y - LANE_Y0 + 30), HX = u.x + (P.x - u.x) * 0.35;   // nhảy lên giữa đường, nện chéo xuống
+    const x0 = u.x, lift = t => t < 0.6 ? 0 : t < BACK + 0.15 ? JUMP * Math.sin(Math.min(1, (t - 0.6) / 0.45) * Math.PI / 2) : JUMP * Math.max(0, 1 - (t - BACK - 0.15) / 0.3);
+    const PX = () => u.x + 12 * (u.f || 1), PY = () => u.y - (u.liftY || 0) - h * 0.55;
+    sigFx({ ult: 1, who: u.id, dur: 2.6, upd(f) {
+      u.liftY = lift(f.t); if (f.t > 0.6 && f.t < SLAM) u.x = x0 + (HX - x0) * Math.min(1, (f.t - 0.6) / 0.45); else if (f.t >= BACK + 0.15 && f.t < 2.5) u.x += (x0 - u.x) * 0.25; if (f.t >= 2.5) { u.liftY = 0; u.x = x0; }
+      if (f.t >= SLAM) sigOnce(f, 'slam', () => { runFx(u, { ...f0, P, r: 170 }, tgt, 'ult'); for (const x of sk.fx) if (x.t !== 'aoe') runFx(u, x, tgt, 'ult');
+        B.shake = 1.3; B.flash = 0.35; B.hitstop = Math.max(B.hitstop || 0, 0.14); sfx('boom'); snd('thunder', 0.9, 0.6); B.decals.push({ x: P.x, y: P.y + 4, r: 170, t: 0, dur: 6 }); });
+    }, draw(f) {
+      const t = f.t, im = ucImg('staff'); sigDim(0.5 * Math.min(1, t / 0.3) * fadeOut(t, 2.2, 0.4), '#120800');
+      const px = PX(), py = PY(), Lhit = Math.hypot(P.x - px, (P.y - 20) - py) + 30, aHit = Math.atan2((P.y - 20) - py, P.x - px), aUp = -Math.PI / 2 - 0.35 * (u.f || 1);
+      let L, ang;
+      if (t < GROW) { const q = Math.min(1, t / GROW), e = q * q * (3 - 2 * q); L = h * 0.9 + (Math.max(Lhit, h * 3.2) - h * 0.9) * e; ang = -Math.PI / 2 + (aUp + Math.PI / 2) * e; }   // lớn dần, nghiêng ra sau
+      else if (t < SLAM) { const q = (t - GROW) / (SLAM - GROW), e = q * q * q; L = Math.max(Lhit, h * 3.2) + (Lhit - Math.max(Lhit, h * 3.2)) * e;
+        let d = aHit - aUp; if (u.f > 0 && d < 0) d += TAU; if (u.f < 0 && d > 0) d -= TAU; ang = aUp + d * e; }                                                // nện xuống (nhanh dần)
+      else if (t < BACK) { L = Lhit; ang = aHit; }
+      else { const q = Math.min(1, (t - BACK) / 0.45); L = Lhit + (h * 0.9 - Lhit) * q; ang = aHit + (-Math.PI / 2 - aHit) * q; }                                    // thu nhỏ về tay
+      const a = t > BACK + 0.4 ? fadeOut(t, BACK + 0.4, 0.2) : 1;
+      if (im && a > 0) { const w = Math.min(26, 10 + L * 0.025);   // gậy dài ra nhưng không phình quá to
+        if (t < SLAM + 0.1) { ctx.save(); ctx.translate(px, py); ctx.rotate(ang + Math.PI / 2); sfxDraw('wk_grow', t * 2.5, 0, -L / 2, Math.max(60, w * 4), { loop: 1, add: 1, sy: L / Math.max(60, w * 4) / 1.3, a: 0.8 }); ctx.restore(); }
+        ctx.save(); ctx.translate(px, py); ctx.rotate(ang + Math.PI / 2); ctx.globalAlpha = a;
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * a; ctx.drawImage(im, -w * 1.2, -L * 1.01, w * 2.4, L * 1.02); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = a;
+        ctx.drawImage(im, -w / 2, -L, w, L); ctx.restore(); }
+      if (t >= SLAM - 0.05) { sfxDraw('wk_slam', (t - SLAM + 0.05) / 0.9, P.x, P.y + 20, 420, { ay: 0.92, add: 1 }); sfxDraw('wk_crack', (t - SLAM) / 0.9, P.x, P.y + 4, 340, { a: fadeOut(t, 2.3, 0.3) }); }
+      if (t >= SLAM && t < SLAM + 0.5) sfxDraw('th_shards', (t - SLAM) / 0.5, P.x, P.y - 40, 300, { add: 1 });
     } });
     snd('whoosh');
   } };
