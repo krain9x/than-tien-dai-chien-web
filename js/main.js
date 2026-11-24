@@ -3100,7 +3100,15 @@ function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm
   ctx.drawImage(im, cx - S_ / 2, cy - S_ / 2, S_, S_); ctx.restore();
   if (Math.random() < 0.05 + 0.1 * full) ssrPart(u.id, u.x + cx + rand(-30, 30), u.y + cy + rand(-40, 40), rand(-20, 20), -rand(20, 60), 0.9);
 }
-function ssrPart(id, x, y, vx, vy, life) { const F = SSR_FX[id]; if (!F || !B) return; B.parts.push({ x, y, vx, vy, life, max: life, color: F.col, size: 9 + Math.random() * 6, img: F.pt[0], rot: Math.random() * 6, vr: rand(-4, 4), nograv: 1 }); }
+const PT_FX = {   // hạt bay quanh người cho SSR+/SSR chưa có bộ SSR_FX (pt: [loại hạt], col: màu)
+  trieucongminh: { col: '#ffe08a', pt: [6] }, thaiatchannhan: { col: '#ff6a2a', pt: [2] }, thanhnguutinh: { col: '#7fa8ff', pt: [11] }, nhiendang: { col: '#ffe08a', pt: [2] },
+  thaisu: { col: '#c8a0ff', pt: [5] }, vanthu: { col: '#9fd0ff', pt: [10] }, ngochoang: { col: '#ffe58a', pt: [3] }, dilac: { col: '#ffd34d', pt: [6] },
+  quangthanh: { col: '#ffcf6a', pt: [9] }, kimlinh: { col: '#ffd34d', pt: [3] }, chanvu: { col: '#7fc8ff', pt: [7] }, vuongmau: { col: '#ffb0c8', pt: [8] },
+  phohien: { col: '#e0f0ff', pt: [0] }, daibang: { col: '#ffd34d', pt: [1] }, ngocdinh: { col: '#bfe0ff', pt: [10] }, phuchy: { col: '#9fffc0', pt: [4] },
+  thannong: { col: '#9fff9a', pt: [4] }, hienvien: { col: '#ffd34d', pt: [10] }, dabao: { col: '#ffd34d', pt: [6] }, lucap: { col: '#ffffff', pt: [10] },
+  namcuc: { col: '#ffb0a0', pt: [8] }, diatang: { col: '#ffd76a', pt: [3] }, lucnhi: { col: '#c070ff', pt: [11] }, cuukho: { col: '#7fc8ff', pt: [7] },
+};
+function ssrPart(id, x, y, vx, vy, life) { const F = SSR_FX[id] || PT_FX[id]; if (!F || !B) return; B.parts.push({ x, y, vx, vy, life, max: life, color: F.col, size: 9 + Math.random() * 6, img: F.pt[0], rot: Math.random() * 6, vr: rand(-4, 4), nograv: 1 }); }
 // ===== ĐẠN RIÊNG UR / UR+ : sheet vẽ tay 6 khung chạy vòng (art/sigfx) + quầng sáng + nổ trúng riêng + hiệu ứng phụ theo truyện =====
 const UR_PROJ = {
   hongquan: { sheet: 'hq_bolt', hit: 'hq_hit', len: 78, col: '#c890ff' },
@@ -3771,11 +3779,11 @@ function render() {
   for (const f of B.fx) drawFx(f);
   drawFxBursts();
   drawSparks();
-  const PT = sfImg('particles');
+  const PT = sfImg('particles'), PT2 = sfImg('particles2');
   for (const f of B.fx) if (f.k === 'ssrhit') drawSsrHit(f);
   for (const p of B.parts) {
     ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
-    if (p.img != null && PT) { const fw = PT.width / 6, s2 = p.size * 2.4; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(p.x, p.y); ctx.rotate(p.rot || 0); ctx.drawImage(PT, p.img * fw, 0, fw, PT.height, -s2 / 2, -s2 / 2 * PT.height / fw, s2, s2 * PT.height / fw); ctx.restore(); continue; }
+    if (p.img != null && PT) { const IM = p.img >= 6 ? PT2 : PT; if (!IM) continue; const fw = IM.width / 6, s2 = p.size * 2.4, ix = p.img % 6; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(p.x, p.y); ctx.rotate(p.rot || 0); ctx.drawImage(IM, ix * fw, 0, fw, IM.height, -s2 / 2, -s2 / 2 * IM.height / fw, s2, s2 * IM.height / fw); ctx.restore(); continue; }
     ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
   }
   ctx.globalAlpha = 1;
