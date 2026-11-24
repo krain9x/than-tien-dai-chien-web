@@ -1217,7 +1217,7 @@ const DOM_NEED = { tamthanh: 'Có Hồng Quân, hoặc đủ Tam Thanh (Thái Th
   HEROES.thailaoquan.ult.desc = HEROES.thailaoquan.ult.desc.replace('500% công', '550% công');
 })();
 HEROES.ngokhong.ult.name = 'Như Ý Định Hải'; HEROES.ngokhong.ult.desc = 'Kim Cô Bổng trong tay lớn dần thành cột chống trời rồi nện thẳng xuống chỗ quái đông nhất 520% công, đất nứt; tạo 2 phân thân 7 giây.';
-HEROES.nata.ult.desc = 'Hiện Tam Đầu Lục Tý, sáu tay tung sáu pháp bảo: Hoả Tiêm Thương, Càn Khôn Quyển (choáng), Hỗn Thiên Lăng (trói), Kim Chuyên, Âm Dương Kiếm, cuối cùng Cửu Long Thần Hoả Tráo úp lồng lửa thiêu đốt; tổng 500% công.';
+HEROES.nata.ult.name = 'Hoả Tiêm Thương Vạn Ảnh'; HEROES.nata.ult.desc = 'Lao tới đâm liên hoàn hàng chục ảnh thương lửa (5 × 50% công), nhát cuối đâm thủng không trung, thương lửa xuyên cả sân 250% công và thiêu đốt.';
 const NO_ART = new Set(["kimmaohong"]);
 (function hideNoArt() {
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
