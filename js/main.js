@@ -1938,7 +1938,7 @@ function poseFor(u) {
 //   Hiển thị = 108px × look.size × SIZE_K × (UR 1,08). SIZE_K bù phần thú cưỡi/toà để NGƯỜI luôn cùng cỡ.
 //   SIZE_K[id] = tổng chiều cao khối / chiều cao người (chỉ tướng cưỡi thú, ngồi toà, áo dài lơ lửng, dáng khom). Kiểm bằng tools/size_sheet.py:
 //   đỉnh đầu NGƯỜI phải chạm vạch đỏ. Vẽ lại tướng có thú cưỡi -> chạy lại size_sheet.py và chỉnh số của tướng đó.
-const SIZE_K = { namcuc: 0.94, nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
+const SIZE_K = { truongkhue: 1.1, namcuc: 0.94, nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
 const heroK = id => (SIZE_K[id] || 1) * (isUR(id) ? 1.08 : 1);
 const HFIX = new Proxy({}, { get: (_, id) => typeof id === 'string' && HEROES[id] ? heroK(id) : undefined });   // tương thích chỗ cũ dùng HFIX[id]
 const _bright = new WeakMap();
@@ -2773,15 +2773,15 @@ const UCFG = {
   hoalinh: {"t": "drop", "obj": "golden_crown", "size": 210, "col": "#ff9a3a", "beam": 1},
   latuyen: {"t": "rain", "obj": "fire_crow", "n": 10, "size": 70, "col": "#ff6a2a"},
   anhong: {"t": "bolt", "obj": "yinyang_mirror", "col": "#ffd34d"},
-  nhithapbattu: {"t": "rain", "obj": "star_meteor", "size": 110, "col": "#7fe08a", "n": 12},
+  nhithapbattu: {"t": "rain", "obj": "star_meteor", "size": 30, "col": "#7fe08a", "n": 12},
   maisonluc: {"t": "summon", "obj": "six_warriors", "size": 240, "col": "#d0a060", "waves": 1},
-  thapthienquan: {"t": "drop", "obj": "formation_flag", "size": 230, "col": "#7fc8ff", "beam": 1},
+  thapthienquan: {"t": "drop", "obj": "formation_flag", "size": 64, "col": "#7fc8ff", "beam": 1},
   cuulongdaotuthanh: {"t": "summon", "obj": "fierce_beast", "size": 250, "col": "#ff7a3a", "waves": 1},
   trinhluan: {"t": "bolt", "obj": "white_light_orb", "size": 180, "col": "#ffd34d"},
   truongkhue: {"t": "summon", "obj": "black_beast", "size": 230, "col": "#ff7a3a", "waves": 1},
   hongcam: {"t": "drop", "obj": "mist_net", "size": 240, "col": "#d0a060"},
   dangcuucong: {"t": "smash", "obj": "grand_sabre", "size": 480, "col": "#ffd34d"},
-  sunghachho: {"t": "rain", "obj": "eagle_feather", "size": 120, "col": "#ff7a3a", "n": 12},
+  sunghachho: {"t": "rain", "obj": "eagle_feather", "size": 30, "col": "#ff7a3a", "n": 12},
   thapdienduong: {"t": "drop", "obj": "life_death_book", "size": 230, "col": "#7fc8ff"},
   nguytrung: {"t": "smash", "obj": "dragon_slayer_sword", "size": 470, "col": "#ffd34d"},
   phucloctho: {"t": "heal", "obj": "blessing_scroll", "size": 210, "col": "#7fe08a"},
