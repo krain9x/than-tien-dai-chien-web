@@ -2610,6 +2610,19 @@ Object.assign(UTPL, {
     if (p > 0.45 && p < 0.85) uxSheet('sheet_boom_blue', tx, ty - 40, 340, (p - 0.45) / 0.4);
   },
   // Khổn Tiên Thằng: ném dây, dây quấn vòng quanh bầy quái rồi siết lại, bùa dán quanh, đất nứt
+  // Hố sụt: mặt đất nứt rồi xoáy thành hố sâu ngay DƯỚI CHÂN bầy quái, đất đá văng lên, quái bị nuốt, hố khép lại
+  pit(f, p, c) {
+    ucDark(p, 0.5); const [tx, ty] = tgtXY(f), S = c.size || 220, gy = ty + 6;
+    if (p < 0.3) uxSheet('sheet_crack', tx, gy, S * 2.2, p / 0.3);
+    const open = p < 0.22 ? 0 : p < 0.42 ? ease3((p - 0.22) / 0.2) : p < 0.82 ? 1 : 1 - ease3((p - 0.82) / 0.18);
+    if (open > 0) { ctx.save(); ctx.translate(tx, gy); ctx.scale(1, 0.42); ucObj(c.obj, 0, 0, S * 1.5 * open, p * 5, Math.min(1, open * 1.3), c.col, 0.35); ctx.restore(); }
+    if (p > 0.24 && p < 0.8) { const q = (p - 0.24) / 0.56; ctx.save(); ctx.fillStyle = '#6b4a2a'; ctx.strokeStyle = '#2a1a0a'; ctx.lineWidth = 2;
+      for (let i = 0; i < 14; i++) { const a0 = i / 14 * TAU + i, r = S * 0.7 * open * (0.6 + 0.4 * ((i * 7) % 5) / 5), t = (q * 2.2 + i * 0.13) % 1, x = tx + Math.cos(a0) * r * (1 - t * 0.9), y = gy + Math.sin(a0) * r * 0.42 * (1 - t * 0.9) - Math.sin(t * Math.PI) * 70, z = 5 + (i % 4) * 3;
+        ctx.globalAlpha = 1 - t; ctx.beginPath(); ctx.moveTo(x - z, y); ctx.lineTo(x, y - z); ctx.lineTo(x + z, y + z * 0.4); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+      ctx.restore(); }
+    if (p >= 0.42) ucHit(f, c.col, 1, 160);
+    if (p > 0.4 && p < 0.75) uxSheet('sheet_boom_gold', tx, gy - 30, S * 1.6, (p - 0.4) / 0.35);
+  },
   bind(f, p, c) {
     ucDark(p, 0.45); const [tx, ty] = tgtXY(f), R = c.r || 180;
     if (p < 0.35) { const q = p / 0.35; ucObj(c.obj, f.x + (tx - f.x) * ease3(q), f.y - 40 + (ty - 60 - f.y + 40) * q - Math.sin(q * Math.PI) * 120, 110, q * 10, 1, c.col, 0.6); }
@@ -2706,7 +2719,7 @@ const UCFG = {
   hoangthientuong: {"t": "throw", "obj": "silver_spear", "n": 3, "size": 40, "col": "#e0f0ff"},
   nhuychantien: {"t": "throw", "obj": "ruyi_hook", "n": 2, "size": 51, "col": "#7fc8ff"},
   holuc: {"t": "bolt", "obj": "thunder_token", "col": "#ffe58a"},
-  diadung: {"t": "suck", "obj": "sinkhole", "col": "#c09060", "size": 200},
+  diadung: {"t": "pit", "obj": "sinkhole", "col": "#c09060", "size": 200},   // hố mở dưới chân quái (suck là hồ lô hút về phía tướng)
   nhentinh: {"t": "drop", "obj": "spider_web", "size": 230, "col": "#e0e0ff"},
   tenguu: {"t": "summon", "obj": "rhino_spirit", "size": 240, "col": "#9fd0ff", "waves": 1},
   loctinh: {"t": "summon", "obj": "white_deer", "size": 220, "col": "#e0f0ff", "waves": 1},
@@ -2746,7 +2759,7 @@ const UCFG = {
   thodia: { t: 'heal', obj: 'gold_ingot', size: 160, col: '#ffe58a' },
   hoangphongquai: { t: 'tornado', obj: 'sand_tornado', col: '#e8c060' },
 };
-const UDUR = { pierce: [1.5, 0.42], charm: [1.8, 0.45], chant: [1.9, 0.55], scroll: [1.8, 0.5], pour: [1.9, 0.5], pearls: [1.9, 0.5], wind: [1.7, 0.5], bolt: [1.7, 0.45], bind: [1.8, 0.55], suck: [2.0, 0.6], tornado: [1.9, 0.55], smash: [1.7, 0.55], drop: [1.6, 0.5], beast: [1.7, 0.6], serpent: [2.4, 0.5], throw: [1.6, 0.45], sweep: [1.6, 0.5], rain: [1.8, 0.5], summon: [1.7, 0.45], heal: [1.8, 0.5] };
+const UDUR = { pierce: [1.5, 0.42], charm: [1.8, 0.45], chant: [1.9, 0.55], scroll: [1.8, 0.5], pour: [1.9, 0.5], pearls: [1.9, 0.5], wind: [1.7, 0.5], bolt: [1.7, 0.45], bind: [1.8, 0.55], suck: [2.0, 0.6], pit: [2.0, 0.42], tornado: [1.9, 0.55], smash: [1.7, 0.55], drop: [1.6, 0.5], beast: [1.7, 0.6], serpent: [2.4, 0.5], throw: [1.6, 0.45], sweep: [1.6, 0.5], rain: [1.8, 0.5], summon: [1.7, 0.45], heal: [1.8, 0.5] };
 const ucNeed = c => ['obj', 'run', 'atk', 'head', 'body', 'under', 'pet', 'wave'].map(k => c[k]).concat(c.t === 'charm' ? ['heart_charm'] : []).filter(Boolean);
 for (const id in UCFG) { const c = UCFG[id], d = UDUR[c.t], need = ucNeed(c); ULTC[id] = { dur: d[0], hit: d[1], need, draw: (f, p) => UTPL[c.t](f, p, c) }; }
 ULTC.duongtien.need = ['hound_run1', 'hound_run2', 'hound_leap', 'hound_bite']; ULTC.tieubachlong.need = ['dragon_head', 'dragon_long'];
