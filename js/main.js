@@ -1833,6 +1833,20 @@ function drawTierAura(u) {   // tầng tướng trên sân: vạch tầng dướ
   for (let i = 0; i < n - 1; i++) { const x = u.x + (i - (n - 2) / 2) * 9, y = u.y + 14; ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4); ctx.fillStyle = n >= 5 ? '#ffd34d' : col; ctx.strokeStyle = '#2a0a04'; ctx.lineWidth = 1.5; ctx.fillRect(-3, -3, 6, 6); ctx.strokeRect(-3, -3, 6, 6); ctx.restore(); }
   ctx.restore();
 }
+function drawShieldPlates(u, front) {
+  const im = FXT.shield_plate; if (!im || !im.complete || !im.naturalWidth) return;
+  const hh = spriteH(u), ratio = Math.min(1, u.shield / Math.max(1, maxHp(u))), n = ratio > 0.3 ? 5 : ratio > 0.12 ? 4 : 3;
+  const rx = hh * 0.43, ry = hh * 0.12, cy = -hh * 0.46, spin = u.t * 2.3 * (u.side === 'e' && !u.ah ? -1 : 1);
+  const fade = u.shieldT > 0 && u.shieldT < 1.2 ? 0.45 + 0.55 * Math.abs(Math.sin(u.t * 14)) : 1;   // sắp hết khiên: nháy
+  const col = (ELEMENTS[u.el] || {}).color || '#9fe0ff';
+  for (let i = 0; i < n; i++) {
+    const a = spin + i * TAU / n, dp = Math.sin(a); if ((dp > 0) !== front) continue;
+    const x = Math.cos(a) * rx, y = cy + dp * ry + Math.sin(a * 2 + u.t * 3) * 2, w = hh * 0.225 * (0.82 + 0.22 * dp), sx = 0.32 + 0.68 * Math.abs(dp);   // hẹp lại khi tấm đi ngang (như đang xoay quanh trục)
+    ctx.save(); ctx.translate(x, y);
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.55 * fade; const g = ctx.createRadialGradient(0, 0, 1, 0, 0, w * 0.95); g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, w * 0.95, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = (front ? 1 : 0.78) * fade; ctx.scale(sx, 1); ctx.drawImage(im, -w / 2, -w / 2, w, w); ctx.restore();
+  }
+}
 function drawUnit(u) {
   const s = 1.0;
   ctx.save();
@@ -1844,11 +1858,7 @@ function drawUnit(u) {
   }
   if (u.clone && !u.clay) alpha = 0.7;   // người đất Nữ Oa: rõ nét
   if (u.inv > 0 && !u.dead) alpha *= 0.55;
-  if (u.shield > 0 && !u.dead) {
-    ctx.save(); ctx.globalAlpha = 0.35 + Math.sin(u.t * 6) * 0.08;
-    Art.E(ctx, 0, -28 * sizeOf(u), 26 * sizeOf(u), 34 * sizeOf(u)); ctx.fillStyle = '#9fe0ff'; ctx.fill();
-    ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.strokeStyle = '#d8f6ff'; ctx.stroke(); ctx.restore();
-  }
+  if (u.shield > 0 && !u.dead) drawShieldPlates(u, false);   // khiên: các tấm khiên quay quanh người (nửa sau đi sau lưng, nửa trước đi trước mặt)
   if ((u.side === 'h' || u.ah) && !u.dead && u.atkAnim >= 0 && typeof ATK_STYLE !== 'undefined' && ATK_STYLE[u.id]) {   // ra đòn: lao tới trước rồi thu về (đường cong nhanh-chậm)
     const q = u.atkAnim, lunge = (q < 0.35 ? Math.sin(q / 0.35 * Math.PI / 2) : Math.max(0, 1 - (q - 0.35) / 0.5)) * (LUNGE[ATK_STYLE[u.id].pat] || 8);
     ctx.translate(u.f * lunge, 0);
@@ -1872,6 +1882,7 @@ function drawUnit(u) {
   }
   else if (img) drawSprite(u, img, alpha);
   else Art.draw(ctx, u.look, { t: u.t, f: u.f, walk: u.walk && !u.dead, atk: u.dead ? -1 : u.atkAnim, cast: u.castT > 0, hurt: u.hurt, scale: s, alpha });
+  if (u.shield > 0 && !u.dead) drawShieldPlates(u, true);
   ctx.restore();
   if (u.dead) return;
   const sz = sizeOf(u);
@@ -2226,7 +2237,7 @@ function sfx(kind) {
 }
 // ------------------------------------------------------------------ CHẤT LIỆU HIỆU ỨNG (art/fx, nền đen, vẽ bằng hoà sáng 'lighter')
 const FXT = {};
-for (const n of ['burst_gold', 'burst_blue', 'slash', 'orb', 'lightning', 'smoke', 'ring', 'flare', 'fire', 'petal', 'burst_moc', 'burst_hoa', 'burst_tho', 'ring_moc', 'ring_thuy', 'ring_hoa', 'ring_tho']) { const i = new Image(); i.src = 'art/fx/' + n + '.webp'; FXT[n] = i; }
+for (const n of ['burst_gold', 'burst_blue', 'slash', 'orb', 'lightning', 'smoke', 'ring', 'flare', 'fire', 'petal', 'burst_moc', 'burst_hoa', 'burst_tho', 'ring_moc', 'ring_thuy', 'ring_hoa', 'ring_tho', 'shield_plate']) { const i = new Image(); i.src = 'art/fx/' + n + '.webp'; FXT[n] = i; }
 function fxGlow(name, x, y, size, rot, alpha, sx, sy) {
   const im = FXT[name]; if (!im || !im.complete || !im.naturalWidth || alpha <= 0) return;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, alpha);
