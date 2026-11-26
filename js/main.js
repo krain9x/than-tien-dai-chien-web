@@ -220,7 +220,7 @@ function fullImg(id, size) {
 // ------------------------------------------------------------------ HERO STATS (menu)
 function heroStats(id) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1) * (1 + 0.02 * (o.tuy || 0)), bt = btBonus(h.role);   // tuy: Tẩy Tuỷ Đan (Động Phủ)
+  const m = (1 + 0.06 * (o.lv - 1)) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * (o.cg || 0)), bt = btBonus(h.role);   // tuy: Tẩy Tuỷ Đan · cg: cảnh giới
   const aw = h.rar === 'R' && o.star >= 5 ? 1.15 : 1;   // tướng R thức tỉnh
   return { hp: h.hp * m * bt.hp * aw, atk: h.atk * m * bt.atk * aw, def: h.def * m * bt.def * aw, aspd: h.aspd * (aw > 1 ? 1.1 : 1) };
 }
@@ -260,15 +260,15 @@ const ammoMax = u => AMMO + M('ammo');
 
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star) * (1 + 0.02 * (o.tuy || 0));
+  const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * (o.cg || 0));
   return {
     side: 'h', id, d: h, look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
     base: { hp: h.hp * m * btBonus(h.role).hp, atk: h.atk * m * btBonus(h.role).atk, def: h.def * m * btBonus(h.role).def },
-    bonus: { hpPct: 0, atkPct: 0, crit: 0, dmgTaken: 0 },
+    bonus: { hpPct: 0, atkPct: 0, crit: (o.cg || 0) >= 3 ? 0.05 : 0, dmgTaken: 0 },
     aspd: h.aspd, range: 680, move: h.move, ranged: true, front: !h.ranged, proj: (ATK_STYLE[id] && ATK_STYLE[id].proj) || h.proj || MELEE_PROJ[id] || 'palm',
     x: 200, y: H / 2, hp: 1, mp: 40, cdA: 0, cdS: 1, cdU: 3, dk: 0,
     shield: 0, shieldT: 0, buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0, inv: 0,
-    isCap: !!isCap, ammo: AMMO, trong: 1, dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
+    cg: o.cg || 0, isCap: !!isCap, ammo: AMMO, trong: 1, dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
   };
 }
 function takeSlot(u) {
@@ -453,6 +453,7 @@ function dealDmg(src, tgt, mult, kind) {
   if (tgt.inv > 0) { if (kind !== 'dot') floater(tgt.x, tgt.y - 60, 'Né', '#bff3ff', 14); return 0; }
   let a = getAtk(src) * mult;
   if (src.side === 'h' && kind === 'ult' && isUR(src.id) && (S.owned[src.id] || {}).star >= 6) a *= 1.5;
+  if (src.side === 'h' && kind === 'ult' && (src.cg || 0) >= 5) a *= 1.15;   // Hoá Thần
   if (src.side === 'h' && kind === 'atk' && SSR_ATK[src.id] && SSR_ATK[src.id].dmg) a *= 1 + SSR_ATK[src.id].dmg;
   if (window.__dmgBy && tgt.side === 'h') window.__dmgBy[src.id] = (window.__dmgBy[src.id] || 0) + a;
   if (src.side === 'e' && B.alive >= 40) a *= B.alive >= 50 ? 1.8 : 1.5;   // quái đông trên sân thì mạnh hơn (VLĐMT): ≥40 +50%, ≥50 +80%
@@ -3856,7 +3857,8 @@ function render() {
   const all = [...B.heroes, ...B.enemies].sort((a, b) => a.y - b.y);
   for (const u of all) if (!(u.dead && u.side === 'e')) Art.shadow(ctx, u.x, u.y, sizeOf(u) * 0.9);
   for (const d of B.drops) drawDrop(d);
-  for (const h of B.heroes) drawTierAura(h);
+  for (const h of B.heroes) { drawRealm(h); drawTierAura(h); }
+  if (B.arena) for (const h of B.enemies) drawRealm(h);
   if (B.arena) for (const h of B.enemies) drawTierAura(h);
   drawGhosts();
   for (const u of all) drawUnit(u);
@@ -4388,7 +4390,8 @@ function showHeroDetail(id, tab) {
           <button class="btn" id="bLv5" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
         <div class="hu-row"><div><b>Sao ${starsHTML(o.star, maxStar(id))}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
           <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= maxStar(id) ? 'disabled' : ''}>Tăng sao</button>${o.star >= maxStar(id) && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh</button>` : ''}</div></div>
-        ${isUR(id) ? `<div class="hu-row ur ${o.star >= 6 ? 'on' : ''}"><div><b>Thành Thánh · 6★</b><small>${o.star >= 6 ? 'Đã Thành Thánh: tuyệt kỹ +50% (trang phục Thánh nhân đang vẽ lại)' : 'Đạt 6★: tuyệt kỹ +50% (trang phục Thánh nhân đang vẽ lại)'}</small></div></div>
+        ${realmRowHTML(id)}
+        ${isUR(id) ? `<div class="hu-row ur ${o.star >= 6 ? 'on' : ''}"><div><b>Thành Thánh · 6★</b><small>${o.star >= 6 ? 'Đã Thành Thánh: tuyệt kỹ +50%, khoác trang phục Thánh nhân' : 'Đạt 6★: tuyệt kỹ +50% và trang phục Thánh nhân'}</small></div></div>
           <div class="hu-row ur on"><div><b>Thánh nhân</b><small>${tierOf(id) === 'UR+' ? 'Pháp Tướng khổng lồ sau lưng khi tung tuyệt kỹ · ' : ''}${DOM_GROUP(id) ? `Vực ${esc(DOMAIN[DOM_GROUP(id)].n)} khi ${esc(DOM_NEED[DOM_GROUP(id)].toLowerCase())} · ` : ''}Bất tử một lần mỗi trận · Miễn khống chế</small></div></div>` : ''}
         ${h.rar === 'R' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã thức tỉnh: +15% máu, công, thủ, +10% tốc đánh' : 'Đạt 5 sao: +15% máu, công, thủ, +10% tốc đánh'}</small></div></div>` : ''}
         ${h.rar === 'SR' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã mở cảnh tuyệt kỹ toàn màn hình' : 'Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR'}</small></div></div>` : ''}
@@ -4438,6 +4441,7 @@ function showHeroDetail(id, tab) {
   ui.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showHeroDetail(id, b.dataset.tab));
   if (!o) return;
   const q = s => $(s);
+  if (q('#bCg')) q('#bCg').onclick = () => realmBreak(id);
   if (q('#bLv')) q('#bLv').onclick = () => { if (S.vang < lvCost) { toast('Không đủ vàng'); return; } S.vang -= lvCost; o.lv++; qAdd('lv'); snd('pickup'); save(); showHeroDetail(id); };
   if (q('#bLv5')) q('#bLv5').onclick = () => { let n = 0; while (o.lv < MAX_LV && S.vang >= lvCostOf(o.lv)) { S.vang -= lvCostOf(o.lv); o.lv++; n++; qAdd('lv'); } if (n) snd('magic'); save(); toast(n ? `Đã nâng ${n} cấp` : 'Không đủ vàng'); showHeroDetail(id); };
   if (q('#bEq')) q('#bEq').onclick = () => showEquip(id);
@@ -4933,7 +4937,7 @@ function arState() {
   const wk = weekKey(); A.peak[wk] = Math.max(A.peak[wk] || 0, A.r);
   return A;
 }
-const arTeamOf = () => S.lineup.filter(id => S.owned[id]).slice(0, 5).map(id => [id, S.owned[id].lv, S.owned[id].star]);
+const arTeamOf = () => S.lineup.filter(id => S.owned[id]).slice(0, 5).map(id => [id, S.owned[id].lv, S.owned[id].star, S.owned[id].cg || 0]);
 function arPower(team) { return team.reduce((s, [id, lv, st]) => { const h = HEROES[id]; if (!h) return s; const m = (1 + 0.06 * (lv - 1)) * starMul(tierOf(id), st) * (TIER_BASE[tierOf(id)] || 1); return s + Math.round(h.hp * m * 0.25 + h.atk * m * 4 + h.def * m * 2); }, 0); }
 function arBot(k) {   // k: -1 yếu hơn, 0 ngang, 1 mạnh hơn
   const my = arTeamOf(), A = arState(), n = Math.max(3, my.length);
@@ -5002,7 +5006,7 @@ function arenaSetup(st) {
   B.arena = { other: { projs: [], fx: [], fxb: [], decals: [], ghosts: [], sparks: [], parts: [], later: [], zones: [], warns: [], cap: null, capTgt: null, comboCd: {}, lastUlt: {}, mods: {}, capRegen: 0, dom: null, pt: null, rift: null, field: {} }, owned: {} };
   for (const u of B.heroes) u.ah = true;
   const team = st.arena.team.filter(t => HEROES[t[0]]), ids = team.map(t => t[0]);
-  for (const [id, lv, star] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, MAX_LV), star: clamp(star | 0, 1, maxStar(id)), shard: 0 };
+  for (const [id, lv, star, cg] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, MAX_LV), star: clamp(star | 0, 1, maxStar(id)), shard: 0, cg: clamp(cg | 0, 0, CG_MAX) };
   arSwap();
   try {
     const info = teamInfo(ids);
@@ -5141,7 +5145,7 @@ function lockWire() {   // gắn nhãn + chặn bấm cho nút đang khoá (gọ
 // ---- ĐỘNG PHỦ: 4 công trình nâng bằng vàng. Tài nguyên: Linh Thảo (lt), Linh Quả (lq), Tẩy Tuỷ Đan (ttd).
 const DP_B = {
   duoc: { n: 'Dược Điền', img: 'dp_duocdien', d: lv => `Mọc ${6 * lv} Linh Thảo + ${4 * lv} Linh Quả mỗi giờ (tích tối đa 12 giờ)` },
-  lo:   { n: 'Luyện Đan Lô', img: 'dp_danlo', d: lv => `Luyện đan từ Linh Thảo · cấp ${lv} mở ${Math.min(4, lv)}/4 phương đan` },
+  lo:   { n: 'Luyện Đan Lô', img: 'dp_danlo', d: lv => `Luyện đan từ Linh Thảo · cấp ${lv} mở ${DAN.filter(x => x.lv <= lv).length}/${DAN.length} phương đan` },
   tl:   { n: 'Tụ Linh Trận', img: 'dp_tulinh', d: lv => `Thu nhập Treo Máy +${10 * (lv - 1)}%` },
   thu:  { n: 'Linh Thú Viên', img: 'dp_thuvien', d: lv => `Linh thú tối đa cấp ${petMaxLv(lv)} · mỗi ngày nhận ${2 * lv} mảnh linh thú` },
 };
@@ -5151,6 +5155,7 @@ const DAN = [
   { id: 'tk', n: 'Tụ Kim Đan', lt: 30, d: '+6.000 vàng', lv: 2, use: () => grant({ vang: 6000 }) },
   { id: 'tt', n: 'Tẩy Tuỷ Đan', lt: 60, vang: 2000, d: 'Dùng cho 1 tướng: +2% máu, công, thủ vĩnh viễn (tối đa 10 viên/tướng)', lv: 3, use: () => { dpState().ttd++; } },
   { id: 'th', n: 'Thú Hồn Đan', lt: 80, d: '+6 mảnh linh thú ngẫu nhiên', lv: 4, use: () => petGiveRandom(6, true) },
+  { id: 'pc', n: 'Phá Cảnh Đan', lt: 50, lq: 20, d: 'Dùng để tướng cấp 30 phá cảnh giới (Thần Tướng > Bồi dưỡng)', lv: 2, use: () => { dpState().pcd = (dpState().pcd || 0) + 1; } },
 ];
 function dpState() {
   S.dp = S.dp || { lv: { duoc: 1, lo: 1, tl: 1, thu: 1 }, t: nowS(), lt: 0, lq: 0, ttd: 0, day: null };
@@ -5161,7 +5166,7 @@ function dpPending() { const D = dpState(), h = Math.min(12, (nowS() - D.t) / 36
 function showDongPhu() {
   const D = dpState(), P = dpPending(), today = dayKey();
   ui.innerHTML = `<div class="screen panel-screen dp-screen" style="background:linear-gradient(rgba(255,248,230,.3), rgba(255,248,230,.55)), url('art/bg/dongphu_bg.webp') center / cover no-repeat">${topBar('Động Phủ')}
-    <div class="dp-res"><span>🌿 Linh Thảo <b>${fmt(D.lt)}</b></span><span>🍑 Linh Quả <b>${fmt(D.lq)}</b></span><span>💊 Tẩy Tuỷ Đan <b>${D.ttd}</b></span></div>
+    <div class="dp-res"><span>🌿 Linh Thảo <b>${fmt(D.lt)}</b></span><span>🍑 Linh Quả <b>${fmt(D.lq)}</b></span><span>💊 Tẩy Tuỷ Đan <b>${D.ttd}</b></span><span>🔮 Phá Cảnh Đan <b>${D.pcd || 0}</b></span></div>
     <div class="dp-grid">${Object.entries(DP_B).map(([k, B0]) => { const lv = dpLv(k), c = DP_COST[lv];
       let act = '';
       if (k === 'duoc') act = `<button class="btn small ${P.lt + P.lq ? 'gold' : ''}" id="dpHarvest" ${P.lt + P.lq ? '' : 'disabled'}>Thu hoạch 🌿${P.lt} 🍑${P.lq}</button>`;
@@ -5179,15 +5184,15 @@ function showDongPhu() {
 }
 function dpBrew() {
   const D = dpState(), lv = dpLv('lo'), w = document.createElement('div'); w.className = 'modal';
-  w.innerHTML = `<div class="xfer"><h3>Luyện Đan Lô · cấp ${lv}</h3><p class="hint">Linh Thảo: ${fmt(D.lt)} · vàng: ${fmt(S.vang)}</p>${DAN.map(x => { const open = lv >= x.lv, ok = open && D.lt >= x.lt && S.vang >= (x.vang || 0);
-    return `<div class="eq-row"><b>${x.n}</b><p>${x.d}</p><small>${open ? `🌿${x.lt}${x.vang ? ' + ' + fmt(x.vang) + ' vàng' : ''}` : 'Mở khi lò đạt cấp ' + x.lv}</small>
+  w.innerHTML = `<div class="xfer"><h3>Luyện Đan Lô · cấp ${lv}</h3><p class="hint">Linh Thảo: ${fmt(D.lt)} · vàng: ${fmt(S.vang)}</p>${DAN.map(x => { const open = lv >= x.lv, ok = open && D.lt >= x.lt && D.lq >= (x.lq || 0) && S.vang >= (x.vang || 0);
+    return `<div class="eq-row"><b>${x.n}</b><p>${x.d}</p><small>${open ? `🌿${x.lt}${x.lq ? ' 🍑' + x.lq : ''}${x.vang ? ' + ' + fmt(x.vang) + ' vàng' : ''}` : 'Mở khi lò đạt cấp ' + x.lv}</small>
       ${open ? `<button class="btn small ${ok ? 'gold' : ''}" data-dan="${x.id}" ${ok ? '' : 'disabled'}>Luyện</button>` : ''}</div>`; }).join('')}
     ${D.ttd ? `<div class="eq-row"><b>Dùng Tẩy Tuỷ Đan (${D.ttd})</b><p>Chọn tướng trong Đội Hình hiện tại:</p><div class="dp-tt">${S.lineup.filter(id => S.owned[id]).map(id => `<button class="btn small" data-tt="${id}" ${(S.owned[id].tuy || 0) >= 10 ? 'disabled' : ''}><img src="${por(id, 40)}" alt="">${(S.owned[id].tuy || 0)}/10</button>`).join('')}</div></div>` : ''}
     <div class="res-btns"><button class="btn" id="danC">Đóng</button></div></div>`;
   ui.appendChild(w);
   $('#danC').onclick = () => { w.remove(); showDongPhu(); };
-  w.querySelectorAll('[data-dan]').forEach(b => b.onclick = () => { const x = DAN.find(y => y.id === b.dataset.dan); if (D.lt < x.lt || S.vang < (x.vang || 0)) return;
-    D.lt -= x.lt; S.vang -= x.vang || 0; x.use(); snd('magic'); save(); toast('Luyện thành ' + x.n); w.remove(); dpBrew(); });
+  w.querySelectorAll('[data-dan]').forEach(b => b.onclick = () => { const x = DAN.find(y => y.id === b.dataset.dan); if (D.lt < x.lt || D.lq < (x.lq || 0) || S.vang < (x.vang || 0)) return;
+    D.lt -= x.lt; D.lq -= x.lq || 0; S.vang -= x.vang || 0; x.use(); snd('magic'); save(); toast('Luyện thành ' + x.n); w.remove(); dpBrew(); });
   w.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { const o = S.owned[b.dataset.tt]; if (!D.ttd || (o.tuy || 0) >= 10) return; D.ttd--; o.tuy = (o.tuy || 0) + 1; snd('heal'); save(); toast(HEROES[b.dataset.tt].name + ': Tẩy Tuỷ ' + o.tuy + '/10'); w.remove(); dpBrew(); });
 }
 
@@ -5293,6 +5298,44 @@ function drawPet() {
   ctx.drawImage(im, Q.x - w / 2, Q.y - h + bob, w, h);
   const k = Math.max(0, Math.min(1, 1 - Q.t / Q.cd));   // vạch hồi chiêu
   ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(Q.hx - 22, Q.hy + 6, 44, 4); ctx.fillStyle = '#7fe8ff'; ctx.fillRect(Q.hx - 22, Q.hy + 6, 44 * k, 4); ctx.restore();
+}
+
+// ---- TU LUYỆN CẢNH GIỚI: tướng cấp 30 phá cảnh. o.cg 0..5 (0 = chưa phá). Mỗi cảnh giới +8% máu/công/thủ; Kim Đan +5% bạo kích; Hoá Thần tuyệt kỹ +15%.
+// Phá cảnh tốn Linh Thảo + Phá Cảnh Đan (luyện ở Đan Lô) + vàng. Vòng hào quang dưới chân đổi màu theo cảnh giới.
+const CG = [
+  { n: 'Phàm Thân', c: '#9a8a7a' },
+  { n: 'Luyện Khí', c: '#bfe6ff', lt: 60, dan: 1, vang: 10000 },
+  { n: 'Trúc Cơ', c: '#7fe08a', lt: 120, dan: 2, vang: 25000 },
+  { n: 'Kim Đan', c: '#ffd34d', lt: 240, dan: 3, vang: 50000, perk: '+5% bạo kích' },
+  { n: 'Nguyên Anh', c: '#c07aff', lt: 400, dan: 4, vang: 90000 },
+  { n: 'Hoá Thần', c: '#ff6a3a', lt: 650, dan: 6, vang: 150000, perk: 'tuyệt kỹ +15%' },
+];
+const CG_MAX = CG.length - 1, CG_STAT = 0.08;
+const cgOf = id => ((S.owned[id] || {}).cg || 0);
+const cgMul = id => 1 + CG_STAT * cgOf(id);
+function realmRowHTML(id) {
+  const o = S.owned[id]; if (!o) return '';
+  const g = o.cg || 0, nx = CG[g + 1], D = dpState(), ok = nx && o.lv >= MAX_LV && D.lt >= nx.lt && (D.pcd || 0) >= nx.dan && S.vang >= nx.vang;
+  return `<div class="hu-row cg-row" style="--cg:${CG[g].c}"><div><b>Cảnh giới · <span class="cg-n">${CG[g].n}</span></b>
+    <small>${g ? `+${Math.round(CG_STAT * g * 100)}% máu, công, thủ${CG.slice(1, g + 1).filter(x => x.perk).map(x => ' · ' + x.perk).join('')}` : 'Chưa nhập đạo'}${nx ? ` → <b>${nx.n}</b>: ${o.lv < MAX_LV ? `cần cấp ${MAX_LV}` : `🌿${nx.lt} · Phá Cảnh Đan ${D.pcd || 0}/${nx.dan} · ${fmt(nx.vang)} vàng`}` : ' · Đã đạt cảnh giới cao nhất'}</small></div>
+    ${nx ? `<div class="hu-btns"><button class="btn ${ok ? 'gold' : ''}" id="bCg" ${ok ? '' : 'disabled'}>Phá cảnh</button></div>` : ''}</div>`;
+}
+function realmBreak(id) {
+  const o = S.owned[id], g = o.cg || 0, nx = CG[g + 1], D = dpState(); if (!nx || o.lv < MAX_LV || D.lt < nx.lt || (D.pcd || 0) < nx.dan || S.vang < nx.vang) return;
+  D.lt -= nx.lt; D.pcd -= nx.dan; S.vang -= nx.vang; o.cg = g + 1; save();
+  const el = document.createElement('div'); el.className = 'cg-burst'; el.style.setProperty('--cg', nx.c);
+  el.innerHTML = `<div class="cg-ring"></div><div class="cg-txt"><small>${esc(HEROES[id].name)}</small><b>${nx.n}</b><em>+${Math.round(CG_STAT * 100)}% máu, công, thủ${nx.perk ? ' · ' + nx.perk : ''}</em></div>`;
+  ui.appendChild(el); snd('gong'); snd('charge_big'); setTimeout(() => { el.remove(); showHeroDetail(id); }, 1900);
+}
+function drawRealm(u) {   // vòng cảnh giới dưới chân (trên sân)
+  if (u.dead || u.clone || u.side !== 'h' && !u.ah) return; const g = u.cg || 0; if (!g) return;
+  const c = CG[g].c, t = B.time, R = 30 + g * 2;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.35 + 0.12 * Math.sin(t * 3 + u.x); ctx.strokeStyle = c; ctx.lineWidth = 2 + g * 0.4;
+  ctx.beginPath(); ctx.ellipse(u.x, u.y + 2, R, R * 0.32, 0, 0, TAU); ctx.stroke();
+  if (g >= 3) { ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.ellipse(u.x, u.y + 2, R * 0.7, R * 0.22, 0, 0, TAU); ctx.stroke(); }
+  if (g >= 4 && Math.random() < 0.25 && !gfxLow()) B.parts.push({ x: u.x + rand(-R, R) * 0.8, y: u.y, vx: 0, vy: -60 - g * 10, life: 0.7, max: 0.7, color: c, size: 2.5, nograv: true });
+  ctx.restore();
 }
 
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
@@ -5682,6 +5725,7 @@ function route() {
   else if (k === 'battle') {
     const tm = h.match(/(?:^|&)team=([\w,]+)/); // &team=nata,quanam (chụp thử): đội hình tạm
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
+    { const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) for (const id of S.lineup) if (S.owned[id]) { S.owned[id].lv = MAX_LV; S.owned[id].cg = +cm[1]; } }   // &cg=4 (thử cảnh giới)
     { const pm = h.match(/(?:^|&)pet=([a-z]+)/); if (pm && PETS[pm[1]]) { petRec(pm[1]).own = 1; S.pet = pm[1]; S.unlockAll = 1; } }   // &pet=chutuoc (thử linh thú)
     Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(STAGES[clamp((+v || 1) - 1, 0, STAGES.length - 1)]))]).then(() => {
     startBattleNow(clamp((+v || 1) - 1, 0, STAGES.length - 1));
@@ -5765,6 +5809,7 @@ function route() {
   else if (k === 'shop') { if (v) { S.ngoc += 3000; S.vang += 50000; for (const id of ['culinhthan', 'longnu', 'hoangphongquai']) S.owned[id].star = 5, S.owned[id].shard = 14; } showShop(v || undefined); }
   else if (k === 'arena') showArena(v || undefined);
   else if (k === 'pets') { if (v) { for (const id of Object.keys(PETS)) Object.assign(petRec(id), { own: 1, lv: 12, star: 2, sh: 25 }); dpState().lq = 500; } showPets(v && PETS[v] ? v : undefined); }
+  else if (k === 'realm') { const id = v || 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); S.owned[id].lv = MAX_LV; const D = dpState(); D.lt = 2000; D.pcd = 20; S.vang += 500000; const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) S.owned[id].cg = +cm[1]; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'up')); }
   else if (k === 'dongphu') { if (v) { const D = dpState(); D.t = nowS() - 5 * 3600; D.lt = 300; D.ttd = 2; S.vang += 100000; D.lv.lo = 4; } showDongPhu(); }
   else if (k === 'tl') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id) && Math.random() < 0.5) S.owned[id] = newRec(); showTienLuc(); }
   else if (k === 'gated') { S = defaultSave(); if (v) for (const st of STAGES.slice(0, +v)) S.cleared[st.id] = 3; showHome(); }

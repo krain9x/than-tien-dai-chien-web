@@ -1333,3 +1333,11 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 :root[data-theme="dem"] .dp-b, :root[data-theme="dem"] .pet-c, :root[data-theme="dem"] .pet-d { background: #2f2812; } :root[data-theme="dem"] .dp-i small, :root[data-theme="dem"] .pet-c small, :root[data-theme="dem"] .pet-sk { color: #d9c5b1; } :root[data-theme="dem"] .dp-i b { color: #ffe9b0; }
 @media (max-width: 640px) { .pet-wrap, .pet-d { grid-template-columns: 1fr; } }
 :root[data-theme="dem"] 
+/* Tu Luyện Cảnh Giới */
+.hu-row.cg-row { border-left: 4px solid var(--cg); } .cg-n { color: var(--cg); text-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.cg-burst { position: absolute; inset: 0; z-index: 60; display: grid; place-items: center; background: radial-gradient(circle, rgba(10,6,2,.55), rgba(10,6,2,.85)); animation: cgFade 1.9s ease forwards; pointer-events: none; }
+.cg-ring { position: absolute; width: 60px; height: 60px; border-radius: 50%; border: 6px solid var(--cg); box-shadow: 0 0 40px var(--cg), inset 0 0 30px var(--cg); animation: cgRing 1.2s ease-out forwards; }
+.cg-txt { position: relative; display: grid; justify-items: center; text-align: center; color: #fff; text-shadow: 0 2px 6px #000; }
+.cg-txt small { font-size: 16px; font-weight: 800; } .cg-txt b { font-size: 56px; line-height: 1.1; color: var(--cg); filter: drop-shadow(0 0 12px var(--cg)); } .cg-txt em { font-style: normal; font-size: 15px; font-weight: 800; }
+@keyframes cgRing { from { transform: scale(.2); opacity: 1; } to { transform: scale(9); opacity: 0; } }
+@keyframes cgFade { 0% { opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
