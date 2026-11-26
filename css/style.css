@@ -1350,3 +1350,20 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .fm-i b { display: block; font-size: 14px; color: #4a2a10; } .fm-i em { font-style: normal; font-size: 12px; color: #b0761a; } .fm-i small { display: block; font-size: 12px; font-weight: 700; color: #6a4a2a; } .fm-lk { color: #a03a1a !important; }
 .fm-b { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; } .fm-b .btn { flex-direction: row; gap: 3px; } .fm-on { font-style: normal; font-weight: 900; font-size: 12px; color: #2a7a3a; align-self: center; }
 :root[data-theme="dem"] .fm-row { background: #2f2812; } :root[data-theme="dem"] .fm-row.on { background: #4a3a12; } :root[data-theme="dem"] .fm-i small { color: #d9c5b1; } :root[data-theme="dem"] .fm-i b { color: #ffe9b0; }
+
+/* Thiên Đạo Lệnh */
+.tdl-head { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 6px 12px; border-radius: 12px; background: #fff6dc; border: 2px solid #c08a1a; margin: 2px 4px 4px; }
+.tdl-head b { font-size: 16px; color: #8a4a0a; } .tdl-head small { display: block; font-size: 12px; font-weight: 700; color: #6a4a2a; }
+.tdl-head .bar { height: 7px; border-radius: 4px; background: #eadbc0; overflow: hidden; margin-top: 4px; } .tdl-head .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf3f, #e2901a); }
+.tdl-head .q-all { border-radius: 10px; border: 2px solid #2a7a3a; background: #e6f6e6; font-weight: 900; padding: 6px 12px; } .tdl-head .q-all.on { background: linear-gradient(#9ff0a0, #3ec05a); color: #0a3a14; }
+.tdl-src { margin: 2px 6px 6px; font-size: 12px; }
+.tdl-cols, .tdl-row { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 6px; align-items: center; }
+.tdl-cols { padding: 0 6px; font-size: 12px; font-weight: 900; color: #8a6a4a; } .tdl-cols em { font-style: normal; font-size: 10px; padding: 0 5px; border-radius: 6px; background: #c08a1a; color: #fff; }
+.tdl-list { display: grid; gap: 4px; padding: 2px 4px 8px; }
+.tdl-row { padding: 3px 4px; border-radius: 10px; } .tdl-row.big { background: rgba(255,210,90,.25); }
+.tdl-b { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #d8c8a8; color: #4a2a10; font-size: 15px; } .tdl-row.ok .tdl-b { background: linear-gradient(#ffe58a, #e2901a); }
+.tdl-c { display: flex; gap: 4px; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 10px; border: 2px solid #c08a1a; background: #fff6dc; font: inherit; font-weight: 800; font-size: 13px; text-align: left; }
+.tdl-c small { font-size: 11px; font-weight: 900; color: #2a7a3a; } .tdl-c.ready { background: linear-gradient(#fff3a0, #ffd560); box-shadow: 0 0 8px rgba(255,200,60,.7); } .tdl-c.got { opacity: .5; }
+.tdl-c.gold { border-color: #b88a2a; background: linear-gradient(#fff2c8, #f3dc9a); opacity: .55; }
+:root[data-theme="dem"] .tdl-head, :root[data-theme="dem"] .tdl-c { background: #2f2812; } :root[data-theme="dem"] .tdl-head small { color: #d9c5b1; } :root[data-theme="dem"] .tdl-c.gold { background: #3a3016; }
+.tdl-r { display: inline-flex; gap: 10px; align-items: center; }

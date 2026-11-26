@@ -4170,6 +4170,7 @@ function showHome() {
       ${hi('hRank', 'ic_rank', 'Xếp Hạng')}
       ${hi('hAch', 'fb_thatbao', 'Thành Tựu', achReady())}
       ${hi('hTl', 'ic_book', 'Tiên Lục', tlReady())}
+      ${hi('hTdl', 'fb_kimtien', 'Đạo Lệnh', tdlReady())}
       ${hi('hBt', 'ic_tangkinh', 'Tàng Kinh')}
       ${hi('hSet', 'ic_settings', 'Cài Đặt')}
     </div>
@@ -4206,7 +4207,7 @@ function showHome() {
   $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = () => showQuests(); $('#hQuest2').onclick = () => showQuests(); $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
   if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hFb').onclick = () => showFabao(); $('#hTd').onclick = showThanhDien;
-  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu;
+  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu;
   lockWire();
 }
 function topBar(title) {
@@ -4517,7 +4518,7 @@ function ssrReveal(ids, done) {   // lá thẻ vàng rung, nứt sáng rồi v�
 function doPull(n) {
   const cost = n === 10 ? GACHA.cost10 : GACHA.cost1 * n;
   if (S.ngoc < cost) { toast('Không đủ Ngọc'); return; }
-  S.ngoc -= cost; qAdd('pull', n);
+  S.ngoc -= cost; spAdd(2 * n); qAdd('pull', n);
   const res = [];
   for (let i = 0; i < n; i++) res.push(pullOne());
   save();
@@ -4793,7 +4794,7 @@ function showQuests(tab) {   // Nhiệm vụ: tab Ngày / Tuần, nút "Nhận t
     <div class="hint">${QTAB === 'day' ? 'Làm mới mỗi ngày.' : 'Làm mới mỗi tuần (thứ Hai).'}</div></div>`;
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-qt]').forEach(b => b.onclick = () => showQuests(b.dataset.qt));
-  const claim = q => { st.c[q.id] = 1; grant(q.rew); snd('pickup'); };
+  const claim = q => { st.c[q.id] = 1; grant(q.rew); spAdd(QTAB === 'day' ? 20 : 80); snd('pickup'); };
   ui.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { claim(L.find(x => x.id === b.dataset.q)); save(); showQuests(); });
   $('#qAll').onclick = () => { ready.forEach(r => claim(r.q)); save(); toast('Đã nhận ' + ready.length + ' phần thưởng'); showQuests(); };
 }
@@ -4881,7 +4882,7 @@ function showShop(tab) {
 }
 
 // ---- THÀNH TỰU: mốc lâu dài, mỗi mục nhiều bậc. Bộ đếm suốt đời S.life (hạ quái, thắng, tuyệt kỹ, hợp kích...)
-function lifeAdd(k, n) { S.life = S.life || {}; S.life[k] = (S.life[k] || 0) + (n == null ? 1 : n); }
+function lifeAdd(k, n) { S.life = S.life || {}; S.life[k] = (S.life[k] || 0) + (n == null ? 1 : n); if (k === 'win') spAdd(3); if (k === 'arenaWin') spAdd(6); }
 function achAdd(k, n) { lifeAdd(k, n); }
 const visHeroes = () => Object.keys(HEROES).filter(id => !NO_ART.has(id));
 const ownVis = () => visHeroes().filter(id => S.owned[id]);
@@ -4921,7 +4922,7 @@ function showAch() {
       <small>${fmt(Math.min(r.v, r.need))}/${fmt(r.need)}</small><span class="rew">${rewTxt(r.a.rew(r.i))}</span>
       <button class="btn small ${r.ready ? 'gold' : ''}" data-ac="${r.a.id}" ${r.ready ? '' : 'disabled'}>${r.all ? '✓' : r.ready ? 'Nhận' : 'Chưa đạt'}</button></div>`).join('')}</div></div>`;
   $('#bBack').onclick = showHome;
-  const claim = r => { S.achGot[r.a.id] = r.got + 1; grant(r.a.rew(r.i)); };
+  const claim = r => { S.achGot[r.a.id] = r.got + 1; grant(r.a.rew(r.i)); spAdd(10); };
   ui.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { const r = achRow(ACH.find(a => a.id === b.dataset.ac)); if (!r.ready) return; claim(r); snd('pickup'); save(); showAch(); });
   $('#acAll').onclick = () => { let n = 0; for (let k = 0; k < 10; k++) for (const a of ACH) { const r = achRow(a); if (r.ready) { claim(r); n++; } } snd('gong'); save(); toast('Đã nhận ' + n + ' phần thưởng'); showAch(); };
 }
@@ -5128,9 +5129,9 @@ function showTienLuc(tab) {
 }
 
 // ---- MỞ DẦN TÍNH NĂNG theo số ải đã qua (chỉ áp cho bản lưu tạo sau khi có luật này: S.gated). Bản lưu cũ giữ nguyên.
-const UNLOCK = { hAch: 3, hTl: 5, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
+const UNLOCK = { hAch: 3, hTl: 5, hTdl: 8, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
                  trPB: 10, trTower: 20, trNan: 30, trRaid: 40, trArena: 15, trRank: 10 };
-const UNLOCK_NAME = { hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
+const UNLOCK_NAME = { hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hTdl: 'Thiên Đạo Lệnh', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
                       trPB: 'Phó Bản Tài Nguyên', trTower: 'Tháp Thập Tuyệt', trNan: 'Tám Mươi Mốt Nạn', trRaid: 'Boss Xâm Lược', trArena: 'Luận Kiếm', trRank: 'Bảng Xếp Hạng' };
 const clearedN = () => STAGES.filter(st => S.cleared[st.id]).length;
 const locked = k => !!S.gated && !S.unlockAll && (UNLOCK[k] || 0) > clearedN();
@@ -5377,6 +5378,44 @@ function showFormation() {
   w.querySelectorAll('[data-fmup]').forEach(b => b.onclick = () => { const id = b.dataset.fmup, lv = fmLv(id); if (lv >= 5 || !pay(FM_COST(lv))) return; S.fm.lv[id] = lv + 1; snd('magic'); save(); w.remove(); showFormation(); });
 }
 const unlockAtN = n => (STAGES[Math.max(0, n - 1)] || {}).id;
+
+// ---- THIÊN ĐẠO LỆNH: thẻ mùa 30 ngày, 30 bậc × 100 điểm. Điểm: nhận nhiệm vụ ngày +20, tuần +80, thắng ải +3, thắng Luận Kiếm +6, mỗi lượt chiêu mộ +2, nhận thành tựu +10.
+// Nhánh thường mở cho mọi người; nhánh "Vàng" chừa sẵn (S.tdl.gold) cho sau này — hiện khoá "Sắp mở".
+const TDL_DAYS = 30, TDL_N = 30, TDL_XP = 100;
+const TDL_EPOCH = Date.UTC(2026, 10, 20) / 864e5;   // mùa 1 bắt đầu 20/11/2026
+const tdlDay = () => Math.floor(Date.now() / 864e5 - TDL_EPOCH);
+const tdlSeason = () => Math.floor(tdlDay() / TDL_DAYS) + 1;
+const tdlDaysLeft = () => TDL_DAYS - ((tdlDay() % TDL_DAYS) + TDL_DAYS) % TDL_DAYS;
+function tdl() { const s = tdlSeason(); if (!S.tdl || S.tdl.s !== s) S.tdl = { s, xp: 0, got: [], gg: [], gold: 0 }; return S.tdl; }
+function spAdd(n) { if (!n || window.__arFoe) return; tdl().xp = Math.min(TDL_N * TDL_XP, tdl().xp + n); }
+const tdlLv = () => Math.floor(tdl().xp / TDL_XP);
+function tdlRew(i) {   // bậc i (0..29)
+  const b = i + 1;
+  if (b === TDL_N) return { univ: 20, thanhan: 15, ngoc: 300 };
+  if (b % 10 === 0) return { ngoc: 200, thanhan: 8, petsh: 5 };
+  if (b % 5 === 0) return { ngoc: 120, univ: 8 };
+  return [{ ngoc: 50 }, { vang: 4000 }, { univ: 3 }, { lq: 15 }, { lt: 25 }, { petsh: 2 }][i % 6];
+}
+function tdlGoldRew(i) { const b = i + 1; return b % 10 === 0 ? { ngoc: 400, thanhan: 15 } : b % 5 === 0 ? { ngoc: 200, univ: 10 } : [{ ngoc: 80 }, { vang: 8000 }, { univ: 5 }, { lq: 25 }, { lt: 40 }, { petsh: 3 }][i % 6]; }
+const tdlReady = () => { const T = tdl(), L = tdlLv(); for (let i = 0; i < L; i++) if (!T.got.includes(i)) return true; return false; };
+function showPass() {
+  const T = tdl(), L = tdlLv(), xp = T.xp % TDL_XP, ready = [...Array(L).keys()].filter(i => !T.got.includes(i));
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Thiên Đạo Lệnh')}
+    <div class="tdl-head"><div><b>Mùa ${T.s} · Bậc ${L}/${TDL_N}</b><small>${L >= TDL_N ? 'Đã đạt bậc cao nhất' : `${xp}/${TDL_XP} điểm lên bậc ${L + 1}`} · còn ${tdlDaysLeft()} ngày (thưởng chưa nhận sẽ mất khi hết mùa)</small>
+      <div class="bar"><i style="width:${L >= TDL_N ? 100 : xp}%"></i></div></div>
+      <button class="q-all ${ready.length ? 'on' : ''}" id="tdlAll" ${ready.length ? '' : 'disabled'}>Nhận tất cả (${ready.length})</button></div>
+    <p class="hint tdl-src">Điểm: nhận nhiệm vụ ngày +20 · tuần +80 · thắng ải +3 · thắng Luận Kiếm +6 · mỗi lượt chiêu mộ +2 · nhận thành tựu +10</p>
+    <div class="tdl-cols"><span>Bậc</span><span>Thưởng thường</span><span>Thiên Đạo Lệnh Vàng <em>Sắp mở</em></span></div>
+    <div class="tdl-list">${[...Array(TDL_N).keys()].map(i => { const ok = i < L, got = T.got.includes(i), big = (i + 1) % 5 === 0;
+      return `<div class="tdl-row ${ok ? 'ok' : ''} ${big ? 'big' : ''}"><b class="tdl-b">${i + 1}</b>
+        <button class="tdl-c ${got ? 'got' : ok ? 'ready' : ''}" data-tdl="${i}" ${ok && !got ? '' : 'disabled'}><span class="tdl-r">${rewTxt(tdlRew(i))}</span><small>${got ? '✓ Đã nhận' : ok ? 'Nhận' : ''}</small></button>
+        <span class="tdl-c gold"><span class="tdl-r">${rewTxt(tdlGoldRew(i))}</span><small>🔒</small></span></div>`; }).join('')}</div></div>`;
+  $('#bBack').onclick = showHome;
+  const claim = i => { if (T.got.includes(i) || i >= tdlLv()) return; T.got.push(i); grant(tdlRew(i)); };
+  ui.querySelectorAll('[data-tdl]').forEach(b => b.onclick = () => { claim(+b.dataset.tdl); snd('pickup'); save(); showPass(); });
+  $('#tdlAll').onclick = () => { ready.forEach(claim); snd('gong'); save(); toast('Đã nhận ' + ready.length + ' phần thưởng'); showPass(); };
+  const cur = ui.querySelector('.tdl-row.ok:not(:has(.got))') || ui.querySelectorAll('.tdl-row')[Math.max(0, L - 1)]; if (cur) cur.scrollIntoView({ block: 'center' });
+}
 
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
 function idleRate() { const n = STAGES.filter(st => S.cleared[st.id]).length; return { vang: 8 + n, ngoc: 1 + Math.floor(n / 10) }; }   // mỗi phút / mỗi giờ
@@ -5851,6 +5890,7 @@ function route() {
   else if (k === 'shop') { if (v) { S.ngoc += 3000; S.vang += 50000; for (const id of ['culinhthan', 'longnu', 'hoangphongquai']) S.owned[id].star = 5, S.owned[id].shard = 14; } showShop(v || undefined); }
   else if (k === 'arena') showArena(v || undefined);
   else if (k === 'pets') { if (v) { for (const id of Object.keys(PETS)) Object.assign(petRec(id), { own: 1, lv: 12, star: 2, sh: 25 }); dpState().lq = 500; } showPets(v && PETS[v] ? v : undefined); }
+  else if (k === 'pass') { if (v) tdl().xp = +v; showPass(); }
   else if (k === 'formation') { S.vang += 500000; dpState().lt = 1000; S.unlockAll = 1; showLineup(); showFormation(); }
   else if (k === 'realm') { const id = v || 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); S.owned[id].lv = MAX_LV; const D = dpState(); D.lt = 2000; D.pcd = 20; S.vang += 500000; const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) S.owned[id].cg = +cm[1]; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'up')); }
   else if (k === 'dongphu') { if (v) { const D = dpState(); D.t = nowS() - 5 * 3600; D.lt = 300; D.ttd = 2; S.vang += 100000; D.lv.lo = 4; } showDongPhu(); }
