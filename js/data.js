@@ -1251,7 +1251,7 @@ const NO_ART = new Set(["kimmaohong", "tenguu", "loctinh", "dalong", "cuuvi", "h
   for (const t in T7) for (const id of T7[t]) { TIER_TABLE[t].push(id); HEROES[id].tier = t; HEROES[id].rar = TIER_CLASS[t]; SR_POOL.push(id); }
   BONDS.push(
     { id: 'suda', name: 'Sư Đà Tam Ma', members: ['thanhsu', 'bachtuong', 'daibang'], g: { atkPct: 0.12, hpPct: 0.12 }, desc: 'Ba yêu vương Sư Đà Lĩnh: +12% công, +12% máu.' },
-    { id: 'tamtieu', name: 'Tam Tiêu Nương Nương', members: ['vantieu', 'quynhtieu', 'bichtieu'], g: { skillPct: 0.15, atkPct: 0.08 }, desc: 'Ba chị em Tam Tiêu: +15% sát thương chiêu, +8% công.' },
+    { id: 'tamtieu3', name: 'Tam Tiêu Nương Nương', members: ['vantieu', 'quynhtieu', 'bichtieu'], g: { skillPct: 0.15, atkPct: 0.08 }, desc: 'Ba chị em Tam Tiêu: +15% sát thương chiêu, +8% công.' },
     { id: 'thapnhikimtien', name: 'Thập Nhị Kim Tiên', members: ['xichtinh', 'thanhhu', 'culuuton'], g: { skillPct: 0.12 }, desc: 'Ba vị Kim Tiên Xiển Giáo: +12% sát thương chiêu.' });
 })();
 
