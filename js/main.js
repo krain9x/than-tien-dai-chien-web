@@ -3259,8 +3259,8 @@ function drawSsrHit(f) { const im = sfImg('hit_' + f.id), p = f.t / f.dur; if (!
 // =================== UR ===================
 const urCost = id => (UR_COST.byTier && UR_COST.byTier[HEROES[id].tier]) || UR_COST.unlock;
 const isUR = id => HEROES[id] && (HEROES[id].tier === 'UR' || HEROES[id].tier === 'UR+');
-// Trang phục 6★ TẠM TẮT (2026-11-24): bộ _s2 là thiết kế cũ trước khi tách lớp, thiếu chân dung -> mất hình. Sức mạnh 6★ vẫn giữ.
-function skinOn(id) { return false && isUR(id) && S.owned && S.owned[id] && S.owned[id].star >= 6 && !(S.skin && S.skin[id] === false) && !!(window.HPOSE && HPOSE[id + '_s2']); }
+// Trang phục Thành Thánh 6★ (vẽ lại 2026-11-26, 8 UR, người dùng duyệt mẫu): <id>_s2 = 7 dáng + chân dung + ảnh thẻ + tranh cảnh. Tắt/bật ở màn chi tiết (#bSkin).
+function skinOn(id) { return isUR(id) && S.owned && S.owned[id] && S.owned[id].star >= 6 && !(S.skin && S.skin[id] === false) && !!(window.HPOSE && HPOSE[id + '_s2']); }
 const _HP0 = {};
 function poseDir(id) { return skinOn(id) ? id + '_s2' : id; }
 function applySkins() { if (!window.HPOSE) return; for (const id in HEROES) if (isUR(id) && HPOSE[id + '_s2']) { if (!_HP0[id]) _HP0[id] = HPOSE[id]; HPOSE[id] = skinOn(id) ? HPOSE[id + '_s2'] : _HP0[id]; } }
@@ -5555,7 +5555,7 @@ function route() {
   else if (k === 'urrv') urReveal(v || 'giaochu', () => {});
   else if (k === 'ur6') { for (const id of ['giaochu', 'thailaoquan']) { S.owned[id] = S.owned[id] || newRec(); S.owned[id].star = 6; } save(); applySkins(); showHeroDetail(v || 'giaochu', 'up'); }
   else if (k === 'fabao') { if (v === 'all') for (const k2 in FABAO) fbGive(k2); showFabao(); }
-  else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); showHeroDetail(v || 'ngokhong'); }
+  else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
   else if (k === 'settings') { showHome(); showSettings(); setTimeout(() => { if (!document.querySelector('.set-modal')) showSettings(); }, 1500); }
