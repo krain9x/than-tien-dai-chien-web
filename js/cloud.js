@@ -27,5 +27,9 @@
   };
   C.lbSet = d => C.user ? db.collection('lb').doc(C.user.uid).set(d) : Promise.resolve();
   C.lbTop = async (field, n) => { const q = await db.collection('lb').orderBy(field, 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
+  // Luận Kiếm: arena/{uid} = đội thủ + điểm (cần quy tắc arena trong firestore.rules)
+  C.arenaSet = d => C.user ? db.collection('arena').doc(C.user.uid).set(d) : Promise.resolve();
+  C.arenaList = async n => { const q = await db.collection('arena').orderBy('ts', 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
+  C.arenaTop = async n => { const q = await db.collection('arena').orderBy('rating', 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
   C.push = S => { if (!C.user) return; clearTimeout(C._t); C._t = setTimeout(() => C.pushNow(S).catch(e => { C.err = e.message; console.warn('cloud', e); }), 3000); };
 })();
