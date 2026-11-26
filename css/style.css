@@ -1341,3 +1341,12 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .cg-txt small { font-size: 16px; font-weight: 800; } .cg-txt b { font-size: 56px; line-height: 1.1; color: var(--cg); filter: drop-shadow(0 0 12px var(--cg)); } .cg-txt em { font-style: normal; font-size: 15px; font-weight: 800; }
 @keyframes cgRing { from { transform: scale(.2); opacity: 1; } to { transform: scale(9); opacity: 0; } }
 @keyframes cgFade { 0% { opacity: 0; } 10% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Trận Pháp */
+.lu-fm { align-self: center; margin: 4px auto 0; flex-direction: row; gap: 4px; }
+.fm-box { max-width: 620px; } .fm-list { display: grid; gap: 6px; max-height: 340px; overflow-y: auto; }
+.fm-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 12px; background: #fff6dc; border: 2px solid #c08a1a; }
+.fm-row.on { background: linear-gradient(#fff3a0, #ffe08a); border-color: #c07a0a; } .fm-row.lock { opacity: .6; }
+.fm-i b { display: block; font-size: 14px; color: #4a2a10; } .fm-i em { font-style: normal; font-size: 12px; color: #b0761a; } .fm-i small { display: block; font-size: 12px; font-weight: 700; color: #6a4a2a; } .fm-lk { color: #a03a1a !important; }
+.fm-b { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; } .fm-b .btn { flex-direction: row; gap: 3px; } .fm-on { font-style: normal; font-weight: 900; font-size: 12px; color: #2a7a3a; align-self: center; }
+:root[data-theme="dem"] .fm-row { background: #2f2812; } :root[data-theme="dem"] .fm-row.on { background: #4a3a12; } :root[data-theme="dem"] .fm-i small { color: #d9c5b1; } :root[data-theme="dem"] .fm-i b { color: #ffe9b0; }

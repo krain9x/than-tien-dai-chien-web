@@ -372,6 +372,7 @@ function startBattleNow(si) {
     u.hp = maxHp(u);
     if (i < 2 || st.arena) { takeSlot(u); B.heroes.push(u); if (i === 0) B.cap = u; } else B.deploy.push(u);   // Luận Kiếm: cả đội ra sân ngay   // mở trận: đội trưởng + 1 tướng; còn lại ra bằng Linh Phù
   });
+  if (!st.arena) fmApply(B.heroes.concat(B.deploy));   // trận pháp
   if (st.arena) { arenaSetup(st); B.auto = true; }
   petStart();   // linh thú (không có ở Luận Kiếm)   // Luận Kiếm: mở trận ở chế độ tự động (đối thủ luôn tự đánh); người chơi vẫn tắt được
   showHUD();
@@ -1452,7 +1453,7 @@ function updateEnemies(dt) {
       let bd = aggro;
       for (const h of B.heroes) { if (h.dead) continue; const d = dist(e, h); if (d < bd) { bd = d; tgt = h; } }
     }
-    const sp = e.move * (e.slow > 0 ? 0.6 : 1) * (1 + buffSum(e, 'aspd') * 0.5);
+    const sp = e.move * (e.slow > 0 ? 0.6 : 1) * (1 + buffSum(e, 'aspd') * 0.5) * (1 - (B.fmSlow || 0));
     if (tgt) {
       const d = dist(e, tgt);
       const reach = e.range + (e.ranged ? 0 : unitR(tgt) + unitR(e) * 0.5);
@@ -4298,6 +4299,7 @@ function showLineup() {
           <button class="mini rm" data-rm="${i}" title="Bỏ khỏi đội">×</button>` : '<i>+</i>'}
       </div>`;
     }).join('')}</div>
+    <button class="btn small gold lu-fm" id="luFm">⚔ Trận Pháp: ${esc(FORMS[fmCur()].n)} · cấp ${fmLv(fmCur())}</button>
     <p class="lu-hint">Lực chiến đội <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b> · Đội trưởng ra trận đầu, <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và mở kỹ năng đội trưởng</p>
     <div class="hf-bar hf1 lu-filter"><div class="hf-chips">${lchip('all', 'Tất cả')}${TIER_ORDER.filter(t => own0.some(id => HEROES[id].tier === t)).map(t => lchip(t, t)).join('')}</div>
       <select class="hf-sel" data-lfs="role"><option value="all">Mọi hệ</option>${Object.keys(ROLES).map(r => `<option value="${r}" ${LF.role === r ? 'selected' : ''}>${ROLES[r].name}</option>`).join('')}</select>
@@ -4312,7 +4314,7 @@ function showLineup() {
     </div>
   </div>`;
   if (keep) { ui.querySelector('.lu4 .pick-grid2').scrollTop = keep[0]; ui.querySelector('.lu4 .synergy').scrollTop = keep[1]; }
-  $('#bBack').onclick = showHome;
+  $('#bBack').onclick = showHome; $('#luFm').onclick = showFormation;
   ui.querySelectorAll('[data-lf]').forEach(b => b.onclick = () => { const [g, v] = b.dataset.lf.split(':'); LF[g] = v; showLineup(); ui.querySelector('.lu4 .pick-grid2').scrollTop = 0; });
   ui.querySelectorAll('[data-lfs]').forEach(sel => sel.onchange = () => { LF[sel.dataset.lfs] = sel.value; showLineup(); ui.querySelector('.lu4 .pick-grid2').scrollTop = 0; });
   ui.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
@@ -5338,6 +5340,44 @@ function drawRealm(u) {   // vòng cảnh giới dưới chân (trên sân)
   ctx.restore();
 }
 
+// ---- TRẬN PHÁP: chọn 1 trận pháp cho đội (đánh ải; Luận Kiếm không áp). Mỗi trận pháp mở theo ải, nâng cấp 1–5 bằng vàng + Linh Thảo.
+// "Hàng trước" = tướng cận chiến (u.front), "hàng sau" = tướng đánh xa. k = hệ số theo cấp (cấp 1 = 1, cấp 5 = 2).
+const FORMS = {
+  thiendia: { n: 'Thiên Địa Nhân Trận', at: 0, d: k => `Cả đội +${pc(0.05 * k)} công và máu.`,
+    ap: (L, k) => { for (const u of L) { u.bonus.atkPct += 0.05 * k; u.bonus.hpPct += 0.05 * k; } } },
+  batquai: { n: 'Bát Quái Trận', at: 12, d: k => `Hàng trước +${pc(0.15 * k)} máu và thủ; hàng sau +${pc(0.08 * k)} công.`,
+    ap: (L, k) => { for (const u of L) { if (u.front) { u.bonus.hpPct += 0.15 * k; u.base.def *= 1 + 0.15 * k; } else u.bonus.atkPct += 0.08 * k; } } },
+  thaptuyet: { n: 'Thập Tuyệt Trận', at: 25, d: k => `Hàng sau +${pc(0.12 * k)} công và +${pc(0.04 * k)} bạo kích.`,
+    ap: (L, k) => { for (const u of L) if (!u.front) { u.bonus.atkPct += 0.12 * k; u.bonus.crit += 0.04 * k; } } },
+  nguhanh: { n: 'Ngũ Hành Trận', at: 35, d: k => `Mỗi hệ khác nhau trong đội: cả đội +${pc(0.035 * k)} công và máu (tối đa 5 hệ).`,
+    ap: (L, k) => { const n = new Set(L.map(u => u.el)).size; for (const u of L) { u.bonus.atkPct += 0.035 * k * n; u.bonus.hpPct += 0.035 * k * n; } } },
+  vantien: { n: 'Vạn Tiên Trận', at: 50, d: k => `Có từ 3 tướng cùng phe: cả đội +${pc(0.12 * k)} sát thương chiêu và tuyệt kỹ.`,
+    ap: (L, k) => { const c = {}; for (const u of L) c[u.fac] = (c[u.fac] || 0) + 1; if (Math.max(0, ...Object.values(c)) >= 3) addMods({ skillPct: 0.12 * k, ultPct: 0.12 * k }); } },
+  cuukhuc: { n: 'Cửu Khúc Hoàng Hà Trận', at: 70, d: k => `Quái đi chậm ${pc(0.1 * k)}; hàng trước +${pc(0.1 * k)} thủ.`,
+    ap: (L, k) => { B.fmSlow = Math.min(0.35, 0.1 * k); for (const u of L) if (u.front) u.base.def *= 1 + 0.1 * k; } },
+};
+const pc = x => Math.round(x * 1000) / 10 + '%';
+const FM_COST = lv => ({ vang: 6000 * lv * lv, lt: 30 * lv });   // lên cấp lv+1
+const fmLv = id => ((S.fm || {}).lv || {})[id] || (id === 'thiendia' ? 1 : 0);
+const fmK = id => 1 + 0.25 * (Math.max(1, fmLv(id)) - 1);
+function fmCur() { S.fm = S.fm || { cur: 'thiendia', lv: { thiendia: 1 } }; if (!FORMS[S.fm.cur] || !fmLv(S.fm.cur)) S.fm.cur = 'thiendia'; return S.fm.cur; }
+function fmApply(list) { if (!B || B.st.arena) return; const id = fmCur(); B.fm = id; FORMS[id].ap(list, fmK(id)); for (const u of list) u.hp = maxHp(u); }
+function showFormation() {
+  fmCur(); const D = dpState(), w = document.createElement('div'); w.className = 'modal';
+  w.innerHTML = `<div class="xfer fm-box"><h3>Trận Pháp</h3><p class="hint">Chọn 1 trận pháp cho đội khi đánh ải. Hàng trước = tướng cận chiến, hàng sau = tướng đánh xa. Linh Thảo: ${fmt(D.lt)} · vàng: ${fmt(S.vang)}</p>
+    <div class="fm-list">${Object.entries(FORMS).map(([id, F]) => { const lv = fmLv(id), open = clearedN() >= F.at || !S.gated || S.unlockAll, cur = S.fm.cur === id, c = FM_COST(Math.max(1, lv));
+      return `<div class="fm-row ${cur ? 'on' : ''} ${open ? '' : 'lock'}"><div class="fm-i"><b>${F.n}${lv ? ` <em>Cấp ${lv}/5</em>` : ''}</b><small>${F.d(fmK(id))}</small>${open ? '' : `<small class="fm-lk">🔒 Mở khi qua ải ${unlockAtN(F.at)}</small>`}</div>
+        <div class="fm-b">${!open ? '' : !lv ? `<button class="btn small gold" data-fml="${id}">Lĩnh ngộ ${icon('vang')}${fmt(c.vang)}</button>` : `${cur ? '<i class="fm-on">Đang dùng</i>' : `<button class="btn small gold" data-fmu="${id}">Dùng</button>`}${lv < 5 ? `<button class="btn small" data-fmup="${id}">Nâng ${icon('vang')}${fmt(c.vang)} 🌿${c.lt}</button>` : ''}`}</div></div>`; }).join('')}</div>
+    <div class="res-btns"><button class="btn" id="fmC">Đóng</button></div></div>`;
+  ui.appendChild(w);
+  $('#fmC').onclick = () => { w.remove(); showLineup(); };
+  const pay = c => { if (S.vang < c.vang || (c.lt && D.lt < c.lt)) { toast(S.vang < c.vang ? 'Không đủ vàng' : 'Không đủ Linh Thảo'); return false; } S.vang -= c.vang; if (c.lt) D.lt -= c.lt; return true; };
+  w.querySelectorAll('[data-fml]').forEach(b => b.onclick = () => { const id = b.dataset.fml; if (!pay({ vang: FM_COST(1).vang })) return; S.fm.lv[id] = 1; S.fm.cur = id; snd('gong'); save(); w.remove(); showFormation(); });
+  w.querySelectorAll('[data-fmu]').forEach(b => b.onclick = () => { S.fm.cur = b.dataset.fmu; snd('pickup'); save(); w.remove(); showFormation(); });
+  w.querySelectorAll('[data-fmup]').forEach(b => b.onclick = () => { const id = b.dataset.fmup, lv = fmLv(id); if (lv >= 5 || !pay(FM_COST(lv))) return; S.fm.lv[id] = lv + 1; snd('magic'); save(); w.remove(); showFormation(); });
+}
+const unlockAtN = n => (STAGES[Math.max(0, n - 1)] || {}).id;
+
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
 function idleRate() { const n = STAGES.filter(st => S.cleared[st.id]).length; return { vang: 8 + n, ngoc: 1 + Math.floor(n / 10) }; }   // mỗi phút / mỗi giờ
 function idleMins() { if (!S.idle) S.idle = nowS(); return Math.min(720, Math.floor((nowS() - S.idle) / 60)); }
@@ -5725,6 +5765,7 @@ function route() {
   else if (k === 'battle') {
     const tm = h.match(/(?:^|&)team=([\w,]+)/); // &team=nata,quanam (chụp thử): đội hình tạm
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
+    { const fm = h.match(/(?:^|&)fm=([a-z]+):?([0-9]?)/); if (fm && FORMS[fm[1]]) { fmCur(); S.fm.lv[fm[1]] = +fm[2] || 1; S.fm.cur = fm[1]; } }   // &fm=batquai:3 (thử trận pháp)
     { const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) for (const id of S.lineup) if (S.owned[id]) { S.owned[id].lv = MAX_LV; S.owned[id].cg = +cm[1]; } }   // &cg=4 (thử cảnh giới)
     { const pm = h.match(/(?:^|&)pet=([a-z]+)/); if (pm && PETS[pm[1]]) { petRec(pm[1]).own = 1; S.pet = pm[1]; S.unlockAll = 1; } }   // &pet=chutuoc (thử linh thú)
     Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(STAGES[clamp((+v || 1) - 1, 0, STAGES.length - 1)]))]).then(() => {
@@ -5733,6 +5774,7 @@ function route() {
       if (/notut/.test(h)) S.tut = { all: 1 };
       if (/dbgprog/.test(h)) setTimeout(() => { const q = s => { const e = document.querySelector(s); if (!e) return s + ':none'; const r = e.getBoundingClientRect(), c = getComputedStyle(e); return s + ':' + [r.x, r.y, r.width, r.height].map(Math.round) + ' d=' + c.display + ' pos=' + c.position + ' bg=' + c.backgroundImage.slice(0, 40); }; const pre = document.createElement('pre'); pre.id = 'dbg'; pre.textContent = ['#hProg', '.h2-ptrack', '#hPfill', '.pm.boss', '#hPcur'].map(q).join(' | '); document.body.appendChild(pre); }, 500);
       B.auto = true; const b = $('#bAuto'); if (b) b.classList.add('on');
+      if (/fmlog/.test(h)) console.log('FM_LOG', B.fm, JSON.stringify(B.heroes.concat(B.deploy).map(u => [u.id, u.front ? 'truoc' : 'sau', Math.round(maxHp(u)), Math.round(getAtk(u)), Math.round(getDef(u))])));
       // &sim=20: tua nhanh 20 giây (dùng để chụp ảnh thử)
       const secs = simPart && simPart.startsWith('sim=') ? +simPart.slice(4) : 0;
       for (let i = 0; i < secs * 60 && !B.over; i++) {
@@ -5809,6 +5851,7 @@ function route() {
   else if (k === 'shop') { if (v) { S.ngoc += 3000; S.vang += 50000; for (const id of ['culinhthan', 'longnu', 'hoangphongquai']) S.owned[id].star = 5, S.owned[id].shard = 14; } showShop(v || undefined); }
   else if (k === 'arena') showArena(v || undefined);
   else if (k === 'pets') { if (v) { for (const id of Object.keys(PETS)) Object.assign(petRec(id), { own: 1, lv: 12, star: 2, sh: 25 }); dpState().lq = 500; } showPets(v && PETS[v] ? v : undefined); }
+  else if (k === 'formation') { S.vang += 500000; dpState().lt = 1000; S.unlockAll = 1; showLineup(); showFormation(); }
   else if (k === 'realm') { const id = v || 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); S.owned[id].lv = MAX_LV; const D = dpState(); D.lt = 2000; D.pcd = 20; S.vang += 500000; const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) S.owned[id].cg = +cm[1]; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'up')); }
   else if (k === 'dongphu') { if (v) { const D = dpState(); D.t = nowS() - 5 * 3600; D.lt = 300; D.ttd = 2; S.vang += 100000; D.lv.lo = 4; } showDongPhu(); }
   else if (k === 'tl') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id) && Math.random() < 0.5) S.owned[id] = newRec(); showTienLuc(); }
