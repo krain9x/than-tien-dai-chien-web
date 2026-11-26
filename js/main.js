@@ -38,7 +38,7 @@ function loadSave() {
   } catch (e) { /* bỏ qua */ }
   return defaultSave();
 }
-function save() { S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
+function save() { if (window.__arFoe) return; S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
 let S = loadSave();
 // Tặng 10 tướng mới vào kho hiện có (một lần cho mỗi bản save) để thử ngay, không cần quay gacha
 // (đã bỏ) tặng sẵn 10 tướng mới — tân thủ đi từ thấp lên cao
@@ -300,7 +300,7 @@ const sizeOf = u => u.look.size || 1;
 // ảnh vẽ tay rộng hơn hình chibi nên cần bán kính va chạm lớn hơn để không chồng lên nhau
 const unitR = u => (u.boss && SPR[u.id] ? 42 : (SPR[u.id] ? 21 : 14) * sizeOf(u));
 function buffSum(u, k) { let s = 0; for (const b of u.buffs) if (b.k === k) s += b.v; return s; }
-function maxHp(u) { return u.base.hp * (1 + u.bonus.hpPct + (u.side === 'h' ? M('hpPct') + RM(u, 'hpPct') + TG(u, 'hp') : 0)); }
+function maxHp(u) { return u.base.hp * (1 + u.bonus.hpPct + (u.side === 'h' ? M('hpPct') + RM(u, 'hpPct') + TG(u, 'hp') : u.ah ? TG(u, 'hp') : 0)); }
 function getAtk(u) {
   let p = u.bonus.atkPct + buffSum(u, 'atk');
   if (u.side === 'h') {
@@ -361,7 +361,7 @@ function startBattleNow(si) {
     st, si, time: 0, wave: -1, waveStart: 0, nextT: null, spawnQ: [], waveDef: null, waveDropped: false,
     heroes: [], enemies: [], projs: [], fx: [], parts: [], floaters: [], drops: [], zones: [], warns: [],
     mods: {}, cp: {}, gate: { hp: st.gate, max: st.gate }, gateHurt: 0,
-    stat: {}, mech: (CHAPTERS[st.chap] || {}).mk || null, mechT: 4, fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
+    stat: {}, mech: st.arena ? null : (CHAPTERS[st.chap] || {}).mk || null, mechT: 4, fxb: [], decals: [], cam: null, ghosts: [], hits: { n: 0, t: 0, id: null }, sparks: [], deploy: [], cap: null, paused: false, over: false, auto: false, speed: 1, shake: 0, slowmo: 0, later: [], flash: 0,
     cutin: null, rerolls: 2, soul: 0, amMode: 'duong', amT: 5, gateT: 10, field: {}, slots: [], kcT: 12, lv: 1, xp: 0, pickQ: [], dodgeCd: 0, deaths: 0, kills: 0, banner: null, endT: null, win: false, joy: null,
     bg: (chBg(st) && chBg(st).complete && chBg(st).naturalWidth) ? chBg(st) : (BGIMG[st.theme] && BGIMG[st.theme].complete && BGIMG[st.theme].naturalWidth) ? BGIMG[st.theme] : Art.backgroundH(W, H, st.theme, st.seed), ids, capTgt: null,
   };
@@ -372,6 +372,7 @@ function startBattleNow(si) {
     u.hp = maxHp(u);
     if (i < 2 || st.arena) { takeSlot(u); B.heroes.push(u); if (i === 0) B.cap = u; } else B.deploy.push(u);   // Luận Kiếm: cả đội ra sân ngay   // mở trận: đội trưởng + 1 tướng; còn lại ra bằng Linh Phù
   });
+  if (st.arena) { arenaSetup(st); B.auto = true; }   // Luận Kiếm: mở trận ở chế độ tự động (đối thủ luôn tự đánh); người chơi vẫn tắt được
   showHUD();
   { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; B.banner = { text: 'Đội trưởng: ' + cs.n, sub: cs.d, t: 0, small: true }; }
   if (st.hmods) addMods(st.hmods);
@@ -404,6 +405,7 @@ function nextWave() {
   if (wd.boss) { B.banner = { text: 'BOSS XUẤT HIỆN', sub: '', t: 0, boss: true }; snd('gong'); setTimeout(() => snd('roar'), 400); bgmSet('boss'); }
   else if (wd.horde) { B.banner = { text: 'Vô vàn kẻ địch tập kích!', sub: '', t: 0, boss: true }; B.shake = Math.max(B.shake, 0.3); }
   else if (wd.strong) { B.banner = { text: 'Địch mạnh tấn công!', sub: '', t: 0, small: true }; snd('gong', 0.6, 1.1); }
+  else if (B.st.arena) B.banner = { text: 'LUẬN KIẾM', sub: 'Đối thủ: ' + B.st.arena.name, t: 0 };
   else if (B.wave === 0 || last) B.banner = { text: last ? 'Đợt cuối' : 'Bắt đầu!', sub: '', t: 0, small: true };
   if (M('waveMp')) for (const h of B.heroes) if (!h.dead) h.mp = Math.min(100, h.mp + M('waveMp'));
 }
@@ -423,7 +425,6 @@ function spawnEnemy(q) {
   if (q.side && Math.random() < 0.4 && !ENEMIES[q.type].boss) { x = VIEW_R() + rand(10, 40); y = Math.random() < 0.5 ? LANE_Y0 + rand(0, 30) : LANE_Y1 - rand(0, 30); }   // ra theo mép trên/dưới nhưng vẫn từ ngoài màn phải
   if (ENEMIES[q.type].boss) { x = VIEW_R() + 60; y = H * 0.56; }
   const e = initTrait(makeEnemy(q.type, B.st.lvl, x, y));
-  if (e.d.mirror) { e.id = e.d.mirror; e.f = -1; }   // Kiếm Ảnh: vẽ bằng dáng của tướng thật
   e.drop = q.drop || null;
   if (e.boss && B.st.bossName && q.type === 'hoyeu') e.name = B.st.bossName;
   B.enemies.push(e);
@@ -433,6 +434,7 @@ function aliveEnemies() { return B.enemies.filter(e => !e.dead); }
 
 // ------------------------------------------------------------------ DAMAGE
 function floater(x, y, txt, color, size, crit, el) {
+  if (B && B.ctxFoe) x = 2 * AR_X0 - x;   // chữ bay sinh ra ở lượt đối thủ: về toạ độ thật
   B.floaters.push({ x: x + rand(-6, 6), y, txt: String(txt), color: color || '#fff', size: size || 16, t: 0, crit: !!crit, el });
 }
 function particles(x, y, color, n, spd, size) {
@@ -474,13 +476,14 @@ function dealDmg(src, tgt, mult, kind) {
   }
   const K = 500 + 50 * (tgt.level || 1);
   a *= K / (K + getDef(tgt) * (src.side === 'h' && M('vnSee') ? 1 - Math.min(5, src.vn || 0) * M('vnSee') : 1));   // Lạc Anh: Thấu Thị bỏ qua phòng thủ
-  if (src.side === 'h' && tgt.side === 'e' && B.st && CHAPTERS[B.st.chap]) { const cr = CH_ROLE[CHAPTERS[B.st.chap].id]; if (cr) { if (src.role === cr[0]) a *= 1.25; else if (src.role === cr[1]) a *= 0.85; } }
+  if (src.side === 'h' && tgt.side === 'e' && B.st && !B.st.arena && CHAPTERS[B.st.chap]) { const cr = CH_ROLE[CHAPTERS[B.st.chap].id]; if (cr) { if (src.role === cr[0]) a *= 1.25; else if (src.role === cr[1]) a *= 0.85; } }
   if (BEATS[src.el] === tgt.el) { a *= 1.3; if (src.side === 'h' && kind !== 'dot' && Math.random() < 0.35) floater(tgt.x + 14, tgt.y - 62 * sizeOf(tgt), 'Khắc!', ELEMENTS[src.el].color, 15, false, src.el); }
   else if (BEATS[tgt.el] === src.el) a *= 0.8;
   let crit = false;
   if (kind !== 'dot' && Math.random() < getCrit(src)) { a *= 1 + getCritDmg(src); crit = true; }
   a *= 1 - (tgt.bonus.dmgTaken || 0) - RM(tgt, 'dr') - (tgt.side === 'h' ? M('kc') + (M('vnDr') ? M('vnDr') * Math.min(5, tgt.vn || 0) : 0) + (M('tpDr') ? M('tpDr') * (tgt.tp || 0) : 0) : 0);
   if (tgt.dk > 0) a *= 1.10;
+  if (B.st && B.st.arena && B.time > AR_RAGE) a *= 1 + (B.time - AR_RAGE) * 0.05;   // Luận Kiếm: Sát khí dâng trào — sát thương tăng dần để trận phân thắng bại
   a = Math.max(1, Math.round(a * rand(0.94, 1.06)));
   // cảm giác đánh: đứng hình, đẩy lùi, tia sáng, rung màn hình
   if (src.side === 'h' && tgt.side === 'e' && kind !== 'dot') {
@@ -498,13 +501,13 @@ function dealDmg(src, tgt, mult, kind) {
   let rem = a;
   if (tgt.shield > 0) { const s = Math.min(tgt.shield, rem); tgt.shield -= s; rem -= s; }
   if (B.stat) {   // thống kê sau trận (phân thân tính cho tướng gốc)
-    const sid = src.side === 'h' ? src.id : null, tid = tgt.side === 'h' ? tgt.id : null, dmg = Math.min(a, tgt.hp + (tgt.shield || 0));
+    const ar = B.st && B.st.arena, sid = ar ? (B.ctxFoe ? null : src.id) : src.side === 'h' ? src.id : null, tid = ar ? (B.ctxFoe ? tgt.id : null) : tgt.side === 'h' ? tgt.id : null, dmg = Math.min(a, tgt.hp + (tgt.shield || 0));
     if (sid) { const r = B.stat[sid] || (B.stat[sid] = { d: 0, t: 0, h: 0 }); r.d += dmg; }
     if (tid) { const r = B.stat[tid] || (B.stat[tid] = { d: 0, t: 0, h: 0 }); r.t += dmg; }
   }
   if (tgt.boss && src.side === 'h' && B.st.raid) B.raidDmg = (B.raidDmg || 0) + Math.min(rem, tgt.hp);
   tgt.hp -= rem; tgt.hurt = 0.1; if (rem > maxHp(tgt) * 0.04) tgt.hitT = 0.35;
-  if (kind === 'ult' && tgt.side === 'e' && !tgt.boss && !tgt.dead) { tgt.x = Math.min(W + 30, tgt.x + 34); tgt.hitT = 0.35; }   // tuyệt kỹ hất văng
+  if (kind === 'ult' && tgt.side === 'e' && !tgt.boss && !tgt.dead && !B.st.arena) { tgt.x = Math.min(W + 30, tgt.x + 34); tgt.hitT = 0.35; }   // tuyệt kỹ hất văng
   if (crit && src.side === 'h') sfx('crit');
   if (tgt.side === 'h' && M('ad2')) adLose(tgt, rem);
   const col = tgt.side === 'h' ? '#ff6b6b' : crit ? '#ffe14d' : kind === 'ult' ? '#ffb347' : '#ffffff';
@@ -559,13 +562,14 @@ function adLose(u, amt) {
 function healAmD(src, u, amt) {   // hồi máu của tướng; Lưỡng Nghi: gây sát thương quái gần; hồi thừa → khiên
   if (!u || u.dead) return;
   const room = maxHp(u) - u.hp;
-  if (B && B.stat && src && src.side === 'h') { const r = B.stat[src.id] || (B.stat[src.id] = { d: 0, t: 0, h: 0 }); r.h += Math.max(0, Math.min(amt, room)); }
+  if (B && B.stat && src && src.side === 'h' && !B.ctxFoe) { const r = B.stat[src.id] || (B.stat[src.id] = { d: 0, t: 0, h: 0 }); r.h += Math.max(0, Math.min(amt, room)); }
   healU(u, amt, true);
   if (M('overShield') && amt > room) { u.shield = Math.max(u.shield, amt - room); u.shieldT = 5; }
   if (M('healDmg')) { const e = nearestEnemy(u, 500); if (e) rawDmg(e, amt * M('healDmg'), '#7dffb0'); }
 }
 function healU(u, amt, silent) {
   if (!u || u.dead) return;
+  if (B && B.st && B.st.arena) amt *= window.__arheal != null ? window.__arheal : AR_HEAL;   // Luận Kiếm: giảm hồi máu (kiểu PvP) để trận không cầm cự tới hết giờ
   const m = maxHp(u), before = u.hp;
   u.hp = Math.min(m, u.hp + amt);
   if (!silent && u.hp - before >= 1) floater(u.x, u.y - 62, '+' + Math.round(u.hp - before), '#5dff8f', 15);
@@ -573,6 +577,7 @@ function healU(u, amt, silent) {
 function kill(t, src) {
   if (t.dead) return;
   t.dead = true; t.hp = 0; t.deathT = 0;
+  if (B.st && B.st.arena) { arenaKill(t); return; }
   if (t.side === 'e') {
     if (t.trait === 'split' && !t.mini) for (const dy of [-26, 26]) { const c = makeEnemy(t.id, t.level, t.x + 10, clamp(t.y + dy, LANE_Y0, LANE_Y1)); c.mini = true; c.trait = null; c.look = { ...c.look, size: sizeOf(t) * 0.65 }; c.base.hp *= 0.35; c.hp = maxHp(c); c.move *= 1.2; B.enemies.push(c); particles(c.x, c.y - 20, '#9fe0ff', 8, 120, 3); }
     B.kills++; sfx('pop'); if (B.fxb.length < 40) fxBurst(t.x, t.y - 22, 'smoke', 120);
@@ -644,7 +649,7 @@ function pickWaitTick(dt) {
   if (!B.pickWait || !B.pickWait.length) return; B.pickWaitT = (B.pickWaitT || 0) + dt;
   if ((!ultBusy() || B.pickWaitT > 4) && !B.paused && !ui.querySelector('.cp-modal')) { B.pickWaitT = 0; queuePick(B.pickWait.shift(), true); }
 }
-function queuePick(fn, now) { if (/nopick/.test(location.hash)) return;
+function queuePick(fn, now) { if (/nopick/.test(location.hash) || (B && B.st && B.st.arena)) return;
   if (!now && fn === openCongPhap && ultBusy()) { (B.pickWait = B.pickWait || []).push(fn); return; }   // nhặt Thiên Thư giữa tuyệt kỹ: chờ chiêu xong mới mở
   if (B.paused || ui.querySelector('.cp-modal')) B.pickQ.push(fn); else fn(); }
 function closePick(wrap) {
@@ -940,7 +945,7 @@ function cast(u, w) {
   if (!canCast(u, w)) return false;
   const sk = u.d[w];
   u.mp -= w === 'ult' ? 60 : 30;
-  if (w === 'ult' && u.side === 'h' && !u.clone) lifeAdd('ult');
+  if (w === 'ult' && u.side === 'h' && !u.clone && !B.ctxFoe) lifeAdd('ult');
   if (w === 'ult') u.cdU = 12; else u.cdS = 6;   // chiêu nhỏ 6 giây/lần
   if (w === 'ult' && u.side === 'h' && tierOf(u.id) === 'UR+' && !u.clone && B) { castPhapTuong(u); }   // Pháp Tướng: chỉ UR+   // vực riêng từng UR đã bỏ: chỉ còn vực nhóm (domUpdate)
   const sk_ = hasSkel(u.id);
@@ -973,7 +978,7 @@ function cast(u, w) {
     const P = bestCluster(70) || (tgt ? { x: tgt.x, y: tgt.y } : null);
     if (P) { B.zones = B.zones.filter(z => !(z.src === u && z.tag === 'pz')); B.zones.push({ x: P.x, y: P.y, r: 70, mult: 0.4, t: 3, dur: 3, src: u, tick: 0, color: '#ff8a3a', tag: 'pz' }); }
   }
-  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); if (sk.fx.some(f => f.t === 'heal')) setTimeout(() => snd('heal'), 500); if (UCFG[u.id] && ['wind', 'tornado', 'sweep', 'pierce', 'throw'].includes(UCFG[u.id].t)) setTimeout(() => snd('whoosh', 1, 0.7), 350); if (scReady(u.id) && S.ultScene !== false) startScene(u, sk); }
+  if (w === 'ult') { B.cutin = { id: u.id, name: sk.name, hero: u.foe ? u.name + ' · Đối thủ' : u.name, t: 0 }; B.slowmo = 0.35; sfx('ult'); if (sk.fx.some(f => f.t === 'heal')) setTimeout(() => snd('heal'), 500); if (UCFG[u.id] && ['wind', 'tornado', 'sweep', 'pierce', 'throw'].includes(UCFG[u.id].t)) setTimeout(() => snd('whoosh', 1, 0.7), 350); if (scReady(u.id) && S.ultScene !== false && !B.ctxFoe) startScene(u, sk); }
   else { floater(u.x, u.y - 82, sk.name, '#fff3b0', 15); snd('magic'); }
   if (u.mp < 10) { u.dk = 2.5; floater(u.x, u.y - 64, 'Điều khí', '#7fd3ff', 14); }
   return true;
@@ -1248,7 +1253,7 @@ function hitFeel(p, t) {
   B.sparks.push({ x: t.x, y: t.y - 24 * sizeOf(t), a, col, t: 0, dur: 0.22, big: p.kind !== 'atk' });
   sfx(p.kind !== 'atk' ? 'hitBig' : 'hit');
   if (B.fxb.length < 40) fxBurst(t.x, t.y - 24 * sizeOf(t), (PFX[p.type] || {}).burst || 'burst_gold', p.kind !== 'atk' ? 150 : 95, Math.random() * 6);
-  if (p.src && p.src.side === 'h') {
+  if (p.src && p.src.side === 'h' && !B.ctxFoe) {
     const h = B.hits; if (h.id !== p.src.id || h.t <= 0) h.n = 0;
     h.id = p.src.id; h.n++; h.t = 1.4;
   }
@@ -1412,7 +1417,7 @@ function wantCast(u, w, tgt) {
   if (fx.some(f => f.t === 'taunt' || f.t === 'shield') && fx[0].at === 'self') return enemiesIn(u, 150).length >= 2;
   if (!tgt) return false;
   if (dist(u, tgt) > Math.max(u.range, 120) + 80) return false;
-  if (w === 'ult') return enemiesIn(tgt, 220).length >= 3 || tgt.boss || tgt.elite;
+  if (w === 'ult') return (B.st && B.st.arena) || enemiesIn(tgt, 220).length >= 3 || tgt.boss || tgt.elite;
   return true;
 }
 function autoSkills(u, tgt, ultOk) {
@@ -1437,7 +1442,6 @@ function updateEnemies(dt) {
     }
     if (e.boss) bossSpecial(e, dt);
     if (e.trait && traitTick(e, dt)) continue;
-    if (e.d.mirror) mirrorSkill(e, dt);   // Kiếm Ảnh (Luận Kiếm)
     let tgt = null;
     if (e.forced && !e.forced.dead && e.forcedT > 0) tgt = e.forced;
     else {
@@ -1616,8 +1620,9 @@ function update(dt) {
   if (false && B && !B.over && B.time > 1.5 && B.time < 1.6) tutor('tap', 'Tướng tự đánh. <b>Chạm vào quái</b> để đội trưởng (vòng vàng) nhắm đánh con đó.');
   if (false && B && !B.over && B.heroes.some(h => !h.dead && h.mp >= 60)) tutor('ult', 'Thẻ tướng phát sáng <b>TUYỆT KỸ</b> → chạm thẻ để tung tuyệt kỹ.');
   if (B && !B.over && B.mech) tutor('mech_' + B.mech, { traps: 'Thập Tuyệt Trận: <b>vòng đỏ</b> là bẫy sắp nổ — chạm quái khác để đội trưởng tránh dồn chỗ.', speed: 'Thiên Cung: quái chạy <b>nhanh hơn</b>, dùng tuyệt kỹ sớm.', fire: 'Hoả Diệm Sơn: <b>lửa</b> rơi xuống chỗ tướng đứng định kỳ.', fog: 'Thuỷ tộc: nước đục che <b>nửa phải</b> màn hình.' }[B.mech] || '');
-  if (B.over) { updateFx(dt); if (B.endT != null && (B.endT -= dt) <= 0) { B.endT = null; showResult(); } return; }
+  if (B.over) { updateFx(dt); if (B.arena) arFoe(() => arFxWorld(dt)); if (B.endT != null && (B.endT -= dt) <= 0) { B.endT = null; showResult(); } return; }
   B.time += dt;
+  if (B.st.arena) { arenaUpdate(dt); return; }   // Luận Kiếm: 2 đội tướng (thế giới soi gương)
   while (B.spawnQ.length && B.spawnQ[0].at <= B.time) spawnEnemy(B.spawnQ.shift());
   B.alive = 0; for (const e of B.enemies) if (!e.dead) B.alive++;
   updateHeroes(dt);
@@ -1636,7 +1641,6 @@ function update(dt) {
   }
   if (B.nextT != null && B.time >= B.nextT && !B.over) nextWave();
   if (B.st.raid && !B.over && B.time >= B.st.raid) endBattle(true, 'Hết giờ');
-  if (B.st.arena && !B.over && B.time >= B.st.par) endBattle(false, 'Hết giờ');
   if (!B.heroes.some(h => !h.dead && !h.clone)) { if (!offerRevive('team')) endBattle(false, 'Cả đội đã trọng thương'); }
 }
 
@@ -1695,7 +1699,7 @@ function endBattle(win, reason) {
     if (B.goldPct) B.reward.vang = Math.round(B.reward.vang * (1 + B.goldPct));
     S.ngoc += B.reward.ngoc; S.vang += B.reward.vang;
     if (!B.st.pb && !B.st.arena) S.cleared[B.st.id] = Math.max(S.cleared[B.st.id] || 0, B.stars);
-    const dropP = B.st.pb ? 0 : B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
+    const dropP = B.st.pb || B.st.arena ? 0 : B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
     if (Math.random() < dropP) { const it = rollEquip(B.st); (S.items = S.items || []).push(it); B.reward.item = it; }
   } else {
     if (B.st.nan) { const N = nanState(); B.nanEnd = N.run ? N.run.n - 1 : 0; N.run = null; }
@@ -1823,7 +1827,7 @@ function drawUnit(u) {
   ctx.translate(u.x, u.y - (u.liftY || 0));   // liftY: biên đạo nhấc tướng lên (vd Ngộ Không nhảy lên nện gậy)
   let alpha = 1;
   if (u.dead) {
-    if (u.side === 'e') { alpha = Math.max(0, 1 - u.deathT * 2.2); ctx.translate(0, -u.deathT * 30); }
+    if (u.side === 'e' && !u.ah) { alpha = Math.max(0, 1 - u.deathT * 2.2); ctx.translate(0, -u.deathT * 30); }
     else alpha = 0.35;
   }
   if (u.clone && !u.clay) alpha = 0.7;   // người đất Nữ Oa: rõ nét
@@ -1833,15 +1837,15 @@ function drawUnit(u) {
     Art.E(ctx, 0, -28 * sizeOf(u), 26 * sizeOf(u), 34 * sizeOf(u)); ctx.fillStyle = '#9fe0ff'; ctx.fill();
     ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.strokeStyle = '#d8f6ff'; ctx.stroke(); ctx.restore();
   }
-  if (u.side === 'h' && !u.dead && u.atkAnim >= 0 && typeof ATK_STYLE !== 'undefined' && ATK_STYLE[u.id]) {   // ra đòn: lao tới trước rồi thu về (đường cong nhanh-chậm)
+  if ((u.side === 'h' || u.ah) && !u.dead && u.atkAnim >= 0 && typeof ATK_STYLE !== 'undefined' && ATK_STYLE[u.id]) {   // ra đòn: lao tới trước rồi thu về (đường cong nhanh-chậm)
     const q = u.atkAnim, lunge = (q < 0.35 ? Math.sin(q / 0.35 * Math.PI / 2) : Math.max(0, 1 - (q - 0.35) / 0.5)) * (LUNGE[ATK_STYLE[u.id].pat] || 8);
     ctx.translate(u.f * lunge, 0);
     if (lunge > 3) {   // bóng mờ kéo theo phía sau
       if (!gfxLow()) B.ghosts.push({ id: u.id, x: u.x + u.f * lunge, y: u.y, f: u.f, t: 0, st: rigState(u) });
     }
   }
-  if (u.side === 'h' && u.dead && !hasSkel(u.id)) ctx.rotate(-1.35);   // rig xương có động tác ngã riêng
-  if (u.side === 'h' && u.dead && hasSkel(u.id)) alpha = Math.max(0.35, 1 - (u.deathT || 0) * 0.8);
+  if ((u.side === 'h' || u.ah) && u.dead && !hasSkel(u.id)) ctx.rotate(-1.35);   // rig xương có động tác ngã riêng
+  if ((u.side === 'h' || u.ah) && u.dead && hasSkel(u.id)) alpha = Math.max(0.35, 1 - (u.deathT || 0) * 0.8);
   if (u.side === 'e' && u.trait && !u.dead) {
     if (u.under) { ctx.save(); ctx.fillStyle = '#6a4a28'; ctx.beginPath(); ctx.ellipse(0, 0, 26, 9, 0, Math.PI, TAU); ctx.fill(); ctx.fillStyle = '#8a6a40'; for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(-14 + i * 9, -4 - Math.abs(Math.sin(u.t * 9 + i)) * 5, 3, 0, TAU); ctx.fill(); } ctx.restore(); ctx.restore(); return; }
     if (u.flyH) { ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(0, 2, 26, 8, 0, 0, TAU); ctx.fill(); ctx.restore(); ctx.translate(0, -u.flyH * (u.d.wings ? 1.3 : 1) + Math.sin(u.t * 4) * 5);
@@ -1851,10 +1855,6 @@ function drawUnit(u) {
       ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.25 + 0.1 * Math.sin(u.t * 5); ctx.fillStyle = '#9fd0ff'; ctx.beginPath(); ctx.ellipse(-4, 0, 16, 40, 0, 0, TAU); ctx.fill(); ctx.restore(); }
   }
   const img = SPR[u.id];
-  if (u.d && u.d.mirror && !u.dead) {   // Kiếm Ảnh: quầng tím đỏ dưới chân + sau lưng để khác tướng phe mình
-    const hh = spriteH(u), pul = 0.5 + 0.18 * Math.sin(u.t * 4); ctx.save(); ctx.globalCompositeOperation = 'lighter';
-    let g = ctx.createRadialGradient(0, -hh * 0.5, 6, 0, -hh * 0.5, hh * 0.62); g.addColorStop(0, `rgba(190,50,255,${0.32 * pul})`); g.addColorStop(1, 'rgba(120,0,80,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -hh * 0.5, hh * 0.62, 0, TAU); ctx.fill();
-    g = ctx.createRadialGradient(0, 0, 4, 0, 0, 50); g.addColorStop(0, `rgba(230,60,200,${pul})`); g.addColorStop(1, 'rgba(120,0,60,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(0, 0, 50, 16, 0, 0, TAU); ctx.fill(); ctx.restore(); }
   if (u.side === 'e' && drawEnemyPose(u, alpha)) {   // quái vẽ bằng tư thế
     if (u.flyH && !u.dead && !u.d.wings) { const cl = ucImg('cloud'); if (cl) { const cw = 110 * sizeOf(u), ch = cw * cl.height / cl.width; ctx.save(); ctx.globalAlpha *= alpha; if (u.d.flyTint) ctx.filter = u.d.flyTint; ctx.drawImage(cl, -cw / 2, -ch * 0.62, cw, ch); ctx.restore(); } }   // mây che chân
   }
@@ -1872,11 +1872,13 @@ function drawUnit(u) {
   }
   if (u.burn > 0) particlesTiny(u);
   if (u.boss) return;
-  const bw = u.side === 'h' ? 40 : (u.elite ? 50 : 30) * Math.min(1.3, sz);
+  const bw = (u.side === 'h' || u.ah) ? 40 : (u.elite ? 50 : 30) * Math.min(1.3, sz);
   hpBar(u.x - bw / 2, top, bw, u.side === 'h' ? 5 : 4, u.hp / maxHp(u), u.side === 'h' ? '#46e36b' : (u.elite ? '#c25bff' : '#ff4d4d'), u.shield > 0 ? u.shield / maxHp(u) : 0);
   if (u.side === 'h' && !u.clone) {
     hpBar(u.x - bw / 2, top + 6, bw, 3, u.mp / 100, u.dk > 0 ? '#7fd3ff' : '#4f8cff', 0);
   }
+  if (u.foe && !u.clone) { hpBar(u.x - bw / 2, top + 6, bw, 3, u.mp / 100, '#c070ff', 0);   // Luận Kiếm: nội công + tên tướng đối thủ
+    ctx.save(); ctx.font = '800 11px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(70,0,0,0.85)'; ctx.strokeText(u.name, u.x, top - 8); ctx.fillStyle = '#ffc0c0'; ctx.fillText(u.name, u.x, top - 8); ctx.restore(); }
 }
 // Chiều cao nhân vật vẽ bằng ảnh (anime cao hơn chibi)
 function spriteH(u) { return u.boss ? 175 : 108 * sizeOf(u); }
@@ -2805,7 +2807,7 @@ function comboFor(u) {   // hợp kích của u: đã sẵn chưa / đồng đ�
 const cxReady = c => (CX[cxKey(c)].need || []).every(n => ucImg(n));
 function castCombo(c) {
   const a = comboHero(c.a), b = comboHero(c.b), c3 = c.c ? comboHero(c.c) : null; if (!a || !b || (c.c && !c3)) return;
-  const X = CX[cxKey(c)], lead = 0.95; lifeAdd('combo');
+  const X = CX[cxKey(c)], lead = 0.95; if (!B.ctxFoe) lifeAdd('combo');
   for (const u of c3 ? [a, b, c3] : [a, b]) { u.mp -= 60; u.cdU = 12; const sk_ = typeof Skel !== 'undefined' && Skel.has(u.id); u.castDur = sk_ ? 1.0 : 0.35; u.castT = u.castDur; u.castUlt = true; u.atkAnim = sk_ ? -1 : 0; }
   B.comboCd[c.name] = B.time + 25;
   const P = clusterPoint() || { x: W * 0.65, y: H * 0.6 }, tx = clamp(P.x, 160, W - 140), ty = clamp(P.y, 290, H - 60);
@@ -2813,7 +2815,7 @@ function castCombo(c) {
   B.fx.push({ k: 'cx', key: cxKey(c), c, c3: c3 && { x: c3.x, y: c3.y - 34 * sizeOf(c3) }, a: { x: a.x, y: a.y - 34 * sizeOf(a) }, b: { x: b.x, y: b.y - 34 * sizeOf(b) }, x: a.x, y: a.y, tx, ty, t: -lead, dur: X.dur, sub: {}, done: {} });
   B.banner = { text: 'HỢP KÍCH · ' + c.name, sub: cxMem(c).map(m => HEROES[m].name).join(' × '), t: 0, boss: true };
   if (X.cast) { B.later.push({ t: lead, fn: () => { if (B && !B.over) X.cast(c, a, b, c3, tx, ty); } }); B.slowmo = 0.35; sfx('ult'); return; }   // biên đạo riêng (tự gây sát thương)
-  B.slowmo = 0.35; sfx('ult'); B.stat && (B.stat.combo = (B.stat.combo || 0) + 1);
+  B.slowmo = 0.35; sfx('ult'); B.stat && !B.ctxFoe && (B.stat.combo = (B.stat.combo || 0) + 1);
   const hits = X.hits, src = a, R = X.r || 240;
   hits.forEach((h, i) => B.later.push({ t: lead + X.dur * h, fn: () => {
     if (!B || B.over) return; const last = i === hits.length - 1, n = hits.length;
@@ -3158,8 +3160,8 @@ const SSR_FX = {
   khuongtanha: { col: '#ffe58a', pt: [5, 3] }, bodetosu: { col: '#bfffd0', pt: [4, 3] }, tranguyentu: { col: '#d0a0ff', pt: [3, 3] },
 };
 const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
-function ssrFxOn(u) { return u && u.side === 'h' && SSR_FX[u.id] && !u.clone && S.gfx !== 'low' && (HEROES[u.id].rar === 'SSR' || ((S.owned[u.id] || {}).star || 0) >= 5); }   // SR có bộ VFX (Ngưu Ma) giữ khi thức tỉnh
-function auraOn(u) { const t = u && u.side === 'h' && !u.clone && S.gfx !== 'low' && tierOf(u.id); return (t === 'SSR+' || t === 'SSR') && !!sfImg('aura_' + u.id); }   // SSR+/SSR: vòng sáng quanh người
+function ssrFxOn(u) { return u && (u.side === 'h' || u.ah) && SSR_FX[u.id] && !u.clone && S.gfx !== 'low' && (HEROES[u.id].rar === 'SSR' || ((S.owned[u.id] || {}).star || 0) >= 5); }   // SR có bộ VFX (Ngưu Ma) giữ khi thức tỉnh
+function auraOn(u) { const t = u && (u.side === 'h' || u.ah) && !u.clone && S.gfx !== 'low' && tierOf(u.id); return (t === 'SSR+' || t === 'SSR') && !!sfImg('aura_' + u.id); }   // SSR+/SSR: vòng sáng quanh người
 function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
   if (UR_LAYERS[u.id]) return;   // UR tách lớp đã có hào quang riêng sau đầu -> bỏ vòng lớn quanh người cho đỡ rối
   const im = sfImg('aura_' + u.id); if (!im) return; const full = 0;   // đầy nộ không làm vòng sáng sáng lên / hạt quanh người nhiều hơn (người dùng chốt 2026-11-24)
@@ -3790,17 +3792,7 @@ function drawRift() {
       ctx.beginPath(); ed.forEach((p, i) => i ? ctx.lineTo(p[0] + ox, p[1] + oy) : ctx.moveTo(p[0] + ox, p[1] + oy)); ctx.stroke(); } }
   ctx.restore();
 }
-function render() {
-  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
-  if (!B) { renderHome(); return; }
-  ctx.save();
-  if (B.shake > 0) ctx.translate(rand(-1, 1) * B.shake * 10, rand(-1, 1) * B.shake * 10);
-  if (B.cam) { const k = Math.sin(Math.PI * B.cam.t / B.cam.dur), z = 1 + 0.05 * k; ctx.translate(B.cam.x, B.cam.y); ctx.scale(z, z); ctx.translate(-B.cam.x, -B.cam.y); }   // camera dí sát điểm nổ tuyệt kỹ
-  ctx.drawImage(B.bg, 0, 0, W, H);
-  ctx.translate(GATE_X, H * VIEW_PY); ctx.scale(VIEW_Z, VIEW_Z); ctx.translate(-GATE_X, -H * VIEW_PY);
-  B.worldM = ctx.getTransform();   // ma trận chiến trường -> màn hình (hiệu ứng hậu kỳ dùng)
-  drawDomain();
-  drawPhapTuong();
+function drawGround() {   // mặt đất: vết cháy/nứt, vùng sát thương, cảnh báo
   for (const d of B.decals) {   // vết cháy/nứt đọng trên đất
     const a = Math.min(1, (d.dur - d.t) / 1.2) * 0.5, g = ctx.createRadialGradient(d.x, d.y, 4, d.x, d.y, d.r);
     g.addColorStop(0, 'rgba(40,18,6,0.9)'); g.addColorStop(0.6, 'rgba(70,32,10,0.45)'); g.addColorStop(1, 'rgba(70,32,10,0)');
@@ -3824,6 +3816,34 @@ function render() {
     ctx.globalAlpha = 0.6; ctx.fillStyle = '#ff7a2e'; ctx.beginPath(); ctx.ellipse(w.x, w.y, w.r * p, w.r * p * 0.55, 0, 0, TAU); ctx.fill();
     ctx.restore();
   }
+}
+function drawUpper() {   // đạn, hiệu ứng, nổ, tia, hạt
+  for (const p of B.projs) drawProj(p);
+  for (const f of B.fx) drawFx(f);
+  drawFxBursts();
+  drawSparks();
+  const PT = sfImg('particles'), PT2 = sfImg('particles2');
+  for (const f of B.fx) if (f.k === 'ssrhit') drawSsrHit(f);
+  for (const p of B.parts) {
+    ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+    if (p.img != null && PT) { const IM = p.img >= 6 ? PT2 : PT; if (!IM) continue; const fw = IM.width / 6, s2 = p.size * 2.4, ix = p.img % 6; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(p.x, p.y); ctx.rotate(p.rot || 0); ctx.drawImage(IM, ix * fw, 0, fw, IM.height, -s2 / 2, -s2 / 2 * IM.height / fw, s2, s2 * IM.height / fw); ctx.restore(); continue; }
+    ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function render() {
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  if (!B) { renderHome(); return; }
+  ctx.save();
+  if (B.shake > 0) ctx.translate(rand(-1, 1) * B.shake * 10, rand(-1, 1) * B.shake * 10);
+  if (B.cam) { const k = Math.sin(Math.PI * B.cam.t / B.cam.dur), z = 1 + 0.05 * k; ctx.translate(B.cam.x, B.cam.y); ctx.scale(z, z); ctx.translate(-B.cam.x, -B.cam.y); }   // camera dí sát điểm nổ tuyệt kỹ
+  ctx.drawImage(B.bg, 0, 0, W, H);
+  ctx.translate(GATE_X, H * VIEW_PY); ctx.scale(VIEW_Z, VIEW_Z); ctx.translate(-GATE_X, -H * VIEW_PY);
+  B.worldM = ctx.getTransform();   // ma trận chiến trường -> màn hình (hiệu ứng hậu kỳ dùng)
+  drawDomain();
+  drawPhapTuong();
+  drawGround();
+  if (B.arena) arDrawW2('low');
   // vòng đội trưởng
   const cap = B.cap;
   if (cap && !cap.dead) {
@@ -3834,6 +3854,7 @@ function render() {
   for (const u of all) if (!(u.dead && u.side === 'e')) Art.shadow(ctx, u.x, u.y, sizeOf(u) * 0.9);
   for (const d of B.drops) drawDrop(d);
   for (const h of B.heroes) drawTierAura(h);
+  if (B.arena) for (const h of B.enemies) drawTierAura(h);
   drawGhosts();
   for (const u of all) drawUnit(u);
   for (const u of all) drawTraitBadge(u);
@@ -3846,17 +3867,8 @@ function render() {
     ctx.save(); ctx.beginPath(); ctx.moveTo(cap.x - 7, y - 9); ctx.lineTo(cap.x + 7, y - 9); ctx.lineTo(cap.x, y);
     ctx.closePath(); Art.fs(ctx, '#ffd34d', 2); ctx.restore();
   }
-  for (const p of B.projs) drawProj(p);
-  for (const f of B.fx) drawFx(f);
-  drawFxBursts();
-  drawSparks();
-  const PT = sfImg('particles'), PT2 = sfImg('particles2');
-  for (const f of B.fx) if (f.k === 'ssrhit') drawSsrHit(f);
-  for (const p of B.parts) {
-    ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
-    if (p.img != null && PT) { const IM = p.img >= 6 ? PT2 : PT; if (!IM) continue; const fw = IM.width / 6, s2 = p.size * 2.4, ix = p.img % 6; ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(p.x, p.y); ctx.rotate(p.rot || 0); ctx.drawImage(IM, ix * fw, 0, fw, IM.height, -s2 / 2, -s2 / 2 * IM.height / fw, s2, s2 * IM.height / fw); ctx.restore(); continue; }
-    ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, TAU); ctx.fill();
-  }
+  drawUpper();
+  if (B.arena) arDrawW2('high');
   ctx.globalAlpha = 1;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   for (const f of B.floaters) {
@@ -3879,6 +3891,7 @@ function render() {
   }
   ctx.restore();
   drawRift();
+  if (B.arena) arDrawW2('rift');
   const boss = B.enemies.find(e => e.boss && !e.dead);
   if (boss) drawBossBar(boss);
   if (B.flash > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, B.flash / 0.22) * (S.calm ? 0.12 : 0.38); ctx.fillStyle = '#fff8e0'; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.restore(); }
@@ -4593,7 +4606,8 @@ function updateHUD() {
     document.querySelectorAll('#hProg .pm').forEach(el => el.classList.toggle('done', +el.dataset.w < B.wave));
     const pr = Math.min(1, (w + (B.wave >= n - 1 ? 1 : fr)) / n), pf = $('#hPfill'), pc = $('#hPcur'); if (pf) pf.style.width = pr * 100 + '%'; if (pc) pc.style.left = pr * 100 + '%';
     const nx = B.st.waves.findIndex((x, k) => k > B.wave && (x.boss || x.strong || x.horde)), np = $('#hPnext');
-    if (np) { if (nx < 0) np.textContent = B.st.waves[n - 1] && B.st.waves[n - 1].boss && B.wave >= n - 1 ? 'BOSS!' : 'Đợt cuối'; else { const x = B.st.waves[nx], d = nx - B.wave; np.textContent = (x.boss ? '☠ Boss' : x.horde ? '👹 Quái đông' : '⚔ Địch mạnh') + (d <= 1 ? ' sắp tới!' : ` sau ${d} đợt`); np.className = d <= 1 ? 'warn' : ''; } } }
+    if (np && B.st.arena) np.textContent = 'Luận Kiếm · ' + Math.max(0, Math.ceil(B.st.par - B.time)) + ' giây';
+    else if (np) { if (nx < 0) np.textContent = B.st.waves[n - 1] && B.st.waves[n - 1].boss && B.wave >= n - 1 ? 'BOSS!' : 'Đợt cuối'; else { const x = B.st.waves[nx], d = nx - B.wave; np.textContent = (x.boss ? '☠ Boss' : x.horde ? '👹 Quái đông' : '⚔ Địch mạnh') + (d <= 1 ? ' sắp tới!' : ` sau ${d} đợt`); np.className = d <= 1 ? 'warn' : ''; } } }
   const t = Math.floor(B.time);
   $('#hTime').textContent = Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
   $('#hTime').classList.toggle('over', B.time > B.st.par);
@@ -4645,9 +4659,9 @@ function showResult() {
   const t = Math.floor(B.time);
   const next = win && typeof B.si === 'number' && B.si < STAGES.length - 1;
   wrap.innerHTML = `<div class="res-title">${B.st.raid ? 'Kết Thúc' : win ? 'Chiến Thắng' : 'Thất Bại'}</div>
-    ${win ? `<div class="res-stars">${[0, 1, 2].map(i => `<span class="${i < B.stars ? 'on' : ''}" style="animation-delay:${0.3 + i * 0.25}s">★</span>`).join('')}</div>
+    ${win && B.st.arena ? '' : win ? `<div class="res-stars">${[0, 1, 2].map(i => `<span class="${i < B.stars ? 'on' : ''}" style="animation-delay:${0.3 + i * 0.25}s">★</span>`).join('')}</div>
       <ul class="res-cond"><li class="on">Qua ải</li><li class="${B.deaths === 0 ? 'on' : ''}">Không tướng nào ngã</li><li class="${B.time <= B.st.par ? 'on' : ''}">Dưới ${B.st.par} giây (${t}s)</li></ul>`
-      : `<p class="res-reason">${esc(B.reason)}</p><p class="hint">Gợi ý: nâng cấp tướng, đổi đội trưởng, hoặc nhặt Linh Phù sớm để gọi đủ đội.</p>`}
+      : `<p class="res-reason">${esc(B.reason)}</p>${B.st.arena ? '<p class="hint">Gợi ý: đổi đội hình, nâng sao tướng chủ lực, thêm tướng hồi máu hoặc chịu đòn.</p>' : '<p class="hint">Gợi ý: nâng cấp tướng, đổi đội trưởng, hoặc nhặt Linh Phù sớm để gọi đủ đội.</p>'}`}
     ${(() => {   // bảng thống kê: sát thương / chịu đòn / hồi máu, MVP
       const ids = Object.keys(B.stat).filter(id => HEROES[id]); if (!ids.length) return `<div class="res-team">${B.ids.map(id => `<img src="${por(id, 56)}">`).join('')}</div>`;
       const mx = k => Math.max(1, ...ids.map(id => B.stat[id][k])), md = mx('d'), mt = mx('t'), mh = mx('h');
@@ -4660,7 +4674,7 @@ function showResult() {
         <div class="rs-leg"><span class="d">Sát thương</span><span class="t">Chịu đòn</span><span class="h">Hồi máu</span></div></div>`;
     })()}
     ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
-    <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.kills} quái</span>${B.reward.univ ? `<span>${icon('univ')}+${B.reward.univ}</span>` : ''}${B.reward.items && B.reward.items.length > 1 ? `<span>+${B.reward.items.length} trang bị</span>` : ''}${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
+    <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.st.arena ? (B.arKills || 0) + ' tướng' : B.kills + ' quái'}</span>${B.reward.univ ? `<span>${icon('univ')}+${B.reward.univ}</span>` : ''}${B.reward.items && B.reward.items.length > 1 ? `<span>+${B.reward.items.length} trang bị</span>` : ''}${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
     ${B.fbRew ? (setTimeout(() => snd('gong'), 400), '') : ''}${B.fbRew ? `<div class="res-hero"><img src="art/ui/${B.fbRew.id}.webp" alt="" style="height:64px"><div><small>Pháp bảo</small><b>${esc(FABAO[B.fbRew.id].n)}</b><em>${B.fbRew.r === 'new' ? 'Nhận mới!' : 'Trùng → +1 cấp'}</em></div></div>` : ''}
     ${B.chRew ? `<div class="res-hero"><img src="${fullImg(B.chRew.id, 160)}" alt=""><div><small>Thưởng qua chương</small><b>${esc(HEROES[B.chRew.id].name)}</b> ${rarTag(HEROES[B.chRew.id].rar)}${B.chRew.dup ? '<em>Đã có → +mảnh</em>' : '<em>Gia nhập đội!</em>'}</div></div>` : ''}
     <div class="res-btns">
@@ -4894,10 +4908,9 @@ function showAch() {
   $('#acAll').onclick = () => { let n = 0; for (let k = 0; k < 10; k++) for (const a of ACH) { const r = achRow(a); if (r.ready) { claim(r); n++; } } snd('gong'); save(); toast('Đã nhận ' + n + ' phần thưởng'); showAch(); };
 }
 
-// ---- LUẬN KIẾM (đấu trường không đồng bộ): đội của người chơi khác hiện thành "Kiếm Ảnh" — tướng thật, biết tung chiêu nhỏ và tuyệt kỹ.
+// ---- LUẬN KIẾM (đấu trường không đồng bộ): đội của người chơi khác (lấy từ máy chủ) do máy điều khiển, dùng đúng bộ não tướng — xem arenaSetup/arSwap.
 // Đối thủ lấy từ Firestore arena/{uid} (đội thủ = đội hình hiện tại lúc thi đấu); chưa đăng nhập / chưa mở quy tắc máy chủ thì đấu với Tiên Hữu (máy).
 const AR_FREE = 5;                         // lượt mỗi ngày
-const AR_HP = 7, AR_ATK = 0.9;             // hệ số chỉ số Kiếm Ảnh — đo bằng #arenafight: 2 đội ngang sức đánh 40–60 giây, thắng thua sát nút
 const AR_TIERS = [[0, 'Luyện Khí', '#9a8a7a'], [1100, 'Trúc Cơ', '#5aa05a'], [1250, 'Kim Đan', '#d8a020'], [1400, 'Nguyên Anh', '#4a90e0'], [1600, 'Hoá Thần', '#a060e0'], [1800, 'Đại Thừa', '#e05050']];
 const AR_WEEK_REW = [{ ngoc: 100, vang: 5000 }, { ngoc: 200, vang: 10000 }, { ngoc: 350, vang: 15000, thanhan: 10 }, { ngoc: 500, vang: 20000, thanhan: 20 }, { ngoc: 800, vang: 30000, thanhan: 35 }, { ngoc: 1200, vang: 50000, thanhan: 60 }];
 const AR_BOT_NAMES = ['Thanh Phong Tán Nhân', 'Tử Vân Đạo Hữu', 'Bích Lạc Kiếm Khách', 'Huyền Minh Chân Nhân', 'Lạc Hà Tiên Tử', 'Vô Trần Cư Sĩ', 'Kim Quang Thượng Nhân', 'Bạch Hạc Đồng Tử', 'Hàn Sơn Ẩn Sĩ', 'Xích Diễm Thiên Quân', 'Lưu Ly Tiên Cơ', 'Thiên Cơ Lão Nhân'];
@@ -4937,34 +4950,91 @@ function arPush() {   // gửi đội thủ + điểm lên máy chủ (bỏ qua 
   const A = arState(), team = arTeamOf(); if (!team.length) return;
   Cloud.arenaSet({ name: (Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), rating: A.r, power: arPower(team), team: JSON.stringify(team), wk: weekKey(), ts: Date.now() }).catch(e => { A.cloudErr = e.code || e.message; });
 }
-function arenaStage(opp) {
-  for (const [id, lv, st] of opp.team) {
-    const h = HEROES[id], m = (1 + 0.06 * (lv - 1)) * starMul(tierOf(id), st) * (TIER_BASE[tierOf(id)] || 1);
-    ENEMIES['ka_' + id] = { name: h.name, mirror: id, role: h.role, hp: h.hp * m * (window.__arhp || AR_HP), atk: h.atk * m * (window.__aratk || AR_ATK), def: h.def * m, aspd: h.aspd, range: h.range || 50, move: (h.move || 80) * 0.7,
-      ranged: !!h.ranged, proj: h.proj, el: h.el, look: h.look || { size: 1 }, sk: h.small.name, ul: h.ult.name };
-  }
-  return { id: '⚔', arena: opp, kind: 'normal', name: 'Luận Kiếm · ' + opp.name, lvl: 1, par: 120, gate: 999999, theme: 'heaven', seed: 7, chap: 6,
-    reward: { ngoc: 0, vang: 0 }, waves: [{ list: opp.team.map(t => ['ka_' + t[0], 1]) }] };
+// ---- LUẬN KIẾM: hai đội tướng đứng sẵn đối mặt, đối thủ dùng ĐÚNG bộ não tướng (đạn riêng, chiêu nhỏ, tuyệt kỹ đầy đủ, hợp kích).
+// Cách làm "thế giới soi gương": mỗi khung chạy lượt phe mình, rồi lật sân (x -> 2·X0 − x) + đổi vai tướng/quái + đổi kho hiệu ứng riêng
+// để chạy lượt đối thủ y như một đội tướng bình thường; hiệu ứng của đối thủ vẽ qua tấm gương ngang. Luôn trả về phe mình (try/finally).
+const AR_HPK = 5, AR_HEAL = 0.5, AR_RAGE = 40;   // hệ số máu Luận Kiếm (đo bằng #arenafight)
+const AR_X0 = (GATE_X - GATE_X / VIEW_Z + VIEW_R()) / 2;   // trục giữa khung nhìn (toạ độ sân)
+const AR_WK = ['projs', 'fx', 'fxb', 'decals', 'ghosts', 'sparks', 'parts', 'later', 'zones', 'warns', 'cap', 'capTgt', 'comboCd', 'lastUlt', 'mods', 'capRegen', 'dom', 'pt', 'rift', 'field'];
+function arSwap() {
+  const A = B.arena, o = A.other;
+  for (const k of AR_WK) { const t = B[k]; B[k] = o[k]; o[k] = t; }
+  const h = B.heroes; B.heroes = B.enemies; B.enemies = h;
+  for (const u of B.heroes) u.side = 'h'; for (const u of B.enemies) u.side = 'e';
+  for (const u of B.heroes.concat(B.enemies)) { u.x = 2 * AR_X0 - u.x; u.f = -u.f; if (u.px != null) u.px = 2 * AR_X0 - u.px; }
+  const so = S.owned; S.owned = A.owned; A.owned = so;   // chỉ số/sao của tướng đối thủ (không dính trang bị của mình)
+  B.ctxFoe = !B.ctxFoe; window.__arFoe = B.ctxFoe;   // save() đọc cờ này: không bao giờ lưu khi đang ở lượt đối thủ
 }
-// Kiếm Ảnh tung chiêu: chiêu nhỏ mỗi ~8 giây, tuyệt kỹ mỗi ~16 giây (tướng hồi máu thì hồi cho đồng đội ảnh)
-function mirrorSkill(e, dt) {
-  if (e.ulT == null) { const k = B.enemies.filter(x => x.d && x.d.mirror).indexOf(e); e.ulT = 12 + k * 4 + rand(0, 1.5); }   // tuyệt kỹ lần lượt từng ảnh, không dồn cùng lúc
-  e.skT = (e.skT == null ? rand(3, 7) : e.skT) - dt; e.ulT -= dt;
-  const col = (ELEMENTS[e.el] || {}).color || '#ff6a6a';
-  const hit = (mult, R, big) => { const t = nearestHero(e, 900); if (!t) return false;
-    e.castT = big ? 1 : 0.5; e.castDur = e.castT; e.castUlt = big; e.atkAnim = -1;
-    floater(e.x, e.y - 130, big ? e.d.ul : e.d.sk, big ? '#ffd0ff' : col, big ? 22 : 16);
-    if (e.d.role === 'dan' && !big) { const ally = B.enemies.filter(x => !x.dead).sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b))[0]; if (ally) { const v = getAtk(e) * 2.2; ally.hp = Math.min(maxHp(ally), ally.hp + v); floater(ally.x, ally.y - 90, '+' + fmt(v), '#7dff9a', 16); fxBurst(ally.x, ally.y - 40, 'flare', 110); } return true; }
-    for (const h of B.heroes) if (!h.dead && dist(h, t) <= R) dealDmg(e, h, mult, big ? 'ult' : 'skill');
-    fxBurst(t.x, t.y - 40, big ? 'burst_gold' : 'flare', big ? 260 : 140); if (big) fxBurst(t.x, t.y - 60, 'lightning', 200, Math.random() * 6); B.fx.push({ k: 'ring', x: t.x, y: t.y, r: R, color: col, t: 0, dur: 0.45 });
-    if (big) { B.shake = Math.max(B.shake, 0.9); sfx('ult'); } return true; };
-  if (e.ulT <= 0) { if (hit(window.__arul || 2.0, 150, true)) e.ulT = rand(20, 24); else e.ulT = 1; }
-  else if (e.skT <= 0) { if (hit(1.2, 85, false)) e.skT = rand(7, 9); else e.skT = 1; }
+function arFoe(fn) {   // chạy fn trong lượt đối thủ; camera/khung va chạm đối thủ tạo ra thì lật về toạ độ thật
+  const cam = B.cam, imp = B.impact, aut = B.auto; arSwap(); B.auto = true;
+  try { fn(); } finally { B.auto = aut; arSwap(); }
+  if (B.cam && B.cam !== cam) B.cam.x = 2 * AR_X0 - B.cam.x;
+  if (B.impact && B.impact !== imp) B.impact.x = 2 * AR_X0 - B.impact.x;
+}
+function arFxWorld(dt) {   // phần riêng từng phe của updateFx (phần chung: rung, loé, chữ bay, khung tuyệt kỹ chỉ chạy 1 lần)
+  for (const l of B.later) { l.t -= dt; if (l.t <= 0 && !l.done) { l.done = true; l.fn(); } }
+  B.later = B.later.filter(l => !l.done);
+  for (const b of B.fxb) b.t += dt; B.fxb = B.fxb.filter(b => b.t < b.dur);
+  for (const d of B.decals) d.t += dt; B.decals = B.decals.filter(d => d.t < d.dur);
+  for (const g of B.ghosts) g.t += dt; B.ghosts = B.ghosts.filter(g => g.t < 0.22);
+  for (const s of B.sparks) s.t += dt; B.sparks = B.sparks.filter(s => s.t < s.dur);
+  for (const f of B.fx) { f.t += dt; if (f.upd) f.upd(f, dt); }
+  domUpdate(dt); if (B.pt) B.pt.t += dt; if (B.rift) B.rift.t += dt;
+  B.fx = B.fx.filter(f => f.t < f.dur);
+  for (const p of B.parts) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.nograv) { p.vy *= 0.96; p.rot += (p.vr || 0) * dt; } else p.vy += 420 * dt; p.vx *= 0.97; }
+  B.parts = B.parts.filter(p => p.life > 0); if (B.parts.length > 600) B.parts.splice(0, B.parts.length - 600);
+}
+function arenaSetup(st) {
+  B.comboCd = B.comboCd || {}; B.lastUlt = B.lastUlt || {};
+  B.arena = { other: { projs: [], fx: [], fxb: [], decals: [], ghosts: [], sparks: [], parts: [], later: [], zones: [], warns: [], cap: null, capTgt: null, comboCd: {}, lastUlt: {}, mods: {}, capRegen: 0, dom: null, pt: null, rift: null, field: {} }, owned: {} };
+  for (const u of B.heroes) u.ah = true;
+  const team = st.arena.team.filter(t => HEROES[t[0]]), ids = team.map(t => t[0]);
+  for (const [id, lv, star] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, MAX_LV), star: clamp(star | 0, 1, maxStar(id)), shard: 0 };
+  arSwap();
+  try {
+    const info = teamInfo(ids);
+    ids.forEach((id, i) => { const u = makeHero(id, i === 0); applyBonuses(u, info); u.hp = maxHp(u); u.foe = true; u.ah = true; takeSlot(u); B.heroes.push(u); if (i === 0) B.cap = u; });
+    if (ids.length) { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; }   // kỹ năng đội trưởng của đối thủ
+  } finally { arSwap(); }
+  const k = window.__arhpk || AR_HPK;   // tướng chỉ đủ máu đánh quái yếu: Luận Kiếm nhân máu đều 2 bên cho trận đủ dài
+  for (const u of B.heroes.concat(B.enemies)) { u.base.hp *= k; u.hp = maxHp(u); u.range = 1000; }   // tầm 1000: hàng sau 2 bên cách ~720 vẫn bắn tới nhau
+}
+function arenaKill(t) {
+  if (t.clone) { t.gone = true; particles(t.x, t.y - 20, '#ffe58a', 10, 120); return; }
+  if (urImmortal(t)) return;
+  floater(t.x, t.y - 70, 'Trọng thương', '#ff8a8a', 15); particles(t.x, t.y - 20, '#ffffff', 14, 150); sfx('pop');
+  if (t.isCap) { t.isCap = false; const mineSide = B.heroes.includes(t), team = mineSide ? B.heroes : B.enemies, n = team.find(h => !h.dead && !h.clone);
+    if (n) { n.isCap = true; if (mineSide) B.cap = n; else B.arena.other.cap = n; } }
+}
+function arenaUpdate(dt) {
+  const mine = () => { updateHeroes(dt); updateProjs(dt); updateZones(dt); updateFx(dt); }, foe = () => arFoe(() => { updateHeroes(dt); updateProjs(dt); updateZones(dt); arFxWorld(dt); });
+  if (window.__arFF != null ? window.__arFF : Math.random() < 0.5) { foe(); mine(); } else { mine(); foe(); }   // phe ra tay trước trong khung: bốc ngẫu nhiên (cố định 1 phe -> phe đó luôn thắng khi 2 bên hạ nhau cùng lúc)
+  for (const u of B.enemies) { if (!u.ah) { u.ah = true; u.foe = true; } if (u.dead) u.deathT = (u.deathT || 0) + dt; }   // triệu hồi/phân thân của đối thủ: gắn nhãn đối thủ
+  for (const u of B.heroes) u.ah = true;
+  if (!B.arRage && B.time >= AR_RAGE) { B.arRage = 1; B.banner = { text: 'SÁT KHÍ DÂNG TRÀO', sub: 'Sát thương hai bên tăng dần theo thời gian', t: 0, boss: true }; sfx('roar'); }
+  const live = L => L.filter(h => !h.dead && !h.clone), a = live(B.heroes), b = live(B.enemies);
+  if (!b.length) endBattle(true);
+  else if (!a.length) endBattle(false, 'Cả đội đã trọng thương');
+  else if (B.time >= B.st.par) { const pct = L => L.reduce((s, h) => s + (h.dead ? 0 : h.hp / maxHp(h)), 0) / Math.max(1, L.filter(h => !h.clone).length);   // hết giờ: bên còn nhiều máu hơn thắng
+    const w = pct(B.heroes) > pct(B.enemies); endBattle(w, w ? 'Hết giờ · đội bạn còn nhiều máu hơn' : 'Hết giờ · đối thủ còn nhiều máu hơn'); }
+}
+// vẽ hiệu ứng của đối thủ: lật sân về thế giới đối thủ, vẽ qua tấm gương ngang quanh trục giữa
+function arDrawW2(layer) {
+  const hits = B.hits; arSwap(); B.mirrorDraw = true; B.hits = { n: 0, t: 0, id: null };
+  try {
+    if (layer === 'rift') { const R = B.rift; if (R) { const wx = R.wx, ang = R.ang; R.wx = 2 * AR_X0 - wx; R.ang = Math.PI - ang; try { drawRift(); } finally { R.wx = wx; R.ang = ang; } } return; }   // khe chém: lật vị trí + góc về toạ độ thật (ma trận gương làm độ rộng khe âm)
+    ctx.save(); ctx.translate(2 * AR_X0, 0); ctx.scale(-1, 1);
+    try { if (layer === 'low') { drawDomain(); drawPhapTuong(); drawGround(); } else drawUpper(); } finally { ctx.restore(); }
+  } finally { B.hits = hits; B.mirrorDraw = false; arSwap(); }
+}
+function arenaStage(opp) {
+  return { id: '⚔', arena: opp, kind: 'normal', name: 'Luận Kiếm · ' + opp.name, lvl: 1, par: 120, gate: 999999, theme: 'heaven', seed: 7, chap: 6,
+    reward: { ngoc: 0, vang: 0 }, waves: [{ list: [] }] };
 }
 function arenaEnd(win) {   // gọi trong endBattle
   const A = arState(), o = B.st.arena, ex = 1 / (1 + Math.pow(10, (o.r - A.r) / 400)), d = Math.round(32 * ((win ? 1 : 0) - ex));
   A.r = Math.max(800, A.r + d); if (win) { A.w++; lifeAdd('arenaWin'); } else A.l++;
-  A.opp = null; arState(); B.arenaDelta = d;
+  A.opp = null; arState(); B.arenaDelta = d; B.arKills = B.enemies.filter(e => e.dead && !e.clone).length;
   B.st.reward = win ? { ngoc: 40, vang: 3000 } : { ngoc: 0, vang: 1000 };
   if (win) { S.thanhan = (S.thanhan || 0) + 2; B.reward.thanhan = 2; }
   arPush();
@@ -5002,7 +5072,8 @@ async function showArena(tab) {
       L.innerHTML = rows.length ? rows.map((r, i) => `<div class="meta-row ${r.uid === Cloud.user.uid ? 'me' : ''}"><div><b>${i + 1}. ${esc(r.name || '?')}</b> <span class="ar-tag" style="--c:${AR_TIERS[arTier(r.rating)][2]}">${AR_TIERS[arTier(r.rating)][1]}</span></div><span class="rew">${r.rating}</span></div>`).join('') : '<div class="hint">Tuần này chưa có ai.</div>';
     } catch (e) { L.innerHTML = `<div class="hint">Chưa mở máy chủ Luận Kiếm (${esc(e.code || e.message)}).</div>`; }
   } else {
-    L.innerHTML = `<div class="q-row"><div class="q-main"><b>Cách đấu</b><small class="shop-sub">Đội của đối thủ hiện thành Kiếm Ảnh tiến vào sân, biết tung chiêu nhỏ và tuyệt kỹ. Hạ hết Kiếm Ảnh trong 120 giây là thắng; đội mình ngã hết hoặc hết giờ là thua.</small></div></div>
+    L.innerHTML = `<div class="q-row"><div class="q-main"><b>Cách đấu</b><small class="shop-sub">Hai đội đứng sẵn hai bên lôi đài. Đội đối thủ do máy điều khiển nhưng dùng đúng tướng, đạn, chiêu nhỏ, tuyệt kỹ và hợp kích như khi người đó tự đánh. Hạ hết đội bên kia là thắng; hết 120 giây thì bên còn nhiều máu hơn thắng.</small></div></div>
+      <div class="q-row"><div class="q-main"><b>Luật lôi đài</b><small class="shop-sub">Máu mọi tướng ×${AR_HPK}, hồi máu còn ${Math.round(AR_HEAL * 100)}%. Từ giây ${AR_RAGE}: Sát khí dâng trào, sát thương hai bên tăng dần. Không hồi sinh, không có Thiên Thư.</small></div></div>
       <div class="q-row"><div class="q-main"><b>Điểm và cảnh giới</b><small class="shop-sub">Thắng đối thủ điểm cao được nhiều điểm hơn. ${AR_TIERS.map(t => t[1] + ' ' + t[0]).join(' · ')}</small></div></div>
       <div class="q-row"><div class="q-main"><b>Thưởng</b><small class="shop-sub">Mỗi trận thắng: 40 ngọc, 3.000 vàng, 2 Thánh Ấn. Hết tuần nhận thưởng theo cảnh giới cao nhất trong tuần.</small></div></div>`;
   }
@@ -5377,17 +5448,21 @@ function route() {
       for (let i = 0; i < secs * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const mm = ui.querySelector('.cp-modal'); const bb = mm && mm.querySelector('.cp-card'); if (bb) bb.click(); else B.paused = false; } }
       if (B.over && B.endT != null) { B.endT = null; showResult(); } });
   }
-  else if (k === 'arenafight') {   // (thử) #arenafight=<lv>&sim=40&team=a,b&opp=c,d&olv=20&ost=3&lv=20&st=3 — trận Luận Kiếm, in kết quả ra console
-    const tm = h.match(/(?:^|&)team=([\w,]+)/), om = h.match(/(?:^|&)opp=([\w,]+)/), g = (n, d) => +((h.match(new RegExp('(?:^|&)' + n + '=([\\d.]+)')) || [])[1] || d);
+  else if (k === 'arenafight') {   // (thử) #arenafight=1&sim=40&team=a,b&opp=c,d&lv=20&st=3&olv=20&ost=3[&manual][&result] — trận Luận Kiếm, in ARENA_RESULT ra console
+    const tm = h.match(/(?:^|&)team=([a-z,]+)/), om = h.match(/(?:^|&)opp=([a-z,]+)/), g = (n, d) => { const m = h.match(new RegExp('(?:^|&)' + n + '=([0-9.]+)')); return m ? +m[1] : d; };
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { S.owned[id] = { lv: g('lv', 1), star: g('st', 1), shard: 0 }; }); S.lineup = ids; }
     const ot = (om ? om[1].split(',') : S.lineup).filter(id => HEROES[id]).map(id => [id, g('olv', g('lv', 1)), g('ost', g('st', 1))]);
-    window.__arul = g('arul', 0) || null; window.__arhp = g('arhp', 0) || null; window.__aratk = g('aratk', 0) || null;
-    const st = arenaStage({ bot: 1, name: 'Thử', r: 1000, team: ot, power: arPower(ot) }); S.tut = { all: 1 };
-    Promise.all([ensureHeroAssets(S.lineup.concat(ot.map(t => t[0])))]).then(() => { startBattleNow(st);
-      if (B) { B.auto = true; const secs = simPart && simPart.startsWith('sim=') ? +simPart.slice(4) : 0;
-        for (let i = 0; i < secs * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; } }
-        for (let i = 0; i < 240 && B; i++) update(1 / 60);   // chạy tiếp tới màn kết quả
-        if (B) console.log('ARENA_RESULT', JSON.stringify({ over: B.over, win: B.win, t: Math.round(B.time), heroes: B.heroes.filter(x => !x.dead && !x.clone).length, enemies: B.enemies.filter(x => !x.dead).length, ehp: Math.round(B.enemies.reduce((a, x) => a + (x.dead ? 0 : x.hp / maxHp(x)), 0) * 100) })); } }); }
+    window.__arhpk = g('hpk', 0) || null; window.__arheal = g('heal', -1) >= 0 ? g('heal', -1) : null; window.__arFF = /foefirst/.test(h) ? true : /minefirst/.test(h) ? false : null; const st = arenaStage({ bot: 1, name: 'Thử', r: 1000, team: ot, power: arPower(ot) }), bi = chBg(st); S.tut = { all: 1 };
+    Promise.all([ensureHeroAssets(S.lineup.concat(ot.map(t => t[0]))), new Promise(res => { if (!bi || bi.complete) res(); else { bi.onload = res; bi.onerror = res; } })]).then(() => { startBattleNow(st);
+      const fu = h.match(/(?:^|&)fult=([a-z]+):([0-9.]+)/);   // (chụp) ép tướng đối thủ tung tuyệt kỹ rồi chạy N giây
+      if (B && fu) { for (const u of B.heroes.concat(B.enemies)) u.base.hp *= 50, u.hp = maxHp(u); B.time = 1; arFoe(() => { const u = B.heroes.find(x => x.id === fu[1]); if (u) { u.mp = 100; u.cdU = 0; u.stun = 0; u.dk = 0; cast(u, 'ult'); } }); for (let i = 0; i < +fu[2] * 60 && !B.over; i++) update(1 / 60); console.log('ARENA_RESULT', '{}'); return; }
+      if (B) { B.auto = !/manual/.test(h); const secs = g('sim', 0);
+        for (let i = 0; i < secs * 60 && !B.over; i++) update(1 / 60);
+        const res = { over: B.over, win: B.win, t: Math.round(B.time), mine: B.heroes.filter(x => !x.dead && !x.clone).length, foe: B.enemies.filter(x => !x.dead && !x.clone).length,
+          mhp: Math.round(B.heroes.reduce((a, x) => a + (x.dead || x.clone ? 0 : x.hp / maxHp(x)), 0) * 100), fhp: Math.round(B.enemies.reduce((a, x) => a + (x.dead || x.clone ? 0 : x.hp / maxHp(x)), 0) * 100) };
+        if (/diag/.test(h)) console.log('ARENA_DIAG', JSON.stringify({ modsA: B.mods, modsB: B.arena.other.mods, fieldA: Object.keys(B.field || {}), fieldB: Object.keys(B.arena.other.field || {}), capRegen: [B.capRegen, B.arena.other.capRegen], hpA: B.heroes.map(x => Math.round(maxHp(x))), hpB: B.enemies.map(x => Math.round(maxHp(x))), atkA: B.heroes.map(x => Math.round(getAtk(x))), stat: B.stat }));
+        if (/result/.test(h)) for (let i = 0; i < 240 && B; i++) update(1 / 60);
+        console.log('ARENA_RESULT', JSON.stringify(res)); } }); }
   else if (k === 'battle') {
     const tm = h.match(/(?:^|&)team=([\w,]+)/); // &team=nata,quanam (chụp thử): đội hình tạm
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
@@ -5717,6 +5792,7 @@ SIG.giaochu = {
         if (t > 2.05) { const k = Math.min(1, (t - 2.05) / 0.2); x += (P.x - x) * k; y += (P.y - 90 - y) * k; S *= 1 - 0.4 * k; }
         if (t < 2.3) { sigGlow(x, y, 54, TT_SW[i][2], 0.6 * fade); sigImg(TT_IMG[i], x, y, S * 0.3, rot + Math.PI, fade); }   // 4 kiếm vẽ riêng (mũi vẽ hướng lên -> xoay ngược cho mũi chĩa xuống)
         if (q >= 1 && t < 2.05) { ctx.save(); ctx.globalAlpha = 0.9; ctx.fillStyle = '#fff'; ctx.font = '800 12px "Baloo 2",sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = TT_SW[i][2];
+          if (B && B.mirrorDraw) { ctx.translate(c.x, 0); ctx.scale(-1, 1); ctx.translate(-c.x, 0); }   // Luận Kiếm: chữ không bị lật ngược
           ctx.strokeText(TT_SW[i][0], c.x, c.y + 18); ctx.fillText(TT_SW[i][0], c.x, c.y + 18); ctx.restore(); }
       }
       if (t >= 2.2) sfxDraw('tt_final', (t - 2.2) / 0.8, P.x, P.y + 30, 400, { ay: 0.8, add: 1 });   // trận nổ
