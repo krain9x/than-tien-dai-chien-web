@@ -286,7 +286,7 @@ function makeEnemy(type, lvl, x, y) {
   const d = ENEMIES[type], m = 1 + (window.__eg != null ? window.__eg : EGROW) * (lvl - 1), spd = B && B.mech === 'speed' ? 1.35 : 1;   // chương Đại náo Thiên Cung: quái nhanh hơn
   const e = {
     side: 'e', id: type, d, look: d.look, name: d.name, el: d.el, level: lvl,
-    base: { hp: d.hp * m * ((B && B.st.ehp) || 1) * (d.boss && B && B.st.raid ? 60 : 1), atk: d.atk * m * ((B && B.st.eatk) || 1), def: d.def * (1 + 0.1 * (lvl - 1)) },
+    base: { hp: d.hp * m * ((B && B.st.ehp) || 1) * (d.boss && B && (B.st.raid || B.st.evtT) ? 60 : 1), atk: d.atk * m * ((B && B.st.eatk) || 1), def: d.def * (1 + 0.1 * (lvl - 1)) },
     bonus: { hpPct: 0, atkPct: 0, crit: 0, dmgTaken: 0 },
     aspd: d.aspd, range: d.range, move: d.move * spd * ((B && B.st.espd) || 1), ranged: !!d.ranged, proj: d.proj,
     x, y, hp: d.hp * m, cdA: rand(0.3, 1.2), buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0,
@@ -379,6 +379,7 @@ function startBattleNow(si) {
   { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; B.banner = { text: 'Đội trưởng: ' + cs.n, sub: cs.d, t: 0, small: true }; }
   if (st.hmods) addMods(st.hmods);
   if (!st.arena && tlBonus()) addMods({ atkPct: tlBonus(), hpPct: tlBonus() });   // Thần Tiên Lục
+  if (!st.arena && titleMods()) addMods(titleMods());   // Danh hiệu
   { const fm = fbMods(); const g = fm.goldPct || 0; delete fm.goldPct; addMods(fm); B.goldPct = g; }   // pháp bảo
   if (st.hhp) addMods({ hpPct: -(1 - st.hhp) });
   if (st.bookN) for (let i = 0; i < st.bookN; i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1200 + i * 300);
@@ -390,6 +391,7 @@ function startBattleNow(si) {
 // ------------------------------------------------------------------ WAVES
 function nextWave() {
   B.wave++;
+  if (B.wave >= 1 && !B.kn && !B.st.arena && !B.st.raid && !B.st.evtT && !B.st.bicanh && (clearedN() >= 6 || !S.gated) && !/nopick/.test(location.hash) && Math.random() < 0.3) { B.kn = 1; B.later.push({ t: 3, fn: () => kyNgo() }); }   // Kỳ Ngộ
   const wd = B.st.waves[B.wave];
   B.waveDef = wd; B.waveDropped = false; B.waveStart = B.time; B.nextT = null;
   let delay = 0.6;
@@ -509,7 +511,7 @@ function dealDmg(src, tgt, mult, kind) {
     if (sid) { const r = B.stat[sid] || (B.stat[sid] = { d: 0, t: 0, h: 0 }); r.d += dmg; }
     if (tid) { const r = B.stat[tid] || (B.stat[tid] = { d: 0, t: 0, h: 0 }); r.t += dmg; }
   }
-  if (tgt.boss && src.side === 'h' && B.st.raid) B.raidDmg = (B.raidDmg || 0) + Math.min(rem, tgt.hp);
+  if (tgt.boss && src.side === 'h' && (B.st.raid || B.st.evtT)) B.raidDmg = (B.raidDmg || 0) + Math.min(rem, tgt.hp);
   tgt.hp -= rem; tgt.hurt = 0.1; if (rem > maxHp(tgt) * 0.04) tgt.hitT = 0.35;
   if (kind === 'ult' && tgt.side === 'e' && !tgt.boss && !tgt.dead && !B.st.arena) { tgt.x = Math.min(W + 30, tgt.x + 34); tgt.hitT = 0.35; }   // tuyệt kỹ hất văng
   if (crit && src.side === 'h') sfx('crit');
@@ -573,6 +575,7 @@ function healAmD(src, u, amt) {   // hồi máu của tướng; Lưỡng Nghi: g
 }
 function healU(u, amt, silent) {
   if (!u || u.dead) return;
+  if (B && B.st && B.st.noHeal) return;   // Bí Cảnh Huyết Chiến
   if (B && B.st && B.st.arena) amt *= window.__arheal != null ? window.__arheal : AR_HEAL;   // Luận Kiếm: giảm hồi máu (kiểu PvP) để trận không cầm cự tới hết giờ
   const m = maxHp(u), before = u.hp;
   u.hp = Math.min(m, u.hp + amt);
@@ -1630,6 +1633,7 @@ function update(dt) {
   while (B.spawnQ.length && B.spawnQ[0].at <= B.time) spawnEnemy(B.spawnQ.shift());
   B.alive = 0; for (const e of B.enemies) if (!e.dead) B.alive++;
   updateHeroes(dt);
+  if (B.st.poison) for (const h of B.heroes) if (!h.dead && !h.clone) h.hp = Math.max(1, h.hp - maxHp(h) * B.st.poison * dt);   // Bí Cảnh Độc Chướng
   petTick(dt);
   updateEnemies(dt);
   updateProjs(dt);
@@ -1646,6 +1650,7 @@ function update(dt) {
   }
   if (B.nextT != null && B.time >= B.nextT && !B.over) nextWave();
   if (B.st.raid && !B.over && B.time >= B.st.raid) endBattle(true, 'Hết giờ');
+  if (B.st.evtT && !B.over && B.time >= B.st.evtT) endBattle(true, 'Hết giờ');
   if (!B.heroes.some(h => !h.dead && !h.clone)) { if (!offerRevive('team')) endBattle(false, 'Cả đội đã trọng thương'); }
 }
 
@@ -1677,7 +1682,7 @@ function chapterReward(st) {   // gọi khi thắng lần đầu ải boss cuố
 }
 function endBattle(win, reason) {
   if (B.over) return;
-  if (B.st.raid) win = true;
+  if (B.st.raid || B.st.evtT) win = true;
   B.over = true; B.win = win; B.reason = reason || '';
   B.endT = win ? 1.2 : 1.0;
   B.stars = win ? 1 + (B.deaths === 0 ? 1 : 0) + (B.time <= B.st.par ? 1 : 0) : 0;
@@ -1685,7 +1690,8 @@ function endBattle(win, reason) {
   if (B.st.raid) { const d = Math.round(B.raidDmg || 0), wk = weekKey(); S.raidBest = S.raidBest || {}; if (d > (S.raidBest[wk] || 0)) S.raidBest[wk] = d;
     const tier = RAID_TIER.filter(t => d >= t[0]).pop(); B.st.reward = { ngoc: tier ? tier[1] : 20, vang: Math.round(d / 50) }; B.raidScore = d; lbPush(); win = true; }
   if (B.st.arena) arenaEnd(win);
-  lifeAdd('kill', B.kills || 0); if (win && !B.st.raid) lifeAdd('win'); qAdd('fight'); if (win) qAdd('win'); wqAdd('fight'); if (win) wqAdd('win'); if (B.st.tower && win) wqAdd('tower'); if (B.st.raid) wqAdd('raid'); qAdd('kill', B.kills || 0);
+  if (B.st.evtT) { const d = Math.round(B.raidDmg || 0); B.raidScore = d; B.st.reward = { ngoc: 0, vang: Math.round(d / 80) }; evtBossEnd(d); }
+  lifeAdd('kill', B.kills || 0); if (win && !B.st.raid && !B.st.evtT) lifeAdd('win'); qAdd('fight'); if (win) qAdd('win'); wqAdd('fight'); if (win) wqAdd('win'); if (B.st.tower && win) wqAdd('tower'); if (B.st.raid) wqAdd('raid'); qAdd('kill', B.kills || 0);
   if (win) {
     if (B.st.tower) { S.tower = Math.max(S.tower || 0, B.st.floor); lbPush(); }
     if (B.st.nan) { const N = nanState(); if (N.run) { if (B.st.nanN > N.best) setTimeout(lbPush, 500); N.best = Math.max(N.best, B.st.nanN); N.run.n = B.st.nanN + 1; if (N.run.n <= 81) N.run.pick = nanPick3(); } }
@@ -1703,8 +1709,9 @@ function endBattle(win, reason) {
     B.reward.vang = first || B.st.pb ? B.st.reward.vang : Math.round(B.st.reward.vang * 0.5);
     if (B.goldPct) B.reward.vang = Math.round(B.reward.vang * (1 + B.goldPct));
     S.ngoc += B.reward.ngoc; S.vang += B.reward.vang;
-    if (!B.st.pb && !B.st.arena) S.cleared[B.st.id] = Math.max(S.cleared[B.st.id] || 0, B.stars);
-    const dropP = B.st.pb || B.st.arena ? 0 : B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
+    if (B.st.bicanh) bcEnd();
+    if (!B.st.pb && !B.st.arena && !B.st.bicanh && !B.st.evtT) S.cleared[B.st.id] = Math.max(S.cleared[B.st.id] || 0, B.stars);
+    const dropP = B.st.pb || B.st.arena || B.st.bicanh || B.st.evtT ? 0 : B.st.kind === 'boss' ? 1 : B.st.kind === 'elite' ? 0.6 : 0.15;   // trang bị rơi
     if (Math.random() < dropP) { const it = rollEquip(B.st); (S.items = S.items || []).push(it); B.reward.item = it; }
   } else {
     if (B.st.nan) { const N = nanState(); B.nanEnd = N.run ? N.run.n - 1 : 0; N.run = null; }
@@ -4178,9 +4185,10 @@ function showTrials() {
     ${card('trNan', 'ic_nan', 'ic_book', 'ch12', 'Tám Mươi Mốt Nạn', `Kỷ lục ${N.best}/81`, N.run ? `Đang ở nạn ${N.run.n}` : 'Hành trình roguelike')}
     ${card('trRaid', 'ic_raid', 'ic_chest', 'ch9', 'Boss Xâm Lược', `Còn ${rd}/3 lượt hôm nay`, 'Thưởng theo sát thương')}
     ${(() => { const A = arState(); return card('trArena', 'ic_battle', 'ic_battle', 'ch5', 'Luận Kiếm', `${AR_TIERS[arTier(A.r)][1]} · ${A.r} điểm`, `Còn ${AR_FREE - A.n}/${AR_FREE} lượt hôm nay`); })()}
+    ${card('trBc', 'ic_trial', 'ic_battle', 'ch10', 'Bí Cảnh Hằng Ngày', 'Luật hôm nay: ' + bcRule().n, 'Còn ' + (BC_N - bcState().n) + '/' + BC_N + ' lượt')}
     ${card('trRank', 'ic_rank', 'ic_team', 'ch6', 'Bảng Xếp Hạng', 'Lực chiến · Tháp · 81 Nạn · Boss', '')}
   </div></div>`;
-  $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trPB').onclick = () => showPB(); $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank(); $('#trArena').onclick = () => showArena();
+  $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trPB').onclick = () => showPB(); $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank(); $('#trArena').onclick = () => showArena(); $('#trBc').onclick = showBicanh;
   lockWire();
 }
 function IC2(n, fb) { return `<img src="art/ui/${n}.webp" onerror="this.onerror=null;this.src='art/ui/${fb}.webp'" alt="">`; }
@@ -4203,7 +4211,7 @@ function showHome() {
   ui.innerHTML = `<div class="screen home2 home4">
     <button class="h4-prof" id="hProf" title="Hồ sơ và cài đặt">
       <span class="h4-av">${cap ? `<img src="${por(cap, 60)}">` : ''}<i class="hm-cloud ${cloudSt}"></i><em>${chN}</em></span>
-      <span class="h4-who"><small>Lực Chiến</small><b>${fmt(totalPower())}</b><i>${window.Cloud && Cloud.user ? esc(Cloud.user.displayName || 'Chấp Bảng Sứ') : 'Chấp Bảng Sứ'}</i>
+      <span class="h4-who"><small>Lực Chiến</small><b>${fmt(totalPower())}</b><i>${esc(titleCur().n)}${window.Cloud && Cloud.user && Cloud.user.displayName ? ' · ' + esc(Cloud.user.displayName) : ''}</i>
         <u><s style="width:${Math.round(cleared / STAGES.length * 100)}%"></s></u></span></button>
     <div class="h4-side">
       ${hi('hRank', 'ic_rank', 'Xếp Hạng')}
@@ -4246,7 +4254,7 @@ function showHome() {
   $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = () => showQuests(); $('#hQuest2').onclick = () => showQuests(); $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
   if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hFb').onclick = () => showFabao(); $('#hTd').onclick = showThanhDien;
-  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu;
+  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; titleCheckNew(); $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu;
   lockWire();
 }
 function topBar(title) {
@@ -4714,7 +4722,7 @@ function showResult() {
   wrap.className = 'modal result-modal ' + (win ? 'win' : 'lose');
   const t = Math.floor(B.time);
   const next = win && typeof B.si === 'number' && B.si < STAGES.length - 1;
-  wrap.innerHTML = `<div class="res-title">${B.st.raid ? 'Kết Thúc' : win ? 'Chiến Thắng' : 'Thất Bại'}</div>
+  wrap.innerHTML = `<div class="res-title">${B.st.raid || B.st.evtT ? 'Kết Thúc' : win ? 'Chiến Thắng' : 'Thất Bại'}</div>
     ${win && B.st.arena ? '' : win ? `<div class="res-stars">${[0, 1, 2].map(i => `<span class="${i < B.stars ? 'on' : ''}" style="animation-delay:${0.3 + i * 0.25}s">★</span>`).join('')}</div>
       <ul class="res-cond"><li class="on">Qua ải</li><li class="${B.deaths === 0 ? 'on' : ''}">Không tướng nào ngã</li><li class="${B.time <= B.st.par ? 'on' : ''}">Dưới ${B.st.par} giây (${t}s)</li></ul>`
       : `<p class="res-reason">${esc(B.reason)}</p>${B.st.arena ? '<p class="hint">Gợi ý: đổi đội hình, nâng sao tướng chủ lực, thêm tướng hồi máu hoặc chịu đòn.</p>' : '<p class="hint">Gợi ý: nâng cấp tướng, đổi đội trưởng, hoặc nhặt Linh Phù sớm để gọi đủ đội.</p>'}`}
@@ -4729,7 +4737,7 @@ function showResult() {
           <span class="rs-b h"><i style="width:${r.h / mh * 100}%"></i><small>${fmt(r.h)}</small></span></div>`; }).join('')}
         <div class="rs-leg"><span class="d">Sát thương</span><span class="t">Chịu đòn</span><span class="h">Hồi máu</span></div></div>`;
     })()}
-    ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}
+    ${B.raidScore != null ? `<p class="res-reason">Sát thương lên boss: <b>${fmt(B.raidScore)}</b></p>` : ''}${B.evtGot != null ? `<p class="res-reason">${evtCur().ic} +${B.evtGot} ${esc(evtCur().cur)}</p>` : ''}${B.bcRew ? `<p class="res-reason">Bí Cảnh: ${rewTxt(B.bcRew)}</p>` : ''}
     <div class="res-rew">${B.reward.ngoc ? `<span>${icon('ngoc')}+${fmt(B.reward.ngoc)}</span>` : ''}<span>${icon('vang')}+${fmt(B.reward.vang)}</span><span>Hạ ${B.st.arena ? (B.arKills || 0) + ' tướng' : B.kills + ' quái'}</span>${B.reward.univ ? `<span>${icon('univ')}+${B.reward.univ}</span>` : ''}${B.reward.items && B.reward.items.length > 1 ? `<span>+${B.reward.items.length} trang bị</span>` : ''}${B.reward.item ? `<span style="color:${EQ_RAR[B.reward.item.r].c}">+ ${esc(B.reward.item.n)}</span>` : ''}</div>
     ${B.fbRew ? (setTimeout(() => snd('gong'), 400), '') : ''}${B.fbRew ? `<div class="res-hero"><img src="art/ui/${B.fbRew.id}.webp" alt="" style="height:64px"><div><small>Pháp bảo</small><b>${esc(FABAO[B.fbRew.id].n)}</b><em>${B.fbRew.r === 'new' ? 'Nhận mới!' : 'Trùng → +1 cấp'}</em></div></div>` : ''}
     ${B.chRew ? `<div class="res-hero"><img src="${fullImg(B.chRew.id, 160)}" alt=""><div><small>Thưởng qua chương</small><b>${esc(HEROES[B.chRew.id].name)}</b> ${rarTag(HEROES[B.chRew.id].rar)}${B.chRew.dup ? '<em>Đã có → +mảnh</em>' : '<em>Gia nhập đội!</em>'}</div></div>` : ''}
@@ -4745,6 +4753,8 @@ function showResult() {
   if (B.st.nan) { $('#rRetry').textContent = B.win ? 'Nạn tiếp' : 'Hành trình mới'; if (!B.win) wrap.querySelector('.res-title').insertAdjacentHTML('afterend', `<p class="res-reason">Hành trình kết thúc ở nạn ${B.st.nanN}. Đã vượt ${B.nanEnd || 0} nạn.</p>`); }
   if (B.st.arena) { const d = B.arenaDelta || 0, A = arState(); $('#rRetry').textContent = 'Luận Kiếm'; $('#rRetry').onclick = () => { B = null; showArena('opp'); };   // không cho đánh lại miễn phí
     wrap.querySelector('.res-title').insertAdjacentHTML('afterend', `<p class="res-reason">Điểm Luận Kiếm: <b>${d >= 0 ? '+' : ''}${d}</b> → ${A.r} · ${AR_TIERS[arTier(A.r)][1]}</p>`); }
+  if (B.st.bicanh) { $('#rRetry').textContent = 'Bí Cảnh'; $('#rRetry').onclick = () => { B = null; showBicanh(); }; }
+  if (B.st.evtT) { $('#rRetry').textContent = 'Sự kiện'; $('#rRetry').onclick = () => { B = null; showWeekEvent(); }; }
   if (next) $('#rNext').onclick = () => enterStage(si + 1);
 }
 
@@ -4921,7 +4931,7 @@ function showShop(tab) {
 }
 
 // ---- THÀNH TỰU: mốc lâu dài, mỗi mục nhiều bậc. Bộ đếm suốt đời S.life (hạ quái, thắng, tuyệt kỹ, hợp kích...)
-function lifeAdd(k, n) { S.life = S.life || {}; S.life[k] = (S.life[k] || 0) + (n == null ? 1 : n); if (k === 'win') spAdd(3); if (k === 'arenaWin') spAdd(6); }
+function lifeAdd(k, n) { S.life = S.life || {}; S.life[k] = (S.life[k] || 0) + (n == null ? 1 : n); if (k === 'win') { spAdd(3); evtGain(6); } if (k === 'arenaWin') spAdd(6); }
 function achAdd(k, n) { lifeAdd(k, n); }
 const visHeroes = () => Object.keys(HEROES).filter(id => !NO_ART.has(id));
 const ownVis = () => visHeroes().filter(id => S.owned[id]);
@@ -4955,7 +4965,7 @@ function showAch() {
   const rows = ACH.map(achRow).sort((x, y) => (y.ready - x.ready) || (x.all - y.all));
   const ready = rows.filter(r => r.ready);
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Thành Tựu')}
-    <div class="hd-tabs q-tabs"><button class="on">Đã xong ${rows.reduce((s2, r) => s2 + r.got, 0)}/${rows.reduce((s2, r) => s2 + r.T.length, 0)} bậc</button>
+    <div class="hd-tabs q-tabs"><button class="on">Đã xong ${rows.reduce((s2, r) => s2 + r.got, 0)}/${rows.reduce((s2, r) => s2 + r.T.length, 0)} bậc</button><button id="acTt">🏅 Danh Hiệu</button>
       <button class="q-all ${ready.length ? 'on' : ''}" id="acAll" ${ready.length ? '' : 'disabled'}>Nhận tất cả (${ready.length})</button></div>
     <div class="q-list">${rows.map(r => `<div class="q-row ${r.all ? 'got' : r.ready ? 'done' : ''}"><div class="q-main"><b>${esc(r.a.name)} <span class="ach-tier">${r.T.length > 1 ? 'Bậc ' + Math.min(r.got + 1, r.T.length) + '/' + r.T.length : ''}</span></b><small class="shop-sub">${r.a.d(r.need)}</small><div class="bar"><i style="width:${Math.min(1, r.v / r.need) * 100}%"></i></div></div>
       <small>${fmt(Math.min(r.v, r.need))}/${fmt(r.need)}</small><span class="rew">${rewTxt(r.a.rew(r.i))}</span>
@@ -4963,6 +4973,7 @@ function showAch() {
   $('#bBack').onclick = showHome;
   const claim = r => { S.achGot[r.a.id] = r.got + 1; grant(r.a.rew(r.i)); spAdd(10); };
   ui.querySelectorAll('[data-ac]').forEach(b => b.onclick = () => { const r = achRow(ACH.find(a => a.id === b.dataset.ac)); if (!r.ready) return; claim(r); snd('pickup'); save(); showAch(); });
+  $('#acTt').onclick = () => showTitles(showAch);
   $('#acAll').onclick = () => { let n = 0; for (let k = 0; k < 10; k++) for (const a of ACH) { const r = achRow(a); if (r.ready) { claim(r); n++; } } snd('gong'); save(); toast('Đã nhận ' + n + ' phần thưởng'); showAch(); };
 }
 
@@ -5169,9 +5180,9 @@ function showTienLuc(tab) {
 
 // ---- MỞ DẦN TÍNH NĂNG theo số ải đã qua (chỉ áp cho bản lưu tạo sau khi có luật này: S.gated). Bản lưu cũ giữ nguyên.
 const UNLOCK = { hAch: 3, hTl: 5, hTdl: 8, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
-                 trPB: 10, trTower: 20, trNan: 30, trRaid: 40, trArena: 15, trRank: 10 };
+                 trPB: 10, trTower: 20, trNan: 30, trRaid: 40, trArena: 15, trRank: 10, trBc: 12 };
 const UNLOCK_NAME = { hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hTdl: 'Thiên Đạo Lệnh', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
-                      trPB: 'Phó Bản Tài Nguyên', trTower: 'Tháp Thập Tuyệt', trNan: 'Tám Mươi Mốt Nạn', trRaid: 'Boss Xâm Lược', trArena: 'Luận Kiếm', trRank: 'Bảng Xếp Hạng' };
+                      trPB: 'Phó Bản Tài Nguyên', trTower: 'Tháp Thập Tuyệt', trNan: 'Tám Mươi Mốt Nạn', trRaid: 'Boss Xâm Lược', trArena: 'Luận Kiếm', trRank: 'Bảng Xếp Hạng', trBc: 'Bí Cảnh' };
 const clearedN = () => STAGES.filter(st => S.cleared[st.id]).length;
 const locked = k => !!S.gated && !S.unlockAll && (UNLOCK[k] || 0) > clearedN();
 const unlockAt = k => (STAGES[(UNLOCK[k] || 1) - 1] || {}).id;
@@ -5426,7 +5437,7 @@ const tdlDay = () => Math.floor(Date.now() / 864e5 - TDL_EPOCH);
 const tdlSeason = () => Math.floor(tdlDay() / TDL_DAYS) + 1;
 const tdlDaysLeft = () => TDL_DAYS - ((tdlDay() % TDL_DAYS) + TDL_DAYS) % TDL_DAYS;
 function tdl() { const s = tdlSeason(); if (!S.tdl || S.tdl.s !== s) S.tdl = { s, xp: 0, got: [], gg: [], gold: 0 }; return S.tdl; }
-function spAdd(n) { if (!n || window.__arFoe) return; tdl().xp = Math.min(TDL_N * TDL_XP, tdl().xp + n); }
+function spAdd(n) { if (!n || window.__arFoe) return; tdl().xp = Math.min(TDL_N * TDL_XP, tdl().xp + n); if (tdl().xp >= TDL_N * TDL_XP) (S.life = S.life || {}).tdl30 = 1; }
 const tdlLv = () => Math.floor(tdl().xp / TDL_XP);
 function tdlRew(i) {   // bậc i (0..29)
   const b = i + 1;
@@ -5454,6 +5465,179 @@ function showPass() {
   ui.querySelectorAll('[data-tdl]').forEach(b => b.onclick = () => { claim(+b.dataset.tdl); snd('pickup'); save(); showPass(); });
   $('#tdlAll').onclick = () => { ready.forEach(claim); snd('gong'); save(); toast('Đã nhận ' + ready.length + ' phần thưởng'); showPass(); };
   const cur = ui.querySelector('.tdl-row.ok:not(:has(.got))') || ui.querySelectorAll('.tdl-row')[Math.max(0, L - 1)]; if (cur) cur.scrollIntoView({ block: 'center' });
+}
+
+// ===================== DANH HIỆU =====================
+// Mở theo thành tích; đeo 1 danh hiệu: hiện dưới tên ở trang chủ và cộng chỉ số nhỏ khi đánh ải (không áp Luận Kiếm).
+const TITLES = [
+  { id: 'cbs', n: 'Chấp Bảng Sứ', d: 'Danh hiệu khởi đầu', c: () => true },
+  { id: 'so', n: 'Sơ Nhập Phong Thần', d: 'Qua 10 ải', c: () => clearedN() >= 10, m: { hpPct: 0.01 } },
+  { id: 'binh', n: 'Bình Định Tam Giới', d: 'Qua 60 ải', c: () => clearedN() >= 60, m: { atkPct: 0.02 } },
+  { id: 'chinh', n: 'Chinh Phục Thiên Hạ', d: 'Qua toàn bộ 120 ải', c: () => clearedN() >= 120, m: { atkPct: 0.02, hpPct: 0.02 } },
+  { id: 'thu', n: 'Thu Thập Thần Tướng', d: 'Sở hữu 50 tướng', c: () => ownVis().length >= 50, m: { hpPct: 0.02 } },
+  { id: 'van', n: 'Vạn Tiên Chi Chủ', d: 'Sở hữu 100 tướng', c: () => ownVis().length >= 100, m: { atkPct: 0.02, hpPct: 0.02 } },
+  { id: 'thanh', n: 'Thánh Nhân Giáng Thế', d: 'Sở hữu 3 tướng UR', c: () => ownVis().filter(id => isUR(id)).length >= 3, m: { atkPct: 0.03 } },
+  { id: 'hn', n: 'Hỗn Nguyên Đạo Tổ', d: 'Có tướng đạt Tiên Vị Hỗn Nguyên', c: () => ownVis().some(id => (S.owned[id].cg || 0) >= 5), m: { atkPct: 0.03 } },
+  { id: 'tinh', n: 'Tinh Quân Luận Kiếm', d: 'Đạt danh vị Tinh Quân (1250 điểm)', c: () => ((S.arena || {}).r || 0) >= 1250 || Object.values(((S.arena || {}).peak) || {}).some(v => v >= 1250), m: { atkPct: 0.02 } },
+  { id: 'ton', n: 'Thiên Tôn Vô Địch', d: 'Đạt danh vị Thiên Tôn (1800 điểm)', c: () => ((S.arena || {}).r || 0) >= 1800 || Object.values(((S.arena || {}).peak) || {}).some(v => v >= 1800), m: { atkPct: 0.03, hpPct: 0.03 } },
+  { id: 'bach', n: 'Bách Chiến Bách Thắng', d: 'Thắng 200 trận', c: () => ((S.life || {}).win || 0) >= 200, m: { atkPct: 0.02 } },
+  { id: 'thap', n: 'Tháp Chủ Thập Tuyệt', d: 'Leo hết 100 tầng Tháp', c: () => (S.tower || 0) >= 100, m: { hpPct: 0.03 } },
+  { id: 'nan', n: 'Vượt Tám Mươi Mốt Nạn', d: 'Vượt đủ 81 nạn', c: () => ((S.nan && S.nan.best) || 0) >= 81, m: { atkPct: 0.02, hpPct: 0.02 } },
+  { id: 'ky', n: 'Kỳ Ngộ Giả', d: 'Gặp 30 kỳ ngộ', c: () => ((S.life || {}).kyngo || 0) >= 30, m: { atkPct: 0.01 } },
+  { id: 'bc', n: 'Bí Cảnh Chi Vương', d: 'Thắng 20 lần Bí Cảnh', c: () => ((S.life || {}).bicanh || 0) >= 20, m: { atkPct: 0.02 } },
+  { id: 'sk', n: 'Sứ Giả Thiên Đình', d: 'Đánh boss sự kiện 15 lần', c: () => ((S.life || {}).evtboss || 0) >= 15, m: { hpPct: 0.02 } },
+  { id: 'dao', n: 'Đạo Hữu Thiên Đạo', d: 'Đạt bậc 30 Thiên Đạo Lệnh', c: () => !!(S.life || {}).tdl30, m: { atkPct: 0.02 } },
+];
+const ttHave = t => { try { return !!t.c(); } catch (e) { return false; } };
+function titleCur() { const t = TITLES.find(x => x.id === S.title); return t && ttHave(t) ? t : TITLES[0]; }
+const ttStat = m => m ? Object.entries(m).map(([k, v]) => `+${Math.round(v * 100)}% ${k === 'atkPct' ? 'công' : 'máu'}`).join(', ') : 'không cộng chỉ số';
+const titleMods = () => titleCur().m || null;
+function titleCheckNew() {
+  S.ttSeen = S.ttSeen || ['cbs']; const fresh = TITLES.filter(t => ttHave(t) && !S.ttSeen.includes(t.id));
+  if (fresh.length) { S.ttSeen.push(...fresh.map(t => t.id)); save(); setTimeout(() => toast('Danh hiệu mới: ' + fresh.map(t => t.n).join(', ')), 600); }
+}
+function showTitles(back) {
+  const cur = titleCur(), w = document.createElement('div'); w.className = 'modal';
+  w.innerHTML = `<div class="xfer fm-box"><h3>Danh Hiệu</h3><p class="hint">Đang đeo: <b>${esc(cur.n)}</b> (${ttStat(cur.m)} khi đánh ải)</p>
+    <div class="fm-list">${TITLES.map(t => { const ok = ttHave(t), on = cur.id === t.id;
+      return `<div class="fm-row ${on ? 'on' : ''} ${ok ? '' : 'lock'}"><div class="fm-i"><b>${esc(t.n)}</b><small>${t.d} · ${ttStat(t.m)}</small></div>
+        <div class="fm-b">${ok ? (on ? '<i class="fm-on">Đang đeo</i>' : `<button class="btn small gold" data-tt="${t.id}">Đeo</button>`) : '<small class="fm-lk">🔒 Chưa đạt</small>'}</div></div>`; }).join('')}</div>
+    <div class="res-btns"><button class="btn" id="ttC">Đóng</button></div></div>`;
+  ui.appendChild(w); $('#ttC').onclick = () => { w.remove(); if (back) back(); };
+  w.querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { S.title = b.dataset.tt; save(); snd('pickup'); w.remove(); showTitles(back); });
+}
+
+// ===================== BÍ CẢNH HẰNG NGÀY =====================
+// Mỗi ngày 1 luật riêng (xoay vòng), 3 lượt/ngày, thưởng tăng theo số sao đạt được (chỉ trả phần sao tăng thêm).
+const BC_RULES = [
+  { id: 'phong', n: 'Cuồng Phong', d: 'Quái chạy nhanh gấp 1,7 lần.', ap: st => { st.espd = 1.7; } },
+  { id: 'huyet', n: 'Huyết Chiến', d: 'Cấm hồi máu: mọi hiệu ứng hồi máu vô hiệu.', ap: st => { st.noHeal = 1; } },
+  { id: 'quan', n: 'Quần Yêu Loạn Vũ', d: 'Quái đông gấp 1,7 lần nhưng máu chỉ còn 75%.', ap: st => { st.waves = st.waves.map(w => ({ ...w, list: w.list.map(([t, n]) => [t, ENEMIES[t].boss ? n : Math.ceil(n * 1.7)]) })); st.ehp = 0.75; } },
+  { id: 'thiet', n: 'Thiết Bích Đồng Tường', d: 'Quái có máu gấp đôi nhưng đánh yếu đi 20%.', ap: st => { st.ehp = 2; st.eatk = 0.8; } },
+  { id: 'kho', n: 'Nội Lực Khô Kiệt', d: 'Tốc độ hồi nội công của cả đội giảm 60%.', ap: st => { st.hmods = { mpRegen: -0.6 }; } },
+  { id: 'doc', n: 'Độc Chướng Lan Tràn', d: 'Mỗi giây cả đội mất 1% máu tối đa.', ap: st => { st.poison = 0.01; } },
+];
+const BC_N = 3, BC_UNIT = { ngoc: 30, vang: 3000, lt: 20, petsh: 2 };
+const bcRule = () => BC_RULES.find(r => r.id === window.__bcRule) || BC_RULES[Math.floor(Date.now() / 864e5) % BC_RULES.length];
+function bcState() { const d = dayKey(); if (!S.bc || S.bc.d !== d) S.bc = { d, n: 0, best: 0 }; return S.bc; }
+function bicanhStage() {
+  let bi = clamp(clearedN() - 1, 0, STAGES.length - 1); while (bi > 0 && STAGES[bi].kind === 'boss') bi--;   // ải thường gần nhất đã qua
+  const base = STAGES[bi], R = bcRule();
+  const st = { ...base, id: 'BC', bicanh: R.id, kind: 'normal', name: 'Bí Cảnh · ' + R.n, lvl: base.lvl + 2, par: 120, gate: 4000, reward: { ngoc: 0, vang: 0 }, waves: base.waves.slice(0, Math.min(9, base.waves.length)), eatk: 1, ehp: 1, espd: 1 };
+  R.ap(st); return st;
+}
+function bcEnd() {   // trong endBattle khi thắng
+  const b = bcState(), stars = B.stars || 1, d = stars - b.best;
+  lifeAdd('bicanh'); if (b.best === 0) spAdd(5);
+  if (d > 0) { b.best = stars; const r = {}; for (const k in BC_UNIT) r[k] = BC_UNIT[k] * d;
+    B.reward.ngoc += r.ngoc; B.reward.vang += r.vang; S.ngoc += r.ngoc; S.vang += r.vang; grant({ lt: r.lt, petsh: r.petsh });
+    B.bcRew = r; }
+}
+function showBicanh() {
+  const b = bcState(), R = bcRule(), left = BC_N - b.n;
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Bí Cảnh Hằng Ngày')}
+    <div class="bc-card"><small>Luật hôm nay</small><h3>${esc(R.n)}</h3><p>${esc(R.d)}</p><p class="hint">Đánh trên ải gần nhất bạn đã qua, có luật đặc biệt. 3 lượt mỗi ngày · đổi luật lúc 0 giờ.</p></div>
+    <div class="meta-list">${[1, 2, 3].map(s => `<div class="meta-row ${b.best >= s ? 'me' : ''}"><div><b>${'★'.repeat(s)} ${s === 1 ? 'Thắng' : s === 2 ? 'Thắng, không tướng nào ngã' : 'Thắng, không ngã, dưới 120 giây'}</b></div>
+      <span class="rew">${rewTxt({ ngoc: BC_UNIT.ngoc, vang: BC_UNIT.vang, lt: BC_UNIT.lt, petsh: BC_UNIT.petsh })}${b.best >= s ? ' ✓' : ''}</span></div>`).join('')}</div>
+    <p class="hint">Mỗi sao thưởng thêm các phần trên (chỉ tính phần sao tăng thêm so với kỷ lục hôm nay). Kỷ lục hôm nay: ${'★'.repeat(b.best) || 'chưa có'}</p>
+    <div style="text-align:center"><button class="btn gold big" id="bcGo" ${left > 0 ? '' : 'disabled'}>Khiêu chiến (${left}/${BC_N})</button></div></div>`;
+  $('#bBack').onclick = showTrials;
+  $('#bcGo').onclick = () => { const x = bcState(); if (x.n >= BC_N) return; x.n++; save(); startBattle(bicanhStage()); };
+}
+
+// ===================== KỲ NGỘ (sự kiện ngẫu nhiên trong ải) =====================
+const KN = [
+  { id: 'namcuc', npc: 'namcuc', t: 'Nam Cực Tiên Ông ghé qua', d: 'Ông cụ cười hiền, đưa bầu hồ lô: "Hậu sinh khả uý, lão tặng chút phúc thọ."',
+    o: [['Xin đào tiên', 'Cả đội hồi đầy máu', 'healAll'], ['Xin thêm thọ', 'Cả đội +10% máu tối đa trong ải này', 'hp10']] },
+  { id: 'thaibach', npc: 'thaibachkimtinh', t: 'Thái Bạch Kim Tinh dâng lễ', d: '"Ngọc Đế sai lão đưa chút lễ vật cho các vị."',
+    o: [['Nhận vàng', '+6.000 vàng', { vang: 6000 }], ['Nhận ngọc', '+50 ngọc', { ngoc: 50 }], ['Nhận Linh Quả', '+25 Linh Quả', { lq: 25 }]] },
+  { id: 'bachcot', npc: 'bachcot', t: 'Thiếu nữ chặn đường', d: 'Một thiếu nữ yếu đuối van xin giúp đỡ… nhưng ánh mắt lại lạnh lẽo.',
+    o: [['Nghênh chiến', '4 quái tinh anh xuất hiện; hạ hết nhận 80 ngọc + 20 Linh Quả', 'ambush'], ['Cho tiền qua', 'Mất 3.000 vàng, bình yên', { vang: -3000 }], ['Bỏ đi', 'Không có gì xảy ra', 'none']] },
+  { id: 'thodia', npc: 'thodia', t: 'Thổ Địa dâng thảo dược', d: '"Tiểu thần trồng được ít Linh Thảo, xin hiến lên các vị tiên trưởng!"',
+    o: [['Nhận Linh Thảo', '+40 Linh Thảo', { lt: 40 }], ['Xin mảnh linh thú', '+3 mảnh linh thú', { petsh: 3 }]] },
+  { id: 'tieubach', npc: 'tieubachlong', t: 'Tiểu Bạch Long nghịch ngợm', d: 'Chú rồng nhỏ vờ làm ngựa trắng, muốn chơi một ván được thua.',
+    o: [['Chơi cùng', '50% nhận 15.000 vàng + 100 ngọc, 50% cả đội mất 25% máu hiện tại', 'gamble'], ['Cho kẹo', '+20 nội công cả đội', 'mp20']] },
+  { id: 'thailao', npc: 'thailaoquan', t: 'Thái Thượng Lão Quân ban đan', d: 'Lão Quân đang luyện đan, tiện tay ném ra mấy viên.',
+    o: [['Tẩy Tuỷ Đan', '+1 Tẩy Tuỷ Đan', 'ttd'], ['Hồi Khí Đan', 'Cả đội +30% công trong 30 giây', 'atk30']] },
+  { id: 'duongtang', npc: 'duongtang', t: 'Đường Tăng xin ăn chay', d: 'Cao tăng khất thực, hứa tụng kinh phù hộ người giúp mình.',
+    o: [['Cúng 2.000 vàng', 'Cả đội +15% công trong 40 giây', 'cung'], ['Bỏ đi', 'Không có gì xảy ra', 'none']] },
+];
+function kyNgo(forceId) {
+  if (!B || B.over) return;
+  if (B.paused || document.querySelector('.modal, .cp-modal, .coach') || ultBusy()) { B.later.push({ t: 3, fn: () => kyNgo(forceId) }); return; }
+  const ev = (forceId && KN.find(x => x.id === forceId)) || pick(KN), w = document.createElement('div'); w.className = 'modal pause-modal kn-modal'; B.paused = true;
+  w.innerHTML = `<div class="kn-box"><img src="${por(ev.npc, 96)}" alt=""><div><small>Kỳ ngộ</small><h3>${esc(ev.t)}</h3><p>${esc(ev.d)}</p></div></div>
+    <div class="kn-opts">${ev.o.map((o, i) => `<button class="btn ${i === 0 ? 'gold' : ''}" data-ko="${i}"><b>${o[0]}</b><small>${o[1]}</small></button>`).join('')}</div>`;
+  ui.appendChild(w);
+  w.querySelectorAll('[data-ko]').forEach(b => b.onclick = () => { const o = ev.o[+b.dataset.ko]; w.remove(); B.paused = false; lastT = performance.now(); knApply(o[2]); lifeAdd('kyngo'); sfx('pickup'); });
+}
+function knApply(e) {
+  const T = alliesAlive();
+  if (typeof e === 'object') { if (e.vang && e.vang < 0 && S.vang < -e.vang) { toast('Không đủ vàng, kẻ lạ bỏ đi'); return; } grant(e); toast('Nhận ' + rewTxt(e).replace(/<[^>]+>/g, '')); return; }
+  if (e === 'healAll') { for (const h of T) healU(h, maxHp(h)); floater(W * 0.25, 150, 'Hồi đầy máu!', '#7dffb0', 22); }
+  else if (e === 'hp10') { for (const h of T) { h.base.hp *= 1.1; h.hp += h.base.hp * 0.1; } floater(W * 0.25, 150, 'Máu tối đa +10%', '#7dffb0', 20); }
+  else if (e === 'mp20') { for (const h of T) h.mp = Math.min(100, h.mp + 20); floater(W * 0.25, 150, '+20 nội công', '#7fd3ff', 20); }
+  else if (e === 'ttd') { dpState().ttd++; toast('Nhận 1 Tẩy Tuỷ Đan'); }
+  else if (e === 'atk30' || e === 'cung') { if (e === 'cung') { if (S.vang < 2000) { toast('Không đủ vàng'); return; } S.vang -= 2000; } const v = e === 'cung' ? 0.15 : 0.3, t = e === 'cung' ? 40 : 30; for (const h of T) h.buffs.push({ k: 'atk', v, t }); floater(W * 0.25, 150, `Công +${Math.round(v * 100)}%`, '#ffd34d', 20); }
+  else if (e === 'gamble') { if (Math.random() < 0.5) { grant({ vang: 15000, ngoc: 100 }); toast('Thắng! +15.000 vàng, +100 ngọc'); } else { for (const h of T) h.hp = Math.max(1, h.hp * 0.75); toast('Thua! Cả đội mất 25% máu'); floater(W * 0.25, 150, 'Thua cuộc…', '#ff8a8a', 20); } }
+  else if (e === 'ambush') {
+    const ids = stageEnemyIds(B.st).filter(t => ENEMIES[t].elite && !ENEMIES[t].boss), type = ids[0] || 'tieuyeu', grp = [];
+    for (let i = 0; i < 4; i++) { const en = initTrait(makeEnemy(type, B.st.lvl, VIEW_R() + rand(20, 60), rand(LANE_Y0, LANE_Y1))); en.elite = true; B.enemies.push(en); grp.push(en); }
+    const chk = () => { if (!B || B.over) return; if (grp.every(x => x.dead)) { grant({ ngoc: 80, lq: 20 }); toast('Hạ hết quái chặn đường: +80 ngọc, +20 Linh Quả'); } else B.later.push({ t: 1, fn: chk }); }; B.later.push({ t: 1, fn: chk });
+    B.banner = { text: 'QUÁI CHẶN ĐƯỜNG', sub: 'Hạ hết 4 quái tinh anh để nhận thưởng', t: 0, small: true };
+  }
+}
+
+// ===================== SỰ KIỆN TUẦN =====================
+// Xoay 4 chủ đề mỗi tuần. Tiền sự kiện: thắng ải +6 (tối đa 60/ngày) và đánh Boss sự kiện (3 lượt/ngày, thưởng theo sát thương). Hết tuần: tiền dư đổi vàng 1:50.
+const EVT = [
+  { id: 'bandao', n: 'Bàn Đào Hội', cur: 'Bàn Đào', ic: '🍑', boss: 'nhilangboss', d: 'Vương Mẫu mở tiệc Bàn Đào, Nhị Lang Thần canh giữ vườn đào — đánh bại Thần để lấy đào tiên.', heroes: ['hangnga', 'thaibachkimtinh', 'namcuc'] },
+  { id: 'phongthan', n: 'Phong Thần Bảng', cur: 'Thần Lệnh', ic: '📜', boss: 'honbang', d: 'Hồn Bảng nổi loạn giữa trời: chế ngự Bảng để nhận Thần Lệnh.', heroes: ['duongtien', 'nata', 'khuongtanha'] },
+  { id: 'thinhkinh', n: 'Tây Thiên Thỉnh Kinh', cur: 'Kinh Văn', ic: '📿', boss: 'bachcotboss', d: 'Trên đường thỉnh kinh, Bạch Cốt Tinh ba lần biến hoá — hạ yêu tinh để thu Kinh Văn.', heroes: ['duongtang', 'satang', 'batgioi', 'ngokhong'] },
+  { id: 'hoyeu', n: 'Hồ Yêu Mê Hoặc', cur: 'Hồ Châu', ic: '🦊', boss: 'datkyboss', d: 'Yêu Hậu Đát Kỷ mê hoặc triều đình Triều Ca — phá Mị Thuật để nhặt Hồ Châu.', heroes: ['datky', 'bachcot', 'ngumavuong'] },
+];
+const EVT_SHOP = [
+  { id: 'univ', n: 'Mảnh vạn năng ×10', cost: 60, lim: 5, give: { univ: 10 } }, { id: 'ngoc', n: 'Ngọc ×100', cost: 40, lim: 5, give: { ngoc: 100 } },
+  { id: 'lq', n: 'Linh Quả ×40', cost: 30, lim: 5, give: { lq: 40 } }, { id: 'lt', n: 'Linh Thảo ×80', cost: 30, lim: 5, give: { lt: 80 } },
+  { id: 'pet', n: 'Mảnh linh thú ×8', cost: 50, lim: 3, give: { petsh: 8 } }, { id: 'ta', n: 'Thánh Ấn ×10', cost: 150, lim: 2, give: { thanhan: 10 } },
+  { id: 'hero', n: 'Mảnh tướng chủ đề ×12', cost: 90, lim: 3, hero: 12 },
+];
+const EVT_BOSS_N = 3, EVT_DAY_CAP = 60;
+const evtWeek = () => Math.floor(Date.now() / 864e5 / 7), evtCur = () => EVT[evtWeek() % EVT.length], evtDaysLeft = () => 7 - Math.floor(Date.now() / 864e5) % 7;
+function evtState() {
+  const w = evtWeek(); if (!S.evt || S.evt.w !== w) {
+    if (S.evt && S.evt.cur > 0) { const v = S.evt.cur * 50; S.vang += v; setTimeout(() => toast(`Sự kiện tuần trước kết thúc: tiền còn dư đổi ${fmt(v)} vàng`), 800); }
+    S.evt = { w, cur: 0, shop: {}, day: null, dayN: 0, bossN: 0, bossD: null, best: 0 };
+  }
+  const d = dayKey(); if (S.evt.day !== d) { S.evt.day = d; S.evt.dayN = 0; } if (S.evt.bossD !== d) { S.evt.bossD = d; S.evt.bossN = 0; }
+  return S.evt;
+}
+function evtGain(n) { const E = evtState(), k = Math.max(0, Math.min(n, EVT_DAY_CAP - E.dayN)); E.dayN += k; E.cur += k; return k; }
+function evtStage() {
+  const b = evtCur().boss, lv = 8 + Math.floor(clearedN() / 4);
+  return { id: 'EVT', evtT: 90, eatk: 0.6, kind: 'boss', name: 'Sự kiện · ' + ENEMIES[b].name, lvl: lv, par: 90, gate: 999999, theme: 'heaven', seed: 5, chap: 0, reward: { ngoc: 0, vang: 0 },
+    waves: [{ list: [[b, 1], ['tieuyeu', 6]], boss: true }, { list: [['tieuyeu', 10]], gap: 20 }, { list: [['tieuyeu', 12]], gap: 20 }] };
+}
+function evtBossEnd(dmg) {   // trong endBattle
+  const E = evtState(), cur = Math.min(40, 8 + Math.floor(dmg / 20000)); lifeAdd('evtboss'); E.best = Math.max(E.best, dmg); E.cur += cur; B.evtGot = cur;
+}
+function showWeekEvent() {
+  const E = evtState(), V = evtCur(), left = EVT_BOSS_N - E.bossN;
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Sự Kiện Tuần')}
+    <div class="bc-card"><small>Còn ${evtDaysLeft()} ngày</small><h3>${V.ic} ${esc(V.n)}</h3><p>${esc(V.d)}</p>
+      <p><b>${V.ic} ${esc(V.cur)}: ${fmt(E.cur)}</b> <small>· thắng ải +6 (hôm nay ${E.dayN}/${EVT_DAY_CAP}) · tiền dư khi hết sự kiện đổi vàng 1:50</small></p></div>
+    <div class="q-row"><div class="q-main"><b>Boss sự kiện: ${esc(ENEMIES[V.boss].name)}</b><small class="shop-sub">90 giây, gây càng nhiều sát thương càng được nhiều ${esc(V.cur)} (8 + 1 mỗi 20.000 sát thương, tối đa 40) · kỷ lục tuần ${fmt(E.best)}</small></div>
+      <button class="btn small ${left > 0 ? 'gold' : ''}" id="evBoss" ${left > 0 ? '' : 'disabled'}>Khiêu chiến ${left}/${EVT_BOSS_N}</button></div>
+    <h4 style="margin:8px 4px 2px">Đổi thưởng</h4><div class="q-list">${EVT_SHOP.map(x => { const n = E.shop[x.id] || 0, l = x.lim - n;
+      return `<div class="q-row ${l ? '' : 'got'}"><div class="q-main"><b>${x.n}</b>${x.hero ? `<small class="shop-sub">Cho 1 tướng chủ đề bạn đang có: ${V.heroes.map(id => esc(HEROES[id].name)).join(', ')}</small>` : ''}</div><small>Còn ${l}/${x.lim}</small>
+        <span class="rew">${V.ic}${x.cost}</span><button class="btn small ${l && E.cur >= x.cost ? 'gold' : ''}" data-ev="${x.id}" ${l && E.cur >= x.cost ? '' : 'disabled'}>${l ? 'Đổi' : 'Hết'}</button></div>`; }).join('')}</div></div>`;
+  $('#bBack').onclick = showEvents;
+  $('#evBoss').onclick = () => { const e = evtState(); if (e.bossN >= EVT_BOSS_N) return; e.bossN++; save(); startBattle(evtStage()); };
+  ui.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => { const x = EVT_SHOP.find(y => y.id === b.dataset.ev), e = evtState(); if ((e.shop[x.id] || 0) >= x.lim || e.cur < x.cost) return;
+    e.cur -= x.cost; e.shop[x.id] = (e.shop[x.id] || 0) + 1;
+    if (x.hero) { const own = V.heroes.filter(id => S.owned[id]); if (own.length) { const id = pick(own); S.owned[id].shard += x.hero; toast(HEROES[id].name + ': +' + x.hero + ' mảnh'); } else { S.univ += x.hero; toast('Chưa có tướng chủ đề: nhận ' + x.hero + ' mảnh vạn năng'); } }
+    else { grant(x.give); toast('Đã đổi ' + x.n); }
+    snd('pickup'); save(); showWeekEvent(); });
 }
 
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
@@ -5801,11 +5985,13 @@ function monthState() { const d = new Date(), k = d.getFullYear() + '-' + (d.get
 function showEvents() {
   const w = wq(), mo = monthState(), today = dayKey(), canSign = mo.last !== today && mo.n < 30;
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Sự Kiện')}
+    <div style="text-align:center;margin:6px"><button class="btn gold" id="evWk">${evtCur().ic} Sự kiện tuần: ${esc(evtCur().n)} · còn ${evtDaysLeft()} ngày</button></div>
     <h4 style="margin:6px 4px">Điểm danh tháng (${mo.n}/30)</h4>
     <div class="m30">${Array.from({ length: 30 }, (_, i) => `<div class="m30d ${i < mo.n ? 'got' : i === mo.n && canSign ? 'ok' : ''}"><b>${i + 1}</b><small>${rewTxt(MONTH_REW(i))}</small></div>`).join('')}</div>
     <div style="text-align:center;margin:6px"><button class="btn gold" id="evSign" ${canSign ? '' : 'disabled'}>${canSign ? 'Điểm danh hôm nay' : 'Đã điểm danh'}</button></div>
     <div class="hint">Nhiệm vụ tuần đã chuyển sang mục <b>Nhiệm Vụ</b>.</div></div></div>`;
   $('#bBack').onclick = showHome;
+  $('#evWk').onclick = showWeekEvent;
   $('#evSign').onclick = () => { grant(MONTH_REW(mo.n)); mo.n++; mo.last = today; save(); showEvents(); };
 }
 
@@ -5852,6 +6038,7 @@ function route() {
       if (/notut/.test(h)) S.tut = { all: 1 };
       if (/dbgprog/.test(h)) setTimeout(() => { const q = s => { const e = document.querySelector(s); if (!e) return s + ':none'; const r = e.getBoundingClientRect(), c = getComputedStyle(e); return s + ':' + [r.x, r.y, r.width, r.height].map(Math.round) + ' d=' + c.display + ' pos=' + c.position + ' bg=' + c.backgroundImage.slice(0, 40); }; const pre = document.createElement('pre'); pre.id = 'dbg'; pre.textContent = ['#hProg', '.h2-ptrack', '#hPfill', '.pm.boss', '#hPcur'].map(q).join(' | '); document.body.appendChild(pre); }, 500);
       B.auto = true; const b = $('#bAuto'); if (b) b.classList.add('on');
+      { const km = h.match(/(?:^|&)kn=([a-z]*)/); if (km) { B.kn = 1; B.later.push({ t: 1.5, fn: () => kyNgo(km[1]) }); } }   // &kn=namcuc (thử kỳ ngộ)
       if (/fmlog/.test(h)) console.log('FM_LOG', B.fm, JSON.stringify(B.heroes.concat(B.deploy).map(u => [u.id, u.front ? 'truoc' : 'sau', Math.round(maxHp(u)), Math.round(getAtk(u)), Math.round(getDef(u))])));
       // &sim=20: tua nhanh 20 giây (dùng để chụp ảnh thử)
       const secs = simPart && simPart.startsWith('sim=') ? +simPart.slice(4) : 0;
@@ -5929,6 +6116,20 @@ function route() {
   else if (k === 'shop') { if (v) { S.ngoc += 3000; S.vang += 50000; for (const id of ['culinhthan', 'longnu', 'hoangphongquai']) S.owned[id].star = 5, S.owned[id].shard = 14; } showShop(v || undefined); }
   else if (k === 'arena') showArena(v || undefined);
   else if (k === 'pets') { if (v) { for (const id of Object.keys(PETS)) Object.assign(petRec(id), { own: 1, lv: 12, star: 2, sh: 25 }); dpState().lq = 500; } showPets(v && PETS[v] ? v : undefined); }
+  else if (k === 'bicanh') { S.unlockAll = 1; for (const st of STAGES.slice(0, 25)) S.cleared[st.id] = 3;
+    const rm = h.match(/(?:^|&)rule=([a-z]+)/), tm = h.match(/(?:^|&)team=([a-z,]+)/); if (rm) window.__bcRule = rm[1];
+    if (v === 'go') { if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { S.owned[id] = { lv: 20, star: 3, shard: 0 }; }); S.lineup = ids; } S.tut = { all: 1 };
+      const st = bicanhStage(); Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(st))]).then(() => { startBattleNow(st); B.auto = true; const sm = h.match(/(?:^|&)sim=([0-9]+)/), secs = sm ? +sm[1] : 0;
+        for (let i = 0; i < secs * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; } }
+        console.log('BC_RESULT', JSON.stringify({ rule: st.bicanh, over: B.over, win: B.win, t: Math.round(B.time), mine: B.heroes.filter(x => !x.dead).length, hp: Math.round(B.heroes.reduce((a, x) => a + (x.dead ? 0 : x.hp / maxHp(x)), 0) * 100), en: B.enemies.filter(x => !x.dead).length, spd: st.espd, ehp: st.ehp, waves: st.waves.length, n0: st.waves[0].list.map(l => l[1]).join('+') })); }); }
+    else showBicanh(); }
+  else if (k === 'evt') { if (v === 'go') { const tm = h.match(/(?:^|&)team=([a-z,]+)/); if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { S.owned[id] = { lv: 25, star: 3, shard: 0 }; }); S.lineup = ids; } S.tut = { all: 1 };
+      const st = evtStage(); Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(st))]).then(() => { startBattleNow(st); B.auto = true; const sm = h.match(/(?:^|&)sim=([0-9]+)/), secs = sm ? +sm[1] : 0;
+        for (let i = 0; i < secs * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; } }
+        for (let i = 0; i < 120 && B; i++) update(1 / 60);
+        console.log('EVT_RESULT', JSON.stringify({ over: B.over, win: B.win, t: Math.round(B.time), dmg: Math.round(B.raidDmg || 0), got: B.evtGot, cur: evtState().cur, vang: B.reward && B.reward.vang, lvlboss: B.st.name })); }); }
+    else { if (v) evtState().cur = +v; showWeekEvent(); } }
+  else if (k === 'titles') { S.life = { win: 250, kyngo: 31, bicanh: 22 }; S.pulls = 60; showAch(); showTitles(showAch); }
   else if (k === 'pass') { if (v) tdl().xp = +v; showPass(); }
   else if (k === 'formation') { S.vang += 500000; dpState().lt = 1000; S.unlockAll = 1; showLineup(); showFormation(); }
   else if (k === 'realm') { const id = v || 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); S.owned[id].lv = MAX_LV; const D = dpState(); D.lt = 2000; D.pcd = 20; S.vang += 500000; const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) S.owned[id].cg = +cm[1]; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'up')); }

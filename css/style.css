@@ -1367,3 +1367,12 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .tdl-c.gold { border-color: #b88a2a; background: linear-gradient(#fff2c8, #f3dc9a); opacity: .55; }
 :root[data-theme="dem"] .tdl-head, :root[data-theme="dem"] .tdl-c { background: #2f2812; } :root[data-theme="dem"] .tdl-head small { color: #d9c5b1; } :root[data-theme="dem"] .tdl-c.gold { background: #3a3016; }
 .tdl-r { display: inline-flex; gap: 10px; align-items: center; }
+
+/* Bí Cảnh, Kỳ Ngộ, Sự kiện tuần */
+.bc-card { margin: 4px; padding: 10px 14px; border-radius: 14px; background: #fff6dc; border: 2px solid #c08a1a; }
+.bc-card small { font-weight: 800; color: #b0761a; } .bc-card h3 { margin: 2px 0 4px; color: #8a2a0a; font-size: 20px; } .bc-card p { margin: 3px 0; font-weight: 600; color: #4a2a10; }
+.kn-modal { z-index: 80; }
+.kn-box { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; max-width: 520px; margin: 0 auto 10px; padding: 12px; border-radius: 16px; background: #fff6dc; border: 3px solid #c08a1a; }
+.kn-box img { width: 96px; height: 96px; border-radius: 14px; object-fit: cover; border: 2px solid #c08a1a; } .kn-box small { font-weight: 900; color: #b0761a; } .kn-box h3 { margin: 2px 0 4px; color: #4a2a10; } .kn-box p { margin: 0; font-weight: 600; font-size: 14px; color: #4a2a10; }
+.kn-opts { display: grid; gap: 8px; max-width: 520px; margin: 0 auto; } .kn-opts .btn { text-align: center; } .kn-opts .btn b { font-size: 15px; } .kn-opts .btn small { font-size: 12px; font-weight: 700; }
+:root[data-theme="dem"] .bc-card, :root[data-theme="dem"] .kn-box { background: #2f2812; } :root[data-theme="dem"] .bc-card p, :root[data-theme="dem"] .kn-box p, :root[data-theme="dem"] .kn-box h3 { color: #e8dcc8; }
