@@ -29,7 +29,7 @@ function defaultSave() {
   ['culinhthan', 'hoangphongquai', 'longnu'].forEach(id => { owned[id] = newRec(); });   // tân thủ: 3 tướng R (Hộ Pháp, Chiến Tướng, Linh Y); SR/SSR mở dần qua chương
   return { ngoc: 1500, vang: 3000, univ: 0, owned,
            lineup: ['culinhthan', 'hoangphongquai', 'longnu'],
-           cleared: {}, pity: 0, pity10: 0, pulls: 0 };
+           cleared: {}, pity: 0, pity10: 0, pulls: 0, gated: 1 };   // gated: bản lưu mới mở dần tính năng theo ải
 }
 function loadSave() {
   try {
@@ -376,6 +376,7 @@ function startBattleNow(si) {
   showHUD();
   { const cs = capSkill(ids[0]); if (cs.m) addMods(cs.m); B.capRegen = cs.regen || 0; B.banner = { text: 'Đội trưởng: ' + cs.n, sub: cs.d, t: 0, small: true }; }
   if (st.hmods) addMods(st.hmods);
+  if (!st.arena && tlBonus()) addMods({ atkPct: tlBonus(), hpPct: tlBonus() });   // Thần Tiên Lục
   { const fm = fbMods(); const g = fm.goldPct || 0; delete fm.goldPct; addMods(fm); B.goldPct = g; }   // pháp bảo
   if (st.hhp) addMods({ hpPct: -(1 - st.hhp) });
   if (st.bookN) for (let i = 0; i < st.bookN; i++) setTimeout(() => B && !B.over && queuePick(openCongPhap), 1200 + i * 300);
@@ -4047,7 +4048,7 @@ function showSettings() {
       <button class="btn small ${S.ultScene === false ? '' : 'gold'}" id="sScene">Cảnh tuyệt kỹ SSR: ${S.ultScene === false ? 'Tắt' : 'Bật'}</button>
       <button class="btn small ${S.calm ? 'gold' : ''}" id="sCalm">Giảm nháy màn hình: ${S.calm ? 'Bật' : 'Tắt'}</button>
       <button class="btn small" id="sGfx">Đồ hoạ: ${S.gfx === 'low' ? 'Nhẹ' : S.gfx === 'high' ? 'Đẹp' : 'Tự động'}</button></div></section>
-    <section><h4>Chơi thử</h4><div class="set-row"><button class="btn small gold" id="sFull">Nhận full tướng</button><button class="btn small" id="sTut">Xem lại hướng dẫn</button><button class="btn small red" id="sReset">Xoá dữ liệu chơi thử</button></div><small id="sResetMsg"></small></section>
+    <section><h4>Chơi thử</h4><div class="set-row"><button class="btn small gold" id="sFull">Nhận full tướng</button>${S.gated ? `<button class="btn small ${S.unlockAll ? 'gold' : ''}" id="sUnl">Mở khoá mọi tính năng: ${S.unlockAll ? 'Bật' : 'Tắt'}</button>` : ''}<button class="btn small" id="sTut">Xem lại hướng dẫn</button><button class="btn small red" id="sReset">Xoá dữ liệu chơi thử</button></div><small id="sResetMsg"></small></section>
   </div><div class="res-btns"><button class="btn gold" id="sClose">Đóng</button></div></div>`;
   ui.appendChild(w);
   const q = s => w.querySelector(s), close = () => { w.remove(); showHome(); };
@@ -4059,6 +4060,7 @@ function showSettings() {
   q('#sSnd').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); audioOn(); w.remove(); showSettings(); };
   q('#sScene').onclick = () => { S.ultScene = S.ultScene === false ? true : false; save(); w.remove(); showSettings(); };
   w.querySelectorAll('[data-th]').forEach(b => b.onclick = () => { S.theme = b.dataset.th; save(); applyTheme(); w.remove(); showSettings(); });
+  if (q('#sUnl')) q('#sUnl').onclick = () => { S.unlockAll = !S.unlockAll; save(); w.remove(); showSettings(); };
   q('#sCalm').onclick = () => { S.calm = !S.calm; save(); w.remove(); showSettings(); };
   q('#sGfx').onclick = () => { S.gfx = S.gfx === 'low' ? 'high' : S.gfx === 'high' ? 'auto' : 'low'; save(); w.remove(); showSettings(); };
   q('#sTut').onclick = () => { S.tut = {}; save(); toast('Hướng dẫn sẽ hiện lại ở trận tới'); };
@@ -4134,6 +4136,7 @@ function showTrials() {
     ${card('trRank', 'ic_rank', 'ic_team', 'ch6', 'Bảng Xếp Hạng', 'Lực chiến · Tháp · 81 Nạn · Boss', '')}
   </div></div>`;
   $('#bBack').onclick = showHome; $('#trTower').onclick = showTower; $('#trPB').onclick = () => showPB(); $('#trNan').onclick = showNan; $('#trRaid').onclick = showRaid; $('#trRank').onclick = () => showRank(); $('#trArena').onclick = () => showArena();
+  lockWire();
 }
 function IC2(n, fb) { return `<img src="art/ui/${n}.webp" onerror="this.onerror=null;this.src='art/ui/${fb}.webp'" alt="">`; }
 // tranh thẻ ải trên trang chủ: cảnh tuyệt kỹ hợp với boss / vùng của chương
@@ -4160,6 +4163,7 @@ function showHome() {
     <div class="h4-side">
       ${hi('hRank', 'ic_rank', 'Xếp Hạng')}
       ${hi('hAch', 'fb_thatbao', 'Thành Tựu', achReady())}
+      ${hi('hTl', 'ic_book', 'Tiên Lục', tlReady())}
       ${hi('hBt', 'ic_tangkinh', 'Tàng Kinh')}
       ${hi('hSet', 'ic_settings', 'Cài Đặt')}
     </div>
@@ -4194,7 +4198,8 @@ function showHome() {
   $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = () => showQuests(); $('#hQuest2').onclick = () => showQuests(); $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
   if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hFb').onclick = () => showFabao(); $('#hTd').onclick = showThanhDien;
-  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch;
+  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc();
+  lockWire();
 }
 function topBar(title) {
   return `<div class="topbar-menu tb4"><button class="tb4-back" id="bBack" aria-label="Quay lại"><svg viewBox="0 0 60 34"><path d="M58 9 C40 7 26 8 16 10 L22 2 L2 17 L22 32 L17 22 C28 20 42 20 58 24 C50 19 50 14 58 9Z"/></svg></button><h2>${title}</h2>${resBar()}</div>`;
@@ -4424,7 +4429,7 @@ function showHeroDetail(id, tab) {
       hero.classList.add('act'); let t = 0; for (const [p, d] of seq) { setTimeout(() => { pa.src = `art/poses/${pd}/${p}.webp`; }, t); t += d; }
       if (seq[1][0] === 'ult') { st2.classList.add('ultfx'); snd('magic'); } else snd('whoosh');
       setTimeout(() => { hero.classList.remove('act'); st2.classList.remove('ultfx'); }, t); }; }
-  $('#bBack').onclick = showHeroes;
+  $('#bBack').onclick = () => { const f = HD_BACK || showHeroes; HD_BACK = null; f(); };
   ui.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showHeroDetail(id, b.dataset.tab));
   if (!o) return;
   const q = s => $(s);
@@ -5079,6 +5084,52 @@ async function showArena(tab) {
   }
 }
 
+// ---- THẦN TIÊN LỤC: sổ sưu tầm theo bộ truyện. Cấp Tiên Lục = số tướng sở hữu / 10 → cả đội +0,5% công & máu mỗi cấp (đánh ải, không áp Luận Kiếm).
+const TL_BOOKS = [['pt', 'Phong Thần', 'Phong Thần'], ['td', 'Tây Du', 'Tây Du']];
+const TL_MS = [10, 20, 35, 50];   // mốc sưu tầm mỗi bộ (+ mốc "đủ bộ")
+const tlBook = (b, id) => (HEROES[id].src || '').includes(b[2]);
+const tlList = b => visHeroes().filter(id => tlBook(b, id));
+const tlLv = () => Math.floor(ownVis().length / 10);
+const tlBonus = () => tlLv() * 0.005;
+const TL_RK = { 'UR+': 0, UR: 1, 'SSR+': 2, SSR: 3, SR: 4, R: 5, A: 6 };
+let TL_TAB = 'pt', HD_BACK = null;
+function tlMs(b) { const L = tlList(b); return TL_MS.filter(n => n < L.length).concat([L.length]); }
+function tlRew(i, last) { return last ? { ngoc: 500, univ: 30, thanhan: 30 } : { ngoc: 100 + 60 * i, univ: 5 + 5 * i }; }
+function tlReady() { S.tl = S.tl || {}; return TL_BOOKS.some(b => { const own = tlList(b).filter(id => S.owned[id]).length; return tlMs(b).some((n, i) => own >= n && !(S.tl[b[0]] || []).includes(i)); }); }
+function showTienLuc(tab) {
+  if (tab) TL_TAB = tab; S.tl = S.tl || {};
+  const b = TL_BOOKS.find(x => x[0] === TL_TAB), L = tlList(b).sort((x, y) => (!!S.owned[y] - !!S.owned[x]) || (TL_RK[tierOf(x)] - TL_RK[tierOf(y)]) || HEROES[x].name.localeCompare(HEROES[y].name));
+  const own = L.filter(id => S.owned[id]).length, ms = tlMs(b), got = S.tl[b[0]] || [], lv = tlLv(), all = ownVis().length;
+  ui.innerHTML = `<div class="screen panel-screen">${topBar('Thần Tiên Lục')}
+    <div class="tl-head"><div class="tl-lv"><b>Tiên Lục cấp ${lv}</b><small>Cả đội +${(lv * 0.5).toFixed(1)}% công &amp; máu · sở hữu ${all} tướng, thêm ${10 - all % 10} lên cấp ${lv + 1}</small><div class="bar"><i style="width:${all % 10 * 10}%"></i></div></div>
+      <div class="hd-tabs q-tabs">${TL_BOOKS.map(x => `<button class="${x[0] === TL_TAB ? 'on' : ''}" data-tlt="${x[0]}">${x[1]} <small>${tlList(x).filter(id => S.owned[id]).length}/${tlList(x).length}</small></button>`).join('')}</div></div>
+    <div class="tl-ms">${ms.map((n, i) => { const ok = own >= n, done = got.includes(i), last = i === ms.length - 1;
+      return `<button class="cb ${done ? 'done' : ok ? 'ready' : ''}" data-tlm="${i}" ${ok && !done ? '' : 'disabled'}><b>${last ? 'Đủ bộ' : n + ' tướng'}</b><small>${done ? 'Đã nhận' : rewTxt(tlRew(i, last))}</small></button>`; }).join('')}</div>
+    <div class="tl-grid">${L.map(id => { const h = HEROES[id], o = S.owned[id], lo = o ? (o.lore || []).length : 0;
+      return `<button class="tl-card ${o ? 'own' : 'no'} ${tierCls(tierOf(id))}" data-tl="${id}"><img src="${por(id, 72)}" alt="">${rarTag(id)}<b>${esc(h.name)}</b><small>${o ? 'Truyện ký ' + lo + '/3' : 'Chưa sở hữu'}</small></button>`; }).join('')}</div></div>`;
+  $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-tlt]').forEach(x => x.onclick = () => showTienLuc(x.dataset.tlt));
+  ui.querySelectorAll('[data-tlm]').forEach(x => x.onclick = () => { const i = +x.dataset.tlm; S.tl[b[0]] = S.tl[b[0]] || []; if (S.tl[b[0]].includes(i)) return; S.tl[b[0]].push(i); grant(tlRew(i, i === ms.length - 1)); snd('gong'); save(); toast('Đã nhận thưởng Thần Tiên Lục'); showTienLuc(); });
+  ui.querySelectorAll('[data-tl]').forEach(x => x.onclick = () => { HD_BACK = () => showTienLuc(); showHeroDetail(x.dataset.tl, 'info'); });
+}
+
+// ---- MỞ DẦN TÍNH NĂNG theo số ải đã qua (chỉ áp cho bản lưu tạo sau khi có luật này: S.gated). Bản lưu cũ giữ nguyên.
+const UNLOCK = { hAch: 3, hTl: 5, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
+                 trPB: 10, trTower: 20, trNan: 30, trRaid: 40, trArena: 50, trRank: 10 };
+const UNLOCK_NAME = { hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
+                      trPB: 'Phó Bản Tài Nguyên', trTower: 'Tháp Thập Tuyệt', trNan: 'Tám Mươi Mốt Nạn', trRaid: 'Boss Xâm Lược', trArena: 'Luận Kiếm', trRank: 'Bảng Xếp Hạng' };
+const clearedN = () => STAGES.filter(st => S.cleared[st.id]).length;
+const locked = k => !!S.gated && !S.unlockAll && (UNLOCK[k] || 0) > clearedN();
+const unlockAt = k => (STAGES[(UNLOCK[k] || 1) - 1] || {}).id;
+function lockWire() {   // gắn nhãn + chặn bấm cho nút đang khoá (gọi sau khi dựng màn)
+  for (const k in UNLOCK) { const el = document.getElementById(k); if (!el || !locked(k)) continue;
+    el.classList.add('locked'); el.insertAdjacentHTML('beforeend', `<i class="lk">🔒 ${unlockAt(k)}</i>`);
+    el.onclick = e => { e.stopPropagation(); toast(`${UNLOCK_NAME[k]}: mở khi qua ải ${unlockAt(k)}`); }; }
+  if (!S.gated) return; S.unl = S.unl || [];
+  const fresh = Object.keys(UNLOCK).filter(k => !locked(k) && UNLOCK[k] > 0 && !S.unl.includes(k));
+  if (fresh.length) { S.unl.push(...fresh); save(); const n = fresh.filter(k => k[0] === 'h').map(k => UNLOCK_NAME[k]); if (n.length) setTimeout(() => toast('Mở tính năng mới: ' + n.join(', ')), 300); }
+}
+
 // ---- Treo máy: thu vàng khi không chơi, tối đa 12 giờ
 function idleRate() { const n = STAGES.filter(st => S.cleared[st.id]).length; return { vang: 8 + n, ngoc: 1 + Math.floor(n / 10) }; }   // mỗi phút / mỗi giờ
 function idleMins() { if (!S.idle) S.idle = nowS(); return Math.min(720, Math.floor((nowS() - S.idle) / 60)); }
@@ -5547,6 +5598,8 @@ function route() {
   else if (k === 'quests') showQuests();
   else if (k === 'shop') { if (v) { S.ngoc += 3000; S.vang += 50000; for (const id of ['culinhthan', 'longnu', 'hoangphongquai']) S.owned[id].star = 5, S.owned[id].shard = 14; } showShop(v || undefined); }
   else if (k === 'arena') showArena(v || undefined);
+  else if (k === 'tl') { if (v) for (const id of Object.keys(HEROES)) if (!S.owned[id] && !NO_ART.has(id) && Math.random() < 0.5) S.owned[id] = newRec(); showTienLuc(); }
+  else if (k === 'gated') { S = defaultSave(); if (v) for (const st of STAGES.slice(0, +v)) S.cleared[st.id] = 3; showHome(); }
   else if (k === 'ach') { if (v) { S.life = { kill: 4000, win: 60, ult: 250, combo: 3 }; S.pulls = 60; } showAch(); }
   else if (k === 'tower') showTower();
   else if (k === 'nan') showNan();

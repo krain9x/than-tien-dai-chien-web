@@ -1292,3 +1292,22 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .q-row.ar-row { grid-template-columns: 1fr auto; }
 :root[data-theme="dem"] .ar-rank { background: color-mix(in srgb, var(--c) 18%, #2f2812); } :root[data-theme="dem"] .ar-rank small, :root[data-theme="dem"] .ar-stat, :root[data-theme="dem"] .ar-wk { color: #d9c5b1; }
 @media (max-width: 640px) { .ar-head { grid-template-columns: 1fr; } }
+
+/* Thần Tiên Lục */
+.tl-head { display: grid; gap: 6px; padding: 2px 4px 6px; }
+.tl-lv { padding: 6px 12px; border-radius: 12px; background: #fff6dc; border: 2px solid #c08a1a; }
+.tl-lv b { font-size: 16px; color: #8a4a0a; } .tl-lv small { display: block; font-weight: 700; font-size: 12px; color: #6a4a2a; }
+.tl-lv .bar { height: 6px; border-radius: 3px; background: #eadbc0; overflow: hidden; margin-top: 4px; } .tl-lv .bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf3f, #e2901a); }
+.tl-ms { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 4px 8px; } .tl-ms .cb { flex: 1; min-width: 92px; }
+.tl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; padding: 4px; }
+.tl-card { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 4px; border-radius: 12px; border: 2px solid #c08a1a; background: #fff6dc; font: inherit; }
+.tl-card img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; } .tl-card .rar { position: absolute; top: 4px; left: 4px; }
+.tl-card b { font-size: 12px; text-align: center; line-height: 1.1; } .tl-card small { font-size: 10px; font-weight: 700; color: #8a6a4a; }
+.tl-card.no img { filter: grayscale(1) brightness(.55); } .tl-card.no { opacity: .75; border-color: #b8a890; }
+:root[data-theme="dem"] .tl-lv, :root[data-theme="dem"] .tl-card { background: #2f2812; } :root[data-theme="dem"] .tl-lv small, :root[data-theme="dem"] .tl-card small { color: #d9c5b1; }
+/* nút đang khoá (mở dần theo ải) */
+.locked { filter: grayscale(.9) brightness(.8); position: relative; }
+.locked .lk { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); font-style: normal; font-size: 10px; font-weight: 900; white-space: nowrap; padding: 1px 6px; border-radius: 8px; background: rgba(20,12,6,.85); color: #ffe9b0; filter: none; }
+.tr-card.locked .lk { bottom: 8px; font-size: 12px; }
+.h4-ic.locked { display: none; }   /* nút nhỏ chưa mở: ẩn hẳn, mở tới đâu hiện tới đó */
+.tl-ms .cb.ready { background: linear-gradient(#fff3a0, #ffc21a); border-color: #c07a0a; box-shadow: 0 0 10px rgba(255,200,60,.7); }
