@@ -454,7 +454,7 @@ function dealDmg(src, tgt, mult, kind) {
   if (tgt.inv > 0) { if (kind !== 'dot') floater(tgt.x, tgt.y - 60, 'Né', '#bff3ff', 14); return 0; }
   let a = getAtk(src) * mult;
   if (src.side === 'h' && kind === 'ult' && isUR(src.id) && (S.owned[src.id] || {}).star >= 6) a *= 1.5;
-  if (src.side === 'h' && kind === 'ult' && (src.cg || 0) >= 5) a *= 1.15;   // Hoá Thần
+  if (src.side === 'h' && kind === 'ult' && (src.cg || 0) >= 5) a *= 1.15;   // Hỗn Nguyên
   if (src.side === 'h' && kind === 'atk' && SSR_ATK[src.id] && SSR_ATK[src.id].dmg) a *= 1 + SSR_ATK[src.id].dmg;
   if (window.__dmgBy && tgt.side === 'h') window.__dmgBy[src.id] = (window.__dmgBy[src.id] || 0) + a;
   if (src.side === 'e' && B.alive >= 40) a *= B.alive >= 50 ? 1.8 : 1.5;   // quái đông trên sân thì mạnh hơn (VLĐMT): ≥40 +50%, ≥50 +80%
@@ -4930,7 +4930,7 @@ function showAch() {
 // ---- LUẬN KIẾM (đấu trường không đồng bộ): đội của người chơi khác (lấy từ máy chủ) do máy điều khiển, dùng đúng bộ não tướng — xem arenaSetup/arSwap.
 // Đối thủ lấy từ Firestore arena/{uid} (đội thủ = đội hình hiện tại lúc thi đấu); chưa đăng nhập / chưa mở quy tắc máy chủ thì đấu với Tiên Hữu (máy).
 const AR_FREE = 5;                         // lượt mỗi ngày
-const AR_TIERS = [[0, 'Luyện Khí', '#9a8a7a'], [1100, 'Trúc Cơ', '#5aa05a'], [1250, 'Kim Đan', '#d8a020'], [1400, 'Nguyên Anh', '#4a90e0'], [1600, 'Hoá Thần', '#a060e0'], [1800, 'Đại Thừa', '#e05050']];
+const AR_TIERS = [[0, 'Thiên Binh', '#9a8a7a'], [1100, 'Thiên Tướng', '#5aa05a'], [1250, 'Tinh Quân', '#d8a020'], [1400, 'Thiên Vương', '#4a90e0'], [1600, 'Đế Quân', '#a060e0'], [1800, 'Thiên Tôn', '#e05050']];
 const AR_WEEK_REW = [{ ngoc: 100, vang: 5000 }, { ngoc: 200, vang: 10000 }, { ngoc: 350, vang: 15000, thanhan: 10 }, { ngoc: 500, vang: 20000, thanhan: 20 }, { ngoc: 800, vang: 30000, thanhan: 35 }, { ngoc: 1200, vang: 50000, thanhan: 60 }];
 const AR_BOT_NAMES = ['Thanh Phong Tán Nhân', 'Tử Vân Đạo Hữu', 'Bích Lạc Kiếm Khách', 'Huyền Minh Chân Nhân', 'Lạc Hà Tiên Tử', 'Vô Trần Cư Sĩ', 'Kim Quang Thượng Nhân', 'Bạch Hạc Đồng Tử', 'Hàn Sơn Ẩn Sĩ', 'Xích Diễm Thiên Quân', 'Lưu Ly Tiên Cơ', 'Thiên Cơ Lão Nhân'];
 const arTier = r => { let k = 0; AR_TIERS.forEach((t, i) => { if (r >= t[0]) k = i; }); return k; };
@@ -5094,8 +5094,8 @@ async function showArena(tab) {
   } else {
     L.innerHTML = `<div class="q-row"><div class="q-main"><b>Cách đấu</b><small class="shop-sub">Hai đội đứng sẵn hai bên lôi đài. Đội đối thủ do máy điều khiển nhưng dùng đúng tướng, đạn, chiêu nhỏ, tuyệt kỹ và hợp kích như khi người đó tự đánh. Hạ hết đội bên kia là thắng; hết 120 giây thì bên còn nhiều máu hơn thắng.</small></div></div>
       <div class="q-row"><div class="q-main"><b>Luật lôi đài</b><small class="shop-sub">Máu mọi tướng ×${AR_HPK}, hồi máu còn ${Math.round(AR_HEAL * 100)}%. Từ giây ${AR_RAGE}: Sát khí dâng trào, sát thương hai bên tăng dần. Không hồi sinh, không có Thiên Thư.</small></div></div>
-      <div class="q-row"><div class="q-main"><b>Điểm và cảnh giới</b><small class="shop-sub">Thắng đối thủ điểm cao được nhiều điểm hơn. ${AR_TIERS.map(t => t[1] + ' ' + t[0]).join(' · ')}</small></div></div>
-      <div class="q-row"><div class="q-main"><b>Thưởng</b><small class="shop-sub">Mỗi trận thắng: 40 ngọc, 3.000 vàng; từ ải ${AR_TA_AT} thêm 2 Thánh Ấn. Hết tuần nhận thưởng theo cảnh giới cao nhất trong tuần. Đối thủ được ghép theo lực chiến gần đội bạn.</small></div></div>`;
+      <div class="q-row"><div class="q-main"><b>Điểm và danh vị</b><small class="shop-sub">Thắng đối thủ điểm cao được nhiều điểm hơn. ${AR_TIERS.map(t => t[1] + ' ' + t[0]).join(' · ')}</small></div></div>
+      <div class="q-row"><div class="q-main"><b>Thưởng</b><small class="shop-sub">Mỗi trận thắng: 40 ngọc, 3.000 vàng; từ ải ${AR_TA_AT} thêm 2 Thánh Ấn. Hết tuần nhận thưởng theo danh vị cao nhất trong tuần. Đối thủ được ghép theo lực chiến gần đội bạn.</small></div></div>`;
   }
 }
 
@@ -5158,7 +5158,7 @@ const DAN = [
   { id: 'tk', n: 'Tụ Kim Đan', lt: 30, d: '+6.000 vàng', lv: 2, use: () => grant({ vang: 6000 }) },
   { id: 'tt', n: 'Tẩy Tuỷ Đan', lt: 60, vang: 2000, d: 'Dùng cho 1 tướng: +2% máu, công, thủ vĩnh viễn (tối đa 10 viên/tướng)', lv: 3, use: () => { dpState().ttd++; } },
   { id: 'th', n: 'Thú Hồn Đan', lt: 80, d: '+6 mảnh linh thú ngẫu nhiên', lv: 4, use: () => petGiveRandom(6, true) },
-  { id: 'pc', n: 'Phá Cảnh Đan', lt: 50, lq: 20, d: 'Dùng để tướng cấp 30 phá cảnh giới (Thần Tướng > Bồi dưỡng)', lv: 2, use: () => { dpState().pcd = (dpState().pcd || 0) + 1; } },
+  { id: 'pc', n: 'Thăng Tiên Đan', lt: 50, lq: 20, d: 'Dùng để tướng cấp 30 thăng Tiên Vị (Thần Tướng > Bồi dưỡng)', lv: 2, use: () => { dpState().pcd = (dpState().pcd || 0) + 1; } },
 ];
 function dpState() {
   S.dp = S.dp || { lv: { duoc: 1, lo: 1, tl: 1, thu: 1 }, t: nowS(), lt: 0, lq: 0, ttd: 0, day: null };
@@ -5169,7 +5169,7 @@ function dpPending() { const D = dpState(), h = Math.min(12, (nowS() - D.t) / 36
 function showDongPhu() {
   const D = dpState(), P = dpPending(), today = dayKey();
   ui.innerHTML = `<div class="screen panel-screen dp-screen" style="background:linear-gradient(rgba(255,248,230,.3), rgba(255,248,230,.55)), url('art/bg/dongphu_bg.webp') center / cover no-repeat">${topBar('Động Phủ')}
-    <div class="dp-res"><span>🌿 Linh Thảo <b>${fmt(D.lt)}</b></span><span>🍑 Linh Quả <b>${fmt(D.lq)}</b></span><span>💊 Tẩy Tuỷ Đan <b>${D.ttd}</b></span><span>🔮 Phá Cảnh Đan <b>${D.pcd || 0}</b></span></div>
+    <div class="dp-res"><span>🌿 Linh Thảo <b>${fmt(D.lt)}</b></span><span>🍑 Linh Quả <b>${fmt(D.lq)}</b></span><span>💊 Tẩy Tuỷ Đan <b>${D.ttd}</b></span><span>🔮 Thăng Tiên Đan <b>${D.pcd || 0}</b></span></div>
     <div class="dp-grid">${Object.entries(DP_B).map(([k, B0]) => { const lv = dpLv(k), c = DP_COST[lv];
       let act = '';
       if (k === 'duoc') act = `<button class="btn small ${P.lt + P.lq ? 'gold' : ''}" id="dpHarvest" ${P.lt + P.lq ? '' : 'disabled'}>Thu hoạch 🌿${P.lt} 🍑${P.lq}</button>`;
@@ -5303,15 +5303,15 @@ function drawPet() {
   ctx.save(); ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(Q.hx - 22, Q.hy + 6, 44, 4); ctx.fillStyle = '#7fe8ff'; ctx.fillRect(Q.hx - 22, Q.hy + 6, 44 * k, 4); ctx.restore();
 }
 
-// ---- TU LUYỆN CẢNH GIỚI: tướng cấp 30 phá cảnh. o.cg 0..5 (0 = chưa phá). Mỗi cảnh giới +8% máu/công/thủ; Kim Đan +5% bạo kích; Hoá Thần tuyệt kỹ +15%.
-// Phá cảnh tốn Linh Thảo + Phá Cảnh Đan (luyện ở Đan Lô) + vàng. Vòng hào quang dưới chân đổi màu theo cảnh giới.
+// ---- TIÊN VỊ (thang Phong Thần, người dùng chọn 27/11): tướng cấp 30 thăng vị. o.cg 0..5 (0 = chưa phong). Mỗi bậc +8% máu/công/thủ; Kim Đan +5% bạo kích; Hoá Thần tuyệt kỹ +15%.
+// Thăng vị tốn Linh Thảo + Thăng Tiên Đan (luyện ở Đan Lô) + vàng. Vòng hào quang dưới chân đổi màu theo Tiên Vị.
 const CG = [
-  { n: 'Phàm Thân', c: '#9a8a7a' },
-  { n: 'Luyện Khí', c: '#bfe6ff', lt: 60, dan: 1, vang: 10000 },
-  { n: 'Trúc Cơ', c: '#7fe08a', lt: 120, dan: 2, vang: 25000 },
-  { n: 'Kim Đan', c: '#ffd34d', lt: 240, dan: 3, vang: 50000, perk: '+5% bạo kích' },
-  { n: 'Nguyên Anh', c: '#c07aff', lt: 400, dan: 4, vang: 90000 },
-  { n: 'Hoá Thần', c: '#ff6a3a', lt: 650, dan: 6, vang: 150000, perk: 'tuyệt kỹ +15%' },
+  { n: 'Chưa phong vị', c: '#9a8a7a' },
+  { n: 'Thiên Tiên', c: '#bfe6ff', lt: 60, dan: 1, vang: 10000 },
+  { n: 'Kim Tiên', c: '#7fe08a', lt: 120, dan: 2, vang: 25000 },
+  { n: 'Thái Ất Kim Tiên', c: '#ffd34d', lt: 240, dan: 3, vang: 50000, perk: '+5% bạo kích' },
+  { n: 'Đại La Kim Tiên', c: '#c07aff', lt: 400, dan: 4, vang: 90000 },
+  { n: 'Hỗn Nguyên', c: '#ff6a3a', lt: 650, dan: 6, vang: 150000, perk: 'tuyệt kỹ +15%' },
 ];
 const CG_MAX = CG.length - 1, CG_STAT = 0.08;
 const cgOf = id => ((S.owned[id] || {}).cg || 0);
@@ -5319,9 +5319,9 @@ const cgMul = id => 1 + CG_STAT * cgOf(id);
 function realmRowHTML(id) {
   const o = S.owned[id]; if (!o) return '';
   const g = o.cg || 0, nx = CG[g + 1], D = dpState(), ok = nx && o.lv >= MAX_LV && D.lt >= nx.lt && (D.pcd || 0) >= nx.dan && S.vang >= nx.vang;
-  return `<div class="hu-row cg-row" style="--cg:${CG[g].c}"><div><b>Cảnh giới · <span class="cg-n">${CG[g].n}</span></b>
-    <small>${g ? `+${Math.round(CG_STAT * g * 100)}% máu, công, thủ${CG.slice(1, g + 1).filter(x => x.perk).map(x => ' · ' + x.perk).join('')}` : 'Chưa nhập đạo'}${nx ? ` → <b>${nx.n}</b>: ${o.lv < MAX_LV ? `cần cấp ${MAX_LV}` : `🌿${nx.lt} · Phá Cảnh Đan ${D.pcd || 0}/${nx.dan} · ${fmt(nx.vang)} vàng`}` : ' · Đã đạt cảnh giới cao nhất'}</small></div>
-    ${nx ? `<div class="hu-btns"><button class="btn ${ok ? 'gold' : ''}" id="bCg" ${ok ? '' : 'disabled'}>Phá cảnh</button></div>` : ''}</div>`;
+  return `<div class="hu-row cg-row" style="--cg:${CG[g].c}"><div><b>Tiên Vị · <span class="cg-n">${CG[g].n}</span></b>
+    <small>${g ? `+${Math.round(CG_STAT * g * 100)}% máu, công, thủ${CG.slice(1, g + 1).filter(x => x.perk).map(x => ' · ' + x.perk).join('')}` : 'Chưa phong tiên vị'}${nx ? ` → <b>${nx.n}</b>: ${o.lv < MAX_LV ? `cần cấp ${MAX_LV}` : `🌿${nx.lt} · Thăng Tiên Đan ${D.pcd || 0}/${nx.dan} · ${fmt(nx.vang)} vàng`}` : ' · Đã đạt tiên vị cao nhất'}</small></div>
+    ${nx ? `<div class="hu-btns"><button class="btn ${ok ? 'gold' : ''}" id="bCg" ${ok ? '' : 'disabled'}>Thăng vị</button></div>` : ''}</div>`;
 }
 function realmBreak(id) {
   const o = S.owned[id], g = o.cg || 0, nx = CG[g + 1], D = dpState(); if (!nx || o.lv < MAX_LV || D.lt < nx.lt || (D.pcd || 0) < nx.dan || S.vang < nx.vang) return;
