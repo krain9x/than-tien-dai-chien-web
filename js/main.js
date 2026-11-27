@@ -241,7 +241,12 @@ function heroStats(id) {
   const aw = h.rar === 'R' && o.star >= 5 ? 1.15 : 1;   // tướng R thức tỉnh
   return { hp: h.hp * m * bt.hp * aw, atk: h.atk * m * bt.atk * aw, def: h.def * m * bt.def * aw, aspd: h.aspd * (aw > 1 ? 1.1 : 1) };
 }
-function power(id) { const s = heroStats(id); return Math.round(s.hp * 0.25 + s.atk * 4 + s.def * 2); }
+// LỰC CHIẾN (28/11): so chỉ số với CHUẨN VAI TRÒ (tướng R cùng vai trò, cấp 1, 1★ = 1150) -> phản ánh phẩm/cấp/sao/Tiên Vị, không thiên vị Hộ Pháp máu dày
+const PW_BASE = { the: [3000, 98, 118], phap: [1320, 170, 52], dan: [1650, 115, 66], sat: [1500, 165, 60], tran: [1550, 112, 70] };
+const pwOf = (role, hp, atk, def) => { const b = PW_BASE[role] || PW_BASE.sat; return Math.round(1150 * (0.35 * hp / b[0] + 0.45 * atk / b[1] + 0.2 * def / b[2])); };
+// 28/11: tướng cùng phẩm đã cân bằng theo số đo thật -> lực chiến = bậc phẩm × cấp × sao × Tiên Vị × trang bị (không theo công/máu gốc từng tướng)
+const PW_LAD = { A: 0.8, R: 1, SR: 1.2, SSR: 1.45, 'SSR+': 1.75, UR: 2.3, 'UR+': 3.0 };
+function power(id) { const h = HEROES[id], s = heroStats(id), t = tierOf(id), k = s.hp / (h.hp * (TIER_BASE[t] || 1) * btBonus(h.role).hp); const eq = eqBonus(id); return Math.round(1150 * (PW_LAD[t] || 1) * k * (1 + 0.5 * (eq.atkPct + eq.hpPct) + eq.crit + 0.3 * (eq.defPct + eq.aspdPct + eq.skillPct))); }
 function bondLv(b) {   // cấp duyên phận 0–10: mỗi sao trên 1 sao và mỗi 10 cấp của thành viên +1 (VLĐMT herofetterconfig)
   let n = 0; for (const id of b.members) { const o = S.owned[id]; if (!o) return 0; n += (o.star - 1) + Math.floor(o.lv / 10); }
   return Math.min(10, n);
@@ -267,7 +272,7 @@ function teamInfo(ids) {
 // =====================================================================
 let B = null;
 const M = k => ((B && B.mods[k]) || 0) + (B && B.dom ? domMod(k) : 0);
-const RM = (u, k) => (u && u.side === 'h' && B && B.mods[u.role + '.' + k]) || 0;   // công pháp theo hệ của tướng
+const RM = (u, k) => ((u && u.side === 'h' && B && B.mods[u.role + '.' + k]) || 0) + ((u && u.eqm && u.eqm[k]) || 0);   // công pháp theo hệ của tướng + trang bị (eqm)
 const trongOf = u => (u.side === 'h' && u.trong) || 1;
 const TG = (u, k) => (u && u.tg && u.tg[k]) || 0;   // nâng cấp theo tầng riêng của tướng (HEROES[id].tang)
 function rebuildTang(u) {
@@ -359,7 +364,9 @@ function applyBonuses(u, info) {
     }
   }
   for (const b of (info.coll || [])) if (b.members.includes(u.id)) for (const k in b.g) u.bonus[k] = (u.bonus[k] || 0) + b.g[k] * BOND_COLL;
-  const eq = eqBonus(u.id); u.bonus.atkPct += eq.atkPct; u.bonus.hpPct += eq.hpPct; u.bonus.crit += eq.crit;   // trang bị
+  const eq = eqBonus(u.id); u.bonus.atkPct += eq.atkPct; u.bonus.hpPct += eq.hpPct; u.bonus.crit += eq.crit; u.bonus.dmgTaken += eq.dr; u.base.def *= 1 + eq.defPct;
+  u.eqm = { aspdPct: eq.aspdPct, skillPct: eq.skillPct, critDmg: eq.critDmg, healPct: eq.healPct };   // đọc qua RM()
+  if (eq.startShield && B && B.later) B.later.push({ t: 0.2, fn: () => { if (!u.dead) { u.shield = Math.max(u.shield || 0, maxHp(u) * eq.startShield); u.shieldT = 8; } } });   // trang bị
   const pa = u.d.passive || {};
   if (pa.crit) u.bonus.crit += pa.crit;
   if (pa.dr) u.bonus.dmgTaken += pa.dr;
@@ -4524,6 +4531,10 @@ function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + v�
 }
 // icon kỹ năng ở màn Thần Tướng (27/11): huy hiệu vẽ tay theo loại (art/ui/sk_*.webp) + hình riêng của tướng (tuyệt kỹ = pháp bảo tuyệt kỹ, tiểu chiêu = cận cảnh dáng tung chiêu, đòn thường = đạn vẽ tay của SSR)
 function skIcon(id, k) {
+  const own = k !== 'cap' ? `<img class="sk-f" src="art/skill/${poseDir(id).replace('_s2', '')}_${k}.webp" alt="" onerror="this.remove()">` : '';   // icon vẽ riêng từng chiêu (art/skill) phủ lên trên nếu có
+  return skIcon0(id, k) + own;
+}
+function skIcon0(id, k) {
   const base = `<img class="sk-b" src="art/ui/sk_${k}.webp" alt="">`;
   if (k === 'ult') { const o = UCFG[id] && UCFG[id].obj; if (o) return base + `<img class="sk-o" src="art/ultc/${o}.webp" alt="" onerror="this.remove()">`; }
   if (k === 'small' && window.HPOSE && HPOSE[poseDir(id)]) return base + `<img class="sk-p" src="art/poses/${poseDir(id)}/skill.webp" alt="" onerror="this.remove()">`;
@@ -4566,7 +4577,7 @@ function showHeroDetail(id, tab) {
         ${h.rar === 'SR' ? `<div class="hu-row ${o.star >= 5 ? 'on' : ''}"><div><b>Thức tỉnh · 5★</b><small>${o.star >= 5 ? 'Đã mở cảnh tuyệt kỹ toàn màn hình' : 'Đạt 5 sao để mở cảnh tuyệt kỹ toàn màn hình như tướng SSR'}</small></div></div>` : ''}
         <div class="hu-row"><div><b>Truyện Ký</b><small>${(o.lore || []).length}/3 chương đã nhận thưởng</small></div><div class="hu-btns"><button class="btn" id="bLore">Đọc</button></div></div></div>` : '<p class="hint">Chưa sở hữu, nhận qua Chiêu Mộ hoặc qua chương.</p>',
     eq: o ? `<div class="hd-eq">${Object.keys(EQ_SLOT).map(sl => { const it = (S.items || []).find(x => x.id === (o.eq || {})[sl]), pl = (o.eqLv || {})[sl] || 0;
-        return `<div class="he"><i>${EQ_SLOT[sl].name} <em>+${pl}</em></i><b>${it ? eqTxt(it) : 'Trống'}</b></div>`; }).join('')}</div>
+        return `<div class="he">${eqIcon(it, sl)}<i>${EQ_SLOT[sl].name} <em>+${pl}</em></i><b>${it ? eqTxt(it) : 'Trống'}</b></div>`; }).join('')}</div>
       <div class="hu-btns"><button class="btn gold" id="bEq">Thay / cường hoá trang bị</button></div>` : '',
     bond: bonds.length ? bonds.map(b => { const lv = bondLv(b);
         return `<div class="hb"><b>${esc(b.name)}</b> <span class="lvl">Cấp ${lv}/10</span><div class="hb-m">${b.members.map(k => `<img class="${S.owned[k] ? '' : 'off'}" src="${por(k, 40)}" title="${esc(HEROES[k].name)}">`).join('')}</div>
@@ -4996,7 +5007,7 @@ function shopState() {
   return S.shop;
 }
 const eqUsed = () => { const u = new Set(); for (const id in S.owned) for (const v of Object.values(S.owned[id].eq || {})) u.add(v); return u; };
-const EQ_SELL = { R: 400, SR: 1200, SSR: 4000 };
+const EQ_SELL = { R: 400, SR: 1200, SSR: 4000, UR: 15000 };
 const SHARD_RATE = { R: 3, SR: 2, SSR: 1, 'SSR+': 1, UR: 1, 'UR+': 1 };   // mảnh thừa (tướng đã tối đa sao) đổi 1 mảnh vạn năng
 let SHOP_TAB = 'day';
 function showShop(tab) {
@@ -5018,9 +5029,9 @@ function showShop(tab) {
     const sh = maxed.reduce((s, id) => s + Math.floor(S.owned[id].shard / SHARD_RATE[tierOf(id)]), 0);
     body = `<div class="q-row"><div class="q-main"><b>Luyện hoá mảnh thừa</b><small class="shop-sub">Tướng đã tối đa sao: R 3 mảnh, SR 2 mảnh, SSR trở lên 1 mảnh → 1 mảnh vạn năng${maxed.length ? ' · ' + maxed.length + ' tướng' : ''}</small></div><span class="rew">${icon('univ')}${sh}</span>
       <button class="btn small ${sh ? 'gold' : ''}" id="cvSh" ${sh ? '' : 'disabled'}>Luyện hoá</button></div>`
-      + ['R', 'SR', 'SSR'].map(r => { const L = spare(r), v = L.reduce((s, it) => s + EQ_SELL[r] * (1 + 0.5 * (it.st || 0)), 0);
-        return `<div class="q-row"><div class="q-main"><b>Bán trang bị ${EQ_RAR[r].name.toLowerCase()} chưa mặc</b><small class="shop-sub">${L.length} món${r === 'SSR' ? ' · cân nhắc: thần binh hiếm' : ''}</small></div><span class="rew">${icon('vang')}${fmt(v)}</span>
-          <button class="btn small ${L.length && r !== 'SSR' ? 'gold' : ''}" data-sell="${r}" ${L.length ? '' : 'disabled'}>Bán hết</button></div>`; }).join('');
+      + ['R', 'SR', 'SSR', 'UR'].map(r => { const L = spare(r), v = L.reduce((s, it) => s + EQ_SELL[r] * (1 + 0.5 * (it.st || 0)), 0);
+        return `<div class="q-row"><div class="q-main"><b>Bán trang bị ${EQ_RAR[r].name.toLowerCase()} chưa mặc</b><small class="shop-sub">${L.length} món${r === 'SSR' || r === 'UR' ? ' · cân nhắc: thần binh hiếm' : ''}</small></div><span class="rew">${icon('vang')}${fmt(v)}</span>
+          <button class="btn small ${L.length && r !== 'SSR' && r !== 'UR' ? 'gold' : ''}" data-sell="${r}" ${L.length ? '' : 'disabled'}>Bán hết</button></div>`; }).join('');
   }
   ui.innerHTML = `<div class="screen panel-screen">${topBar('Vạn Bảo Các')}
     <div class="hd-tabs q-tabs">${tabs.map(([k, n]) => `<button class="${SHOP_TAB === k ? 'on' : ''}" data-sht="${k}">${n}</button>`).join('')}</div>
@@ -5046,7 +5057,7 @@ function showShop(tab) {
   ui.querySelectorAll('[data-sell]').forEach(b => b.onclick = () => { const r = b.dataset.sell, L = spare(r);
     const doSell = () => { const ids = new Set(L.map(it => it.id)), v = Math.round(L.reduce((s, it) => s + EQ_SELL[r] * (1 + 0.5 * (it.st || 0)), 0));
       S.items = items.filter(it => !ids.has(it.id)); S.vang += v; snd('pickup'); save(); toast('Bán ' + L.length + ' món: +' + fmt(v) + ' vàng'); showShop(); };
-    if (r === 'SSR') { if (b.dataset.ok) doSell(); else { b.dataset.ok = 1; b.textContent = 'Bấm lần nữa'; b.classList.add('gold'); } } else doSell(); });
+    if (r === 'SSR' || r === 'UR') { if (b.dataset.ok) doSell(); else { b.dataset.ok = 1; b.textContent = 'Bấm lần nữa'; b.classList.add('gold'); } } else doSell(); });
 }
 
 // ---- THÀNH TỰU: mốc lâu dài, mỗi mục nhiều bậc. Bộ đếm suốt đời S.life (hạ quái, thắng, tuyệt kỹ, hợp kích...)
@@ -5110,7 +5121,7 @@ function arState() {
   return A;
 }
 const arTeamOf = () => S.lineup.filter(id => S.owned[id]).slice(0, 5).map(id => [id, S.owned[id].lv, S.owned[id].star, S.owned[id].cg || 0]);
-function arPower(team) { return team.reduce((s, [id, lv, st]) => { const h = HEROES[id]; if (!h) return s; const m = (1 + 0.06 * (lv - 1)) * starMul(tierOf(id), st) * (TIER_BASE[tierOf(id)] || 1); return s + Math.round(h.hp * m * 0.25 + h.atk * m * 4 + h.def * m * 2); }, 0); }
+function arPower(team) { return team.reduce((s, [id, lv, st]) => { const h = HEROES[id]; if (!h) return s; const m = (1 + 0.06 * (lv - 1)) * starMul(tierOf(id), st) * (TIER_BASE[tierOf(id)] || 1); return s + Math.round(1150 * (PW_LAD[tierOf(id)] || 1) * m / (TIER_BASE[tierOf(id)] || 1)); }, 0); }
 function arBot(k) {   // k: -1 yếu hơn, 0 ngang, 1 mạnh hơn
   const my = arTeamOf(), A = arState(), n = Math.max(3, my.length);
   const avgLv = my.length ? my.reduce((s, t) => s + t[1], 0) / my.length : 1, avgSt = my.length ? my.reduce((s, t) => s + t[2], 0) / my.length : 1;
@@ -5918,29 +5929,38 @@ function loadCloud() {   // tải Firebase sau khi game đã hiện (không ch�
 
 // ---- Trang bị (rơi từ ải; 3 ô mỗi tướng)
 function rollEquip(st) {
-  const sl = pick(Object.keys(EQ_SLOT)), q = Math.random(), boss = st.kind === 'boss';
-  const r = q < (boss ? 0.15 : 0.04) ? 'SSR' : q < (boss ? 0.55 : 0.3) ? 'SR' : 'R';
-  return { id: Date.now().toString(36) + Math.floor(Math.random() * 1e4), s: sl, r, n: EQ_NAMES[sl][r === 'SSR' ? 2 : r === 'SR' ? 1 : 0], v: EQ_RAR[r].v * (1 + st.chap * 0.15) };
+  const sl = pick(Object.keys(EQ_SLOT)), q = Math.random(), boss = st.kind === 'boss', ur = st.bicanh || st.evtT ? 0.05 : boss ? 0.02 : 0;
+  const r = q < ur ? 'UR' : q < ur + (boss ? 0.15 : 0.04) ? 'SSR' : q < ur + (boss ? 0.55 : 0.3) ? 'SR' : 'R';
+  const set = pick(Object.keys(EQ_SETS)), ch = st.chap || 0, subs = [];
+  const pool = Object.keys(EQ_SUB).filter(k => k !== EQ_SLOT[sl].stat);
+  for (let i = 0; i < EQ_SUBN[r]; i++) { const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0], [a, b] = EQ_SUB[k]; subs.push([k, Math.round((a + Math.random() * (b - a)) * (1 + ch * 0.05) * 1000) / 1000]); }
+  return { id: Date.now().toString(36) + Math.floor(Math.random() * 1e4), s: sl, r, set, sub: subs, n: EQ_SETS[set].n + ' · ' + EQ_NAMES[sl][['R', 'SR', 'SSR', 'UR'].indexOf(r)], v: EQ_RAR[r].v * (1 + ch * 0.15) };
 }
+function eqSetCount(id) { const c = {}, e = (S.owned[id] || {}).eq || {}; for (const sl in e) { const it = (S.items || []).find(x => x.id === e[sl]); if (it && it.set) c[it.set] = (c[it.set] || 0) + 1; } return c; }
 function eqBonus(id) {
-  const o = { atkPct: 0, hpPct: 0, crit: 0 }, e = (S.owned[id] || {}).eq || {};
+  const o = { atkPct: 0, hpPct: 0, crit: 0, defPct: 0, aspdPct: 0, skillPct: 0, critDmg: 0, healPct: 0, dr: 0, startShield: 0 }, e = (S.owned[id] || {}).eq || {};
   const pl = (S.owned[id] || {}).eqLv || {};
-  for (const sl in e) { const it = (S.items || []).find(x => x.id === e[sl]); if (it) o[EQ_SLOT[sl].stat] += eqVal(it) * (1 + EQ_POS_PCT * (pl[sl] || 0)); }
+  for (const sl in e) { const it = (S.items || []).find(x => x.id === e[sl]); if (!it || !EQ_SLOT[sl]) continue; o[EQ_SLOT[sl].stat] += eqVal(it) * (1 + EQ_POS_PCT * (pl[sl] || 0));
+    for (const [k, v] of (it.sub || [])) o[k] = (o[k] || 0) + v * (1 + EQ_STAR_PCT * (it.st || 0)); }
+  const sc = eqSetCount(id); for (const k in sc) { const S_ = EQ_SETS[k]; if (!S_) continue; for (const n of [2, 4, 6]) if (sc[k] >= n) for (const b in S_.b[n]) o[b] = (o[b] || 0) + S_.b[n][b]; }
   return o;
 }
-function eqVal(it) { return (EQ_SLOT[it.s].stat === 'crit' ? it.v * 0.5 : it.v) * (1 + EQ_STAR_PCT * (it.st || 0)); }
-function eqTxt(it) { return `${esc(it.n)}${it.st ? ' ' + '★'.repeat(it.st) : ''} (${EQ_RAR[it.r].name}) +${(eqVal(it) * 100).toFixed(1).replace('.0', '')}% ${EQ_SLOT[it.s].label}`; }
+function eqVal(it) { return it.v * (EQ_STAT_K[EQ_SLOT[it.s].stat] || 1) * (1 + EQ_STAR_PCT * (it.st || 0)); }
+const pct1 = v => (v * 100).toFixed(1).replace('.0', '') + '%';
+function eqTxt(it) { return `${esc(it.n)}${it.st ? ' ' + '★'.repeat(it.st) : ''} (${EQ_RAR[it.r].name}) +${pct1(eqVal(it))} ${EQ_SLOT[it.s].label}${(it.sub || []).map(([k, v]) => ` · +${pct1(v)} ${EQ_SUB[k][2]}`).join('')}`; }
+function eqIcon(it, sl) { const r = it ? it.r : 'R'; return `<span class="eq-ic r-${r}"><img src="art/ui/eq_${it ? it.s : sl}_${r}.webp" alt="" onerror="this.remove()">${it && it.set ? `<img class="eq-set" src="art/ui/set_${it.set}.webp" alt="" onerror="this.remove()">` : ''}</span>`; }
 function showEquip(hid) {
   const o = S.owned[hid]; o.eq = o.eq || {};
   const used = new Set(); for (const k in S.owned) for (const s2 in (S.owned[k].eq || {})) used.add(S.owned[k].eq[s2]);
   const w = document.createElement('div'); w.className = 'modal';
   w.innerHTML = `<div class="xfer"><h3>Trang bị · ${esc(HEROES[hid].name)}</h3>${Object.keys(EQ_SLOT).map(sl => {
       const cur = (S.items || []).find(x => x.id === o.eq[sl]);
-      const cand = (S.items || []).filter(x => x.s === sl && !used.has(x.id)).sort((a, b) => b.v - a.v).slice(0, 6);
+      const cand = (S.items || []).filter(x => x.s === sl && !used.has(x.id)).sort((a, b) => (b.v + (b.sub || []).length * 0.03) - (a.v + (a.sub || []).length * 0.03)).slice(0, 8);
       const pl = (o.eqLv || {})[sl] || 0;
-      return `<div class="eq-row"><b>${EQ_SLOT[sl].name} <em class="eq-pl">+${pl}</em>:</b> <span>${cur ? eqTxt(cur) + (pl ? ` <small>(ô +${pl * 5}%)</small>` : '') : '<i>Trống</i>'}</span>${cur ? `<button class="btn small" data-un="${sl}">Tháo</button>` : ''}
+      return `<div class="eq-row">${eqIcon(cur, sl)}<b>${EQ_SLOT[sl].name} <em class="eq-pl">+${pl}</em>:</b> <span>${cur ? eqTxt(cur) + (pl ? ` <small>(ô +${pl * 5}%)</small>` : '') : '<i>Trống</i>'}</span>${cur ? `<button class="btn small" data-un="${sl}">Tháo</button>` : ''}
         <div class="eq-up"><button class="btn small gold" data-pl="${sl}" ${pl >= EQ_POS_MAX ? 'disabled' : ''}>Cường hoá ô +${pl + 1} ${icon('vang')}${fmt(eqPosCost(pl))}</button>${cur ? `<button class="btn small" data-st="${cur.id}" ${(cur.st || 0) >= EQ_STAR_MAX ? 'disabled' : ''}>Tăng sao ★${(cur.st || 0) + 1} ${icon('vang')}${fmt(eqStarCost(cur.st || 0))}</button>` : ''}</div>
-        <div class="eq-cand">${cand.map(it => `<button class="btn small" data-eq="${it.id}" style="color:${EQ_RAR[it.r].c}">${eqTxt(it)}</button>`).join('') || '<small>Chưa có trang bị trống (đánh ải tinh anh / boss để rơi)</small>'}</div></div>`; }).join('')}
+        <div class="eq-cand">${cand.map(it => `<button class="btn small eq-cb" data-eq="${it.id}" style="color:${EQ_RAR[it.r].c}">${eqIcon(it)}${eqTxt(it)}</button>`).join('') || '<small>Chưa có trang bị trống (đánh ải tinh anh / boss để rơi)</small>'}</div></div>`; }).join('')}
+    <div class="eq-sets"><h4>Bộ trang bị</h4>${(() => { const sc = eqSetCount(hid); const ks = Object.keys(sc); return ks.length ? ks.map(k => `<div class="eq-setr"><img src="art/ui/set_${k}.webp" alt="" onerror="this.remove()"><b>${EQ_SETS[k].n} ${sc[k]}/6</b> ${[2, 4, 6].map(n => `<span class="${sc[k] >= n ? 'on' : ''}">${n}: ${Object.entries(EQ_SETS[k].b[n]).map(([b, v]) => '+' + pct1(v) + ' ' + EQ_BLAB[b]).join(', ')}</span>`).join('')}</div>`).join('') : '<small>Mặc 2/4/6 món cùng bộ để mở hiệu ứng bộ.</small>'; })()}</div>
     <div class="res-btns"><button class="btn" id="eqC">Đóng</button></div></div>`;
   ui.appendChild(w);
   $('#eqC').onclick = () => { w.remove(); showHeroDetail(hid); };
@@ -6162,6 +6182,10 @@ function route() {
       B.auto = true; const b = $('#bAuto'); if (b) b.classList.add('on');
       { const km = h.match(/(?:^|&)kn=([a-z]*)/); if (km) { B.kn = 1; B.later.push({ t: 1.5, fn: () => kyNgo(km[1]) }); } }   // &kn=namcuc (thử kỳ ngộ)
       if (/fmlog/.test(h)) console.log('FM_LOG', B.fm, JSON.stringify(B.heroes.concat(B.deploy).map(u => [u.id, u.front ? 'truoc' : 'sau', Math.round(maxHp(u)), Math.round(getAtk(u)), Math.round(getDef(u))])));
+      if (/(^|&)dummy(&|$)/.test(h)) {   // &dummy: CỌC GỖ thử sát thương — 5 cọc máu vô hạn, không đánh, không di chuyển, đứng cụm giữa sân (đo ST đơn mục tiêu + lan)
+        B.spawnQ = []; B.enemies = []; B.dummy = 1;
+        [[0, 0], [-45, -40], [45, -40], [-45, 40], [45, 40]].forEach(([ox, oy]) => { const e = makeEnemy('thienbinh', 20, W * 0.62 + ox, H * 0.56 + oy); e.base.hp = 1e12; e.hp = 1e12; e.base.atk = 0; e.move = 0; e.dummy = 1; B.enemies.push(e); });
+      }
       // &sim=20: tua nhanh 20 giây (dùng để chụp ảnh thử)
       const secs = simPart && simPart.startsWith('sim=') ? +simPart.slice(4) : 0;
       for (let i = 0; i < secs * 60 && !B.over; i++) {
@@ -6267,6 +6291,11 @@ function route() {
   else if (k === 'urrv') urReveal(v || 'giaochu', () => {});
   else if (k === 'ur6') { for (const id of ['giaochu', 'thailaoquan']) { S.owned[id] = S.owned[id] || newRec(); S.owned[id].star = 6; } save(); applySkins(); showHeroDetail(v || 'giaochu', 'up'); }
   else if (k === 'fabao') { if (v === 'all') for (const k2 in FABAO) fbGive(k2); showFabao(); }
+  else if (k === 'eqtest') {   // &eqtest=<id> (thử trang bị v2): phát 6 món bộ Thiên Binh + vài món lẻ rồi mở màn trang bị
+    const id = HEROES[v] ? v : 'ngokhong'; if (!S.owned[id]) S.owned[id] = newRec(); const o = S.owned[id]; o.eq = {}; S.items = S.items || [];
+    for (const sl of Object.keys(EQ_SLOT)) { const it = rollEquip({ kind: 'boss', chap: 3, bicanh: 1 }); it.s = sl; it.set = 'thienbinh'; it.n = EQ_SETS.thienbinh.n + ' · ' + EQ_NAMES[sl][2]; S.items.push(it); if (sl !== 'phap') o.eq[sl] = it.id; }
+    for (let i = 0; i < 6; i++) S.items.push(rollEquip({ kind: 'boss', chap: 5, bicanh: 1 }));
+    ensureHeroAssets([id]).then(() => { showHeroDetail(id); showEquip(id); console.log('EQ_BONUS', JSON.stringify(eqBonus(id))); }); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
