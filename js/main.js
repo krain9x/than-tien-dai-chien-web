@@ -2863,7 +2863,7 @@ const UCFG = {
   bichthuykimtinhthu: {"t": "summon", "obj": "water_beast", "size": 260, "col": "#7fc8ff", "waves": 1},
   namcungthich: {"t": "smash", "obj": "zhou_saber", "size": 460, "col": "#ffd34d"},
   khuonghoanghau: {"t": "heal", "obj": "jade_ruyi_queen", "size": 210, "col": "#ffd34d"},
-  maiba: {"t": "drop", "obj": "memorial_tablet", "size": 230, "col": "#d0a060"},
+  maiba: {"t": "drop", "obj": "memorial_tablet", "size": 61, "col": "#d0a060"},
   bachhacdongtu: {"t": "heal", "obj": "crane_feather_fan", "size": 210, "col": "#ffd34d"},
   giaochu: { t: 'rain', obj: 'tru_sword', n: 8, size: 110, col: '#ff5a3a' },
   khongtuyen: { t: 'wind', obj: 'peacock_fan', size: 220, col: '#9fffc0' },
