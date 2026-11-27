@@ -155,15 +155,32 @@ function applyTheme() {
 }
 const BGIMG = {};
 for (const t of ['forest', 'pass', 'tomb', 'fire', 'river', 'cave', 'sea', 'snow', 'heaven']) { const i = new Image(); i.src = 'art/bg/' + t + '.webp'; BGIMG[t] = i; }
+// Sprite toàn thân (art/sprites): chỉ tải NGAY cho tướng đang có / trong đội hình / quái; tướng còn lại tải ngầm sau khi vào game (đỡ ~8MB lần mở đầu).
+// SPR_PEND[id] = có sprite nhưng chưa tải xong: por()/fullImg() vẫn trả đường dẫn ảnh (trình duyệt tự tải), canvas thì gọi ensureSpr(id).
+const SPR_PEND = {}, SPR_LOAD = {};
+const sprOK = id => !!(SPR[id] || SPR_PEND[id]);
+function ensureSpr(id) {
+  if (SPR[id] || !SPR_PEND[id]) return Promise.resolve();
+  return SPR_LOAD[id] || (SPR_LOAD[id] = new Promise(res => {
+    const img = new Image();
+    img.onload = () => { SPR[id] = img; delete SPR_PEND[id]; res(); };
+    img.onerror = () => { delete SPR_PEND[id]; res(); };
+    img.src = 'art/sprites/' + id + '.webp';
+  }));
+}
 function loadArt() {
-  const ids = [...Object.keys(HEROES), ...Object.keys(ENEMIES)];
+  const hid = typeof NO_ART !== 'undefined' ? NO_ART : new Set();
+  const ids = [...Object.keys(HEROES).filter(id => !hid.has(id)), ...Object.keys(ENEMIES)];
+  const need = new Set([...Object.keys((S && S.owned) || {}), ...((S && S.lineup) || []), ...Object.keys(ENEMIES)]);
   const man = window.ANIM_MANIFEST || {};
-  const jobs = ids.map(id => new Promise(res => {
+  const jobs = ids.filter(id => need.has(id)).map(id => new Promise(res => {
     const img = new Image();
     img.onload = () => { SPR[id] = img; res(); };
     img.onerror = () => res();
     img.src = 'art/sprites/' + id + '.webp';
   }));
+  for (const id of ids) if (!need.has(id)) SPR_PEND[id] = 1;
+  setTimeout(() => { const q = Object.keys(SPR_PEND); let i = 0; const next = () => { if (i < q.length) ensureSpr(q[i++]).then(next); }; for (let k = 0; k < 3; k++) next(); }, 2500);
   for (const t in BGIMG) jobs.push(new Promise(res => { const i = BGIMG[t]; if (i.complete) res(); else { i.onload = res; i.onerror = res; } }));
   if (typeof Rig !== 'undefined') for (const id of Object.keys(window.RIG_DEFS || {})) jobs.push(Rig.load(id));
   if (typeof Layered !== 'undefined') for (const id of Object.keys(window.LAYER_DEFS || {})) jobs.push(Layered.load(id));
@@ -202,7 +219,7 @@ function drawAnimFrame(a, i, h) {
 }
 const PC = {};
 function por(id, size) {
-  if (SPR[id]) return 'art/portraits/' + poseDir(id) + '.webp';
+  if (sprOK(id)) return 'art/portraits/' + poseDir(id) + '.webp';
   size = size || 96; const k = 'p' + id + size;
   if (!PC[k]) PC[k] = Art.portrait((HEROES[id] || ENEMIES[id]).look, size);
   return PC[k];
@@ -211,7 +228,7 @@ function por(id, size) {
 const CHIBI_POR = new Set(['batgioi','cungyeu','datky','dauda','duongtang','honghainhi','hoyeu','nata','ngokhong','ngumavuong','quanam','tieuyeu','tinhanh']);
 function porB(id, size) { return (window.__chibi && CHIBI_POR.has(id)) ? 'art/portraits_chibi/' + id + '.webp' : por(id, size); }
 function fullImg(id, size) {
-  if (SPR[id]) return 'art/sprites/' + poseDir(id) + '.webp';
+  if (sprOK(id)) return 'art/sprites/' + poseDir(id) + '.webp';
   size = size || 160; const k = 'f' + id + size;
   if (!PC[k]) PC[k] = Art.full((HEROES[id] || ENEMIES[id]).look, size);
   return PC[k];
@@ -298,7 +315,7 @@ function makeEnemy(type, lvl, x, y) {
 }
 const sizeOf = u => u.look.size || 1;
 // ảnh vẽ tay rộng hơn hình chibi nên cần bán kính va chạm lớn hơn để không chồng lên nhau
-const unitR = u => (u.boss && SPR[u.id] ? 42 : (SPR[u.id] ? 21 : 14) * sizeOf(u));
+const unitR = u => (u.boss && sprOK(u.id) ? 42 : (sprOK(u.id) ? 21 : 14) * sizeOf(u));
 function buffSum(u, k) { let s = 0; for (const b of u.buffs) if (b.k === k) s += b.v; return s; }
 function maxHp(u) { return u.base.hp * (1 + u.bonus.hpPct + (u.side === 'h' ? M('hpPct') + RM(u, 'hpPct') + TG(u, 'hp') : u.ah ? TG(u, 'hp') : 0)); }
 function getAtk(u) {
@@ -3801,7 +3818,7 @@ function drawCutin() {
   const slide = Math.min(1, p / 0.18);
   if (ci) { const hh = 250, ww = hh * ci.width / ci.height; ctx.drawImage(ci, -ww * 0.6 + slide * ww * 0.6 - 20, y + 195 - hh, ww, hh); }
   else if (img.complete && img.width) {
-    const hh = SPR[c.id] ? 330 : 250, ww = hh * img.width / img.height;
+    const hh = sprOK(c.id) ? 330 : 250, ww = hh * img.width / img.height;
     ctx.drawImage(img, -ww + 40 + slide * (ww + 10), y + 190 - hh, ww, hh);
   }
   ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
@@ -4050,7 +4067,7 @@ function renderShowcase() {
     Art.shadow(ctx, x, y, 2.2);
     ctx.save(); ctx.translate(x, y);
     if (a) drawAnimFrame(a, animFrame(a, { t: homeT, dead: false, ...st }), 330);
-    else if (SPR[SHOW]) { const im = SPR[SHOW]; ctx.drawImage(im, -165 * im.width / im.height, -330, 330 * im.width / im.height, 330); }
+    else if (SPR[SHOW] || (ensureSpr(SHOW), 0)) { const im = SPR[SHOW]; ctx.drawImage(im, -165 * im.width / im.height, -330, 330 * im.width / im.height, 330); }
     ctx.restore();
     ctx.lineWidth = 5; ctx.strokeStyle = '#4a2a1c'; ctx.strokeText(label, x, y - 350);
     ctx.fillStyle = '#fff3b0'; ctx.fillText(label, x, y - 350);
@@ -4082,7 +4099,7 @@ function renderHome() {
     ctx.save(); ctx.translate(o.p[0], o.p[1]);
     ctx.scale(o.p[0] > 480 ? -1 : 1, 1);
     if (!drawHomeHero(o.id, o.i, hh, homeT)) {
-      const img = SPR[o.id];
+      const img = SPR[o.id]; if (!img) ensureSpr(o.id);
       if (img) { const w = hh * img.width / img.height, bb = Math.sin((homeT + o.i) * 2.6) * 0.012; ctx.scale((FACE[o.id] || 1) * (1 - bb * 0.6), 1 + bb); ctx.drawImage(img, -w / 2, -hh, w, hh); }
     }
     ctx.restore();
