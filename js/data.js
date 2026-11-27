@@ -1350,6 +1350,7 @@ const NO_ART = new Set([]);   // đợt 9: bỏ khỏi đây khi đủ ảnh (t�
   const A = {"duhoa":199,"dangcuucong":204,"nguytrung":189,"ovantien":182,"manguyen":180,"honthemavuong":171,"namcungthich":163};
   for (const id in A) if (HEROES[id]) HEROES[id].atk = A[id];
 })();
+const TK_NAME = {"ngokhong": "Như Ý Kim Cô Bổng", "nata": "Hoả Tiêm Thương", "quanam": "Dương Chi Ngọc Tịnh Bình", "duongtien": "Tam Tiêm Lưỡng Nhận Đao", "thailaoquan": "Kim Cang Trác", "bodetosu": "Bồ Đề Giới Xích", "tranguyentu": "Càn Khôn Đại Tụ", "giaochu": "Tru Tiên Tứ Kiếm", "khongtuyen": "Ngũ Sắc Thần Quang Linh", "nhiendang": "Linh Cữu Cung Đăng", "nguyenthuy": "Bàn Cổ Phiên", "ngochoang": "Hạo Thiên Ngọc Tỷ", "dilac": "Nhân Chủng Hậu Thiên Đại", "quangthanh": "Phiên Thiên Ấn", "kimlinh": "Tứ Tượng Tháp", "chanvu": "Thất Tinh Trấn Ma Kiếm", "hongquan": "Tạo Hoá Ngọc Điệp", "nuoa": "Ngũ Sắc Bổ Thiên Thạch", "tiepdan": "Thập Nhị Phẩm Kim Liên", "chuande": "Thất Bảo Diệu Thụ", "nhulai": "Thất Bảo Kim Bát", "phuchy": "Phục Hy Cầm", "thannong": "Thần Nông Đỉnh", "hienvien": "Hiên Viên Kiếm", "dabao": "Đa Bảo Bảo Tháp", "lucap": "Trảm Tiên Phi Đao Hồ Lô"};   // thần khí bản mệnh (tools/thankhi_spec.py)
 (function hideNoArtLate() {   // chạy lần nữa ở CUỐI file: các khối đợt 6+ thêm tướng vào kho sau khối ẩn đầu tiên
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
   for (const k in TIER_TABLE) TIER_TABLE[k] = TIER_TABLE[k].filter(id => !NO_ART.has(id));

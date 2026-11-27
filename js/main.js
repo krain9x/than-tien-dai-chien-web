@@ -38,7 +38,7 @@ function loadSave() {
   } catch (e) { /* bỏ qua */ }
   return defaultSave();
 }
-function save() { if (window.__arFoe) return; S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
+function save() { if (window.__arFoe) return; try { if (S.owned && typeof resonate === 'function') { const n = resonate(); if (n && typeof toast === 'function') setTimeout(() => toast('Cộng hưởng cấp: ' + n + ' tướng lên cấp ' + resLv()), 50); } } catch (e) { } S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
 let S = loadSave();
 // Tặng 10 tướng mới vào kho hiện có (một lần cho mỗi bản save) để thử ngay, không cần quay gacha
 // (đã bỏ) tặng sẵn 10 tướng mới — tân thủ đi từ thấp lên cao
@@ -246,7 +246,7 @@ const PW_BASE = { the: [3000, 98, 118], phap: [1320, 170, 52], dan: [1650, 115, 
 const pwOf = (role, hp, atk, def) => { const b = PW_BASE[role] || PW_BASE.sat; return Math.round(1150 * (0.35 * hp / b[0] + 0.45 * atk / b[1] + 0.2 * def / b[2])); };
 // 28/11: tướng cùng phẩm đã cân bằng theo số đo thật -> lực chiến = bậc phẩm × cấp × sao × Tiên Vị × trang bị (không theo công/máu gốc từng tướng)
 const PW_LAD = { A: 0.8, R: 1, SR: 1.2, SSR: 1.45, 'SSR+': 1.75, UR: 2.3, 'UR+': 3.0 };
-function power(id) { const h = HEROES[id], s = heroStats(id), t = tierOf(id), k = s.hp / (h.hp * (TIER_BASE[t] || 1) * btBonus(h.role).hp); const eq = eqBonus(id); return Math.round(1150 * (PW_LAD[t] || 1) * k * (1 + 0.5 * (eq.atkPct + eq.hpPct) + eq.crit + 0.3 * (eq.defPct + eq.aspdPct + eq.skillPct))); }
+function power(id) { const h = HEROES[id], s = heroStats(id), t = tierOf(id), k = s.hp / (h.hp * (TIER_BASE[t] || 1) * btBonus(h.role).hp); const eq = eqBonus(id), tl = hasTkh(id) ? tkhLv(id) : 0; return Math.round(1150 * (PW_LAD[t] || 1) * k * (tl ? 1.05 + 0.01 * tl : 1) * (1 + 0.5 * (eq.atkPct + eq.hpPct) + eq.crit + 0.3 * (eq.defPct + eq.aspdPct + eq.skillPct))); }
 function bondLv(b) {   // cấp duyên phận 0–10: mỗi sao trên 1 sao và mỗi 10 cấp của thành viên +1 (VLĐMT herofetterconfig)
   let n = 0; for (const id of b.members) { const o = S.owned[id]; if (!o) return 0; n += (o.star - 1) + Math.floor(o.lv / 10); }
   return Math.min(10, n);
@@ -264,7 +264,7 @@ function teamInfo(ids) {
   }).sort((a, b) => b.n - a.n);
   const bonds = BONDS.filter(b => b.members.every(m => ids.includes(m)));
   const coll = BONDS.filter(b => !bonds.includes(b) && b.g && b.members.some(m => ids.includes(m)) && bondColl(b));
-  return { facs, bonds, coll };
+  return { facs, bonds, coll, tk40: ids.filter(id => hasTkh(id) && tkhLv(id) >= 40).length };
 }
 
 // =====================================================================
@@ -320,15 +320,45 @@ function potHTML(id) {
   const st = (S.owned[id] || {}).star || 0;
   return `<div class="pot"><h4>Tiềm năng</h4>${potOf(id).map(t => `<div class="pot-r ${st >= t.star ? 'on' : ''}"><b>${'★'.repeat(t.star)} ${esc(t.n)}</b><span>${esc(t.d)}</span></div>`).join('')}</div>`;
 }
+// ---- THẦN KHÍ BẢN MỆNH: tướng SSR+ trở lên, cấp 0..60; mỗi cấp +1% công/máu; mốc +1/+10/+20/+30/+40/+50/+60 mở hiệu ứng
+const TKH_MAX = 60, tkhLv = id => ((S.owned[id] || {}).tk || 0), hasTkh = id => !!TK_NAME[id];
+const tkhCost = lv => ({ vang: 1500 + 600 * lv, shard: (lv + 1) % 10 === 0 ? 5 + (lv + 1) / 2 : 0 });   // mốc 10/20/.. cần thêm mảnh tướng
+function tkhMiles(id) { const r = HEROES[id].role, U = HEROES[id].ult.name;
+  return [[1, 'Kích hoạt: +5% công, +5% máu'], [10, `${U}: sát thương/hồi máu +15%`],
+    [20, { sat: '+8% bạo kích', phap: '+10% sát thương chiêu', tran: 'Khống chế lâu thêm 0,3 giây', the: 'Nhận ít hơn 10% sát thương', dan: 'Hồi máu +15%' }[r]],
+    [30, 'Vào trận có sẵn 70 nội công'], [40, 'Cả đội +5% công khi ra trận'], [50, `${U}: thêm +25%`], [60, `Thần khí thức tỉnh: ${U} giáng thêm một đòn 150% công`]]; }
+function tkhD(id, d) {   // áp mốc thần khí lên bản sao dữ liệu chiêu (sau tiềm năng)
+  const L = tkhLv(id); if (!hasTkh(id) || L < 10) return d;
+  if (d === HEROES[id]) d = { ...d, small: { ...d.small, fx: d.small.fx.map(f => ({ ...f })) }, ult: { ...d.ult, fx: d.ult.fx.map(f => ({ ...f })) }, passive: { ...d.passive } };
+  const mul = (L >= 10 ? 1.15 : 1) * (L >= 50 ? 1.25 : 1);
+  d.ult.fx.forEach(f => { if (f.mult) f.mult *= mul; if (f.dps) f.dps *= mul; });
+  if (L >= 20) { const r = d.role; if (r === 'sat') d.passive.crit = (d.passive.crit || 0) + 0.08; else if (r === 'phap') d.passive.skillPct = (d.passive.skillPct || 0) + 0.1; else if (r === 'the') d.passive.dr = (d.passive.dr || 0) + 0.1; else if (r === 'dan') d.passive.healPct = (d.passive.healPct || 0) + 0.15; else d.small.fx.concat(d.ult.fx).forEach(f => { if (f.stun) f.stun += 0.3; }); }
+  if (L >= 60) d.ult.fx.push({ t: 'aoe', at: 'cluster', r: 150, mult: 1.5 });
+  return d;
+}
+function tkhHTML(id) {
+  const o = S.owned[id]; if (!hasTkh(id)) return '<p class="hint">Chỉ tướng SSR+ trở lên có thần khí bản mệnh.</p>'; if (!o) return '<p class="hint">Chưa sở hữu tướng.</p>';
+  const L = o.tk || 0, c = tkhCost(L);
+  return `<div class="tk"><div class="tk-h"><span class="tk-ic"><img src="art/ui/tk_${id}.webp" alt="" onerror="this.remove()"></span><div><b>${esc(TK_NAME[id])} +${L}</b><small>${L ? `+${L}% công, máu` : 'Chưa kích hoạt'}</small></div></div>
+    <div class="tk-m">${tkhMiles(id).map(([n, t]) => `<div class="${L >= n ? 'on' : ''}"><i>+${n}</i><span>${esc(t)}</span></div>`).join('')}</div>
+    ${L < TKH_MAX ? `<button class="btn gold" id="bTk">${L ? 'Cường hoá' : 'Kích hoạt'} +${L + 1} · ${icon('vang')}${fmt(c.vang)}${c.shard ? ` · ${c.shard} mảnh` : ''}</button>` : '<p class="hint">Đã đạt +60.</p>'}</div>`;
+}
+function tkhUp(id) { const o = S.owned[id], L = o.tk || 0, c = tkhCost(L); if (L >= TKH_MAX) return;
+  if (S.vang < c.vang) { toast('Không đủ vàng'); return; } if ((o.shard || 0) < c.shard) { toast('Cần ' + c.shard + ' mảnh ' + HEROES[id].name); return; }
+  S.vang -= c.vang; o.shard -= c.shard; o.tk = L + 1; save(); if (tkhMiles(id).some(([n]) => n === L + 1)) toast('Thần khí +' + (L + 1) + ': mở hiệu ứng mới!'); showHeroDetail(id, 'tk'); }
+// ---- CỘNG HƯỞNG CẤP: mọi tướng đã có được nâng tối thiểu bằng cấp của tướng mạnh thứ 5 (khỏi phải nuôi lại từ đầu)
+function resonate() { const L = Object.values(S.owned || {}).map(o => o.lv || 1).sort((a, b) => b - a); if (L.length < 6) return 0; const r = L[4]; let n = 0;
+  for (const id in S.owned) if ((S.owned[id].lv || 1) < r) { S.owned[id].lv = r; n++; } return n; }
+const resLv = () => { const L = Object.values(S.owned || {}).map(o => o.lv || 1).sort((a, b) => b - a); return L.length >= 6 ? L[4] : 0; };
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
   const hs = heroStats(id);   // ĐỒNG BỘ với màn chi tiết (27/11): bảng sao theo phẩm thật + hệ số phẩm + thức tỉnh R (trước đây trận đấu dùng bảng sao SSR cho UR/SSR+ và bỏ hệ số phẩm)
   return {
-    side: 'h', id, d: potD(id, o.star || 1), look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
+    side: 'h', id, d: tkhD(id, potD(id, o.star || 1)), look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
     base: { hp: hs.hp, atk: hs.atk, def: hs.def },
     bonus: { hpPct: 0, atkPct: 0, crit: Math.min(o.cg || 0, cgCap(id)) >= 3 ? 0.05 : 0, dmgTaken: 0 },
     aspd: hs.aspd, range: 680, move: h.move, ranged: true, front: !h.ranged, proj: (ATK_STYLE[id] && ATK_STYLE[id].proj) || h.proj || MELEE_PROJ[id] || 'palm',
-    x: 200, y: H / 2, hp: 1, mp: 40, cdA: 0, cdS: 1, cdU: 3, dk: 0,
+    x: 200, y: H / 2, hp: 1, mp: 40 + (tkhLv(id) >= 30 ? 30 : 0), cdA: 0, cdS: 1, cdU: 3, dk: 0,
     shield: 0, shieldT: 0, buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0, inv: 0,
     cg: o.cg || 0, isCap: !!isCap, ammo: AMMO, trong: 1, dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
   };
@@ -400,6 +430,8 @@ function applyBonuses(u, info) {
     }
   }
   for (const b of (info.coll || [])) if (b.members.includes(u.id)) for (const k in b.g) u.bonus[k] = (u.bonus[k] || 0) + b.g[k] * BOND_COLL;
+  { const L = hasTkh(u.id) ? tkhLv(u.id) : 0; if (L) { u.bonus.atkPct += 0.01 * L + 0.05; u.bonus.hpPct += 0.01 * L + 0.05; } }
+  { const n = (info.tk40 != null ? info.tk40 : 0); if (n) u.bonus.atkPct += 0.05 * n; }
   const eq = eqBonus(u.id); u.bonus.atkPct += eq.atkPct; u.bonus.hpPct += eq.hpPct; u.bonus.crit += eq.crit; u.bonus.dmgTaken += eq.dr; u.base.def *= 1 + eq.defPct;
   u.eqm = { aspdPct: eq.aspdPct, skillPct: eq.skillPct, critDmg: eq.critDmg, healPct: eq.healPct };   // đọc qua RM()
   if (eq.startShield && B && B.later) B.later.push({ t: 0.2, fn: () => { if (!u.dead) { u.shield = Math.max(u.shield || 0, maxHp(u) * eq.startShield); u.shieldT = 8; } } });   // trang bị
@@ -4596,7 +4628,7 @@ function showHeroDetail(id, tab) {
   const list = Object.keys(HEROES).filter(k => S.owned[k]).sort((a, b) => power(b) - power(a)), ix = list.indexOf(id);
   const next = o && o.lv < MAX_LV ? (() => { const sv = o.lv; o.lv++; const n2 = heroStats(id); o.lv = sv; return n2; })() : null;
   const delta = (a, b) => b ? `<em class="up">+${fmt(b - a)}</em>` : '';
-  const tabs = [['info', 'Thông tin'], ['up', 'Bồi dưỡng'], ['eq', 'Trang bị'], ['bond', 'Duyên phận']];
+  const tabs = [['info', 'Thông tin'], ['up', 'Bồi dưỡng'], ['eq', 'Trang bị'], ['bond', 'Duyên phận']].concat(hasTkh(id) ? [['tk', 'Thần khí']] : []);
   const body = {
     info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
       ${potHTML(id)}<div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs hs-ic ${k === 'ult' ? 'ult' : ''}"><span class="hs-i">${skIcon(id, k)}</span><div><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div></div>`; }).join('')}</div>`,
@@ -4615,6 +4647,7 @@ function showHeroDetail(id, tab) {
     eq: o ? `<div class="hd-eq">${Object.keys(EQ_SLOT).map(sl => { const it = (S.items || []).find(x => x.id === (o.eq || {})[sl]), pl = (o.eqLv || {})[sl] || 0;
         return `<div class="he">${eqIcon(it, sl)}<i>${EQ_SLOT[sl].name} <em>+${pl}</em></i><b>${it ? eqTxt(it) : 'Trống'}</b></div>`; }).join('')}</div>
       <div class="hu-btns"><button class="btn gold" id="bEq">Thay / cường hoá trang bị</button></div>` : '',
+    tk: tkhHTML(id),
     bond: bonds.length ? bonds.map(b => { const lv = bondLv(b);
         return `<div class="hb"><b>${esc(b.name)}</b> <span class="lvl">Cấp ${lv}/10</span><div class="hb-m">${b.members.map(k => `<img class="${S.owned[k] ? '' : 'off'}" src="${por(k, 40)}" title="${esc(HEROES[k].name)}">`).join('')}</div>
           <p>${esc(b.desc)}${lv ? ` · Thêm +${Math.round(BOND_LV[lv] * 100)}% công, máu` : ''}</p><p class="hint">${bondColl(b) ? `Đã kích hoạt duyên sưu tầm (${Math.round(BOND_COLL * 100)}%). Cùng ra trận: 100%.` : `Sưu tầm đủ thành viên, mỗi người ${BOND_STAR}★ để kích hoạt ${Math.round(BOND_COLL * 100)}% mà không cần cùng ra trận.`}</p><div class="hb-bar"><i style="width:${lv * 10}%"></i></div></div>`; }).join('') + '<small>Cấp duyên phận tăng theo tổng sao và cấp của các thành viên. Duyên sưu tầm: sở hữu đủ thành viên (mỗi người ' + BOND_STAR + '★) thì tướng ra trận nhận ' + Math.round(BOND_COLL * 100) + '% chỉ số duyên; cùng ra trận nhận đủ 100%.</small>' : '<p class="hint">Tướng này chưa có duyên phận.</p>',
@@ -4655,6 +4688,7 @@ function showHeroDetail(id, tab) {
       setTimeout(() => { hero.classList.remove('act'); st2.classList.remove('ultfx'); }, t); }; }
   $('#bBack').onclick = () => { const f = HD_BACK || showHeroes; HD_BACK = null; f(); };
   ui.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => showHeroDetail(id, b.dataset.tab));
+  { const bt = $('#bTk'); if (bt) bt.onclick = () => tkhUp(id); }
   if (!o) return;
   const q = s => $(s);
   if (q('#bCg')) q('#bCg').onclick = () => realmBreak(id);
@@ -6332,6 +6366,7 @@ function route() {
     for (const sl of Object.keys(EQ_SLOT)) { const it = rollEquip({ kind: 'boss', chap: 3, bicanh: 1 }); it.s = sl; it.set = 'thienbinh'; it.n = EQ_SETS.thienbinh.n + ' · ' + EQ_NAMES[sl][2]; S.items.push(it); if (sl !== 'phap') o.eq[sl] = it.id; }
     for (let i = 0; i < 6; i++) S.items.push(rollEquip({ kind: 'boss', chap: 5, bicanh: 1 }));
     ensureHeroAssets([id]).then(() => { showHeroDetail(id); showEquip(id); console.log('EQ_BONUS', JSON.stringify(eqBonus(id))); }); }
+  else if (k === 'tktest') { const id = HEROES[v] ? v : 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); const lm = h.match(/(?:^|&)tk=(\d+)/); S.owned[id].tk = lm ? +lm[1] : 25; S.owned[id].shard = 99; S.vang = 1e6; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'tk')); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
