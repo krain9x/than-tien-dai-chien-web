@@ -2835,7 +2835,7 @@ const UCFG = {
   baotinh: {"t": "summon", "obj": "leopard_spirit", "size": 240, "col": "#ff7a3a", "waves": 1},
   hungsonquan: {"t": "summon", "obj": "bear_ox", "size": 250, "col": "#d0a060", "waves": 1},
   thapbatcong: {"t": "heal", "obj": "poem_leaf_scroll", "size": 210, "col": "#7fe08a"},
-  thoiphanquan: {"t": "drop", "obj": "judge_brush", "size": 230, "col": "#7fc8ff"},
+  thoiphanquan: {"t": "drop", "obj": "judge_brush", "size": 40, "col": "#7fc8ff"},
   duongthaitong: {"t": "drop", "obj": "imperial_decree", "size": 230, "col": "#ffd34d"},
   nuvuongtayluong: {"t": "heal", "obj": "jade_seal_petals", "size": 210, "col": "#7fc8ff"},
   sonthan: {"t": "drop", "obj": "mountain_peak", "size": 240, "col": "#d0a060"},
