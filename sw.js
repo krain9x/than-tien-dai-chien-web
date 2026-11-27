@@ -1,7 +1,7 @@
 // Bộ nhớ đệm: ảnh/âm thanh lấy từ máy ngay (cập nhật ngầm để lần sau có bản mới); html luôn lấy mạng trước.
-const C = 'ttdc-v1';
+const C = 'ttdc-v2';   // tăng số này mỗi khi sửa hàng loạt ảnh: máy người chơi bỏ bản ảnh cũ trong bộ nhớ đệm, tải bản mới ngay lần mở đầu
 self.addEventListener('install', e => self.skipWaiting());
-self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('activate', e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
