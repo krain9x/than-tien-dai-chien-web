@@ -861,7 +861,7 @@ const STAR_MUL_R = { R: [1, 1.12, 1.25, 1.4, 1.56], SR: [1, 1.15, 1.32, 1.59, 1.
 const starMul = (rar, st) => { const a = STAR_MUL_R[rar] || STAR_MUL; return a[Math.max(0, Math.min(a.length - 1, st - 1))]; };
 
 // KINH TẾ (rà soát 2026-11-22, đường cong kiểu VLĐMT): chi phí lên cấp tăng dốc
-const lvCostOf = lv => Math.round(120 * lv + 18 * lv * lv);
+const lvCostOf = lv => Math.round((120 * lv + 18 * lv * lv) * (lv >= 100 ? 10 : 1));   // bậc Vô Song (100 -> 101) đắt gấp 10
 
 // ===== PHÁP BẢO (giá nâng phẩm theo fabaonewupqualityconfig của VLĐMT ÷10) =====
 const FABAO = {

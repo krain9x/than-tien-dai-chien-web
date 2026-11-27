@@ -237,7 +237,7 @@ function fullImg(id, size) {
 // ------------------------------------------------------------------ HERO STATS (menu)
 function heroStats(id) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * Math.min(o.cg || 0, cgCap(id))), bt = btBonus(h.role);   // tuy: Tẩy Tuỷ Đan · cg: cảnh giới
+  const m = (1 + 0.06 * (lvS(o.lv) - 1)) * vsMul(o.lv) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * Math.min(o.cg || 0, cgCap(id))), bt = btBonus(h.role);   // tuy: Tẩy Tuỷ Đan · cg: cảnh giới
   const aw = h.rar === 'R' && o.star >= 5 ? 1.15 : 1;   // tướng R thức tỉnh
   return { hp: h.hp * m * bt.hp * aw, atk: h.atk * m * bt.atk * aw, def: h.def * m * bt.def * aw, aspd: h.aspd * (aw > 1 ? 1.1 : 1) };
 }
@@ -351,9 +351,9 @@ function resonate() { const L = Object.values(S.owned || {}).map(o => o.lv || 1)
   for (const id in S.owned) { const t = Math.min(r, lvCap(id)); if ((S.owned[id].lv || 1) < t) { S.owned[id].lv = t; n++; } } return n; }
 const resLv = () => { const L = Object.values(S.owned || {}).map(o => o.lv || 1).sort((a, b) => b - a); return L.length >= 6 ? L[4] : 0; };
 // TRẦN CẤP THEO SAO (28/11): 1★30 · 2★40 · 3★60 · 4★80 · 5★100 · UR 6★ 120 (Vô Song). Cộng hưởng cấp không vượt trần của từng tướng.
-const LV_CAP = [30, 40, 60, 80, 100, 120];   // theo sao 1..6 (6★ chỉ UR: cấp 101-120 gọi là Vô Song)
+const LV_CAP = [30, 40, 60, 80, 100, 101];   // theo sao 1..6 (6★ chỉ UR: bậc cuối 'Vô Song' = cấp 101, chỉ số như cấp 110)
 const lvCapS = st => LV_CAP[Math.max(1, Math.min(6, st || 1)) - 1], lvCap = id => lvCapS((S.owned[id] || {}).star || 1);
-const lvTxt = lv => lv > 100 ? `Vô Song ${lv - 100}` : 'Cấp ' + lv;
+const lvTxt = lv => lv > 100 ? 'Vô Song' : 'Cấp ' + lv, lvS = lv => Math.min(lv, 100), VS_MUL = 1.3, vsMul = lv => lv > 100 ? VS_MUL : 1;   // Vô Song: chỉ số ×1,3 so với cấp 100 + tuyệt kỹ +20%
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
   const hs = heroStats(id);   // ĐỒNG BỘ với màn chi tiết (27/11): bảng sao theo phẩm thật + hệ số phẩm + thức tỉnh R (trước đây trận đấu dùng bảng sao SSR cho UR/SSR+ và bỏ hệ số phẩm)
@@ -558,7 +558,8 @@ function dealDmg(src, tgt, mult, kind) {
   if (tgt.inv > 0) { if (kind !== 'dot') floater(tgt.x, tgt.y - 60, 'Né', '#bff3ff', 14); return 0; }
   let a = getAtk(src) * mult;
   if (src.side === 'h' && kind === 'ult' && isUR(src.id) && (S.owned[src.id] || {}).star >= 6) a *= 1.5;
-  if (src.side === 'h' && kind === 'ult' && (src.cg || 0) >= 5) a *= 1.15;   // Hỗn Nguyên
+  if (src.side === 'h' && kind === 'ult' && (src.cg || 0) >= 5) a *= 1.15;
+  if (src.side === 'h' && kind === 'ult' && ((S.owned[src.id] || {}).lv || 0) > 100) a *= 1.2;   // Vô Song   // Hỗn Nguyên
   if (src.side === 'h' && kind === 'atk' && SSR_ATK[src.id] && SSR_ATK[src.id].dmg) a *= 1 + SSR_ATK[src.id].dmg;
   if (window.__dmgBy && tgt.side === 'h') window.__dmgBy[src.id] = (window.__dmgBy[src.id] || 0) + a;
   if (src.side === 'e' && B.alive >= 40) a *= B.alive >= 50 ? 1.8 : 1.5;   // quái đông trên sân thì mạnh hơn (VLĐMT): ≥40 +50%, ≥50 +80%
@@ -4638,8 +4639,8 @@ function showHeroDetail(id, tab) {
     info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
       ${potHTML(id)}<div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs hs-ic ${k === 'ult' ? 'ult' : ''}"><span class="hs-i">${skIcon(id, k)}</span><div><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div></div>`; }).join('')}</div>`,
     up: o ? `<div class="hd-up">
-        <div class="hu-row"><div><b>${lvTxt(o.lv)}/${lvCap(id) > 100 ? 'Vô Song ' + (lvCap(id) - 100) : lvCap(id)}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
-          <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= lvCap(id) ? 'disabled' : ''}>${o.lv >= lvCap(id) && o.star < maxStar(id) ? 'Nâng sao để mở ' + (lvCapS(o.star + 1) > 100 ? 'Vô Song' : 'cấp ' + lvCapS(o.star + 1)) + '<small>' : 'Nâng 1 cấp<small>'}${icon('vang')}${fmt(lvCost)}</small></button>
+        <div class="hu-row"><div><b>${o.lv > 100 ? 'Vô Song · cấp tối đa · chỉ số ×1,3, tuyệt kỹ +20%' : lvTxt(o.lv) + '/' + (lvCap(id) > 100 ? 'Vô Song' : lvCap(id))}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
+          <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= lvCap(id) ? 'disabled' : ''}>${o.lv >= 100 && o.lv < lvCap(id) ? 'Lên Vô Song (×1,3 chỉ số)<small>' : o.lv >= lvCap(id) && o.star < maxStar(id) ? 'Nâng sao để mở ' + (lvCapS(o.star + 1) > 100 ? 'Vô Song' : 'cấp ' + lvCapS(o.star + 1)) + '<small>' : 'Nâng 1 cấp<small>'}${icon('vang')}${fmt(lvCost)}</small></button>
           <button class="btn" id="bLv5" ${o.lv >= lvCap(id) ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
         <div class="hu-row"><div><b>Sao ${starsHTML(o.star, maxStar(id))}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
           <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= maxStar(id) ? 'disabled' : ''}>Tăng sao</button>${o.star >= maxStar(id) && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh → ${Math.floor(o.shard * vcRate(id))} vạn năng</button>` : ''}</div></div>
@@ -5196,7 +5197,7 @@ function arState() {
   return A;
 }
 const arTeamOf = () => S.lineup.filter(id => S.owned[id]).slice(0, 5).map(id => [id, S.owned[id].lv, S.owned[id].star, S.owned[id].cg || 0]);
-function arPower(team) { return team.reduce((s, [id, lv, st]) => { const h = HEROES[id]; if (!h) return s; const m = (1 + 0.06 * (lv - 1)) * starMul(tierOf(id), st) * (TIER_BASE[tierOf(id)] || 1); return s + Math.round(1150 * (PW_LAD[tierOf(id)] || 1) * m / (TIER_BASE[tierOf(id)] || 1)); }, 0); }
+function arPower(team) { return team.reduce((s, [id, lv, st]) => { const h = HEROES[id]; if (!h) return s; const m = (1 + 0.06 * (lvS(lv) - 1)) * vsMul(lv) * starMul(tierOf(id), st) * (TIER_BASE[tierOf(id)] || 1); return s + Math.round(1150 * (PW_LAD[tierOf(id)] || 1) * m / (TIER_BASE[tierOf(id)] || 1)); }, 0); }
 function arBot(k) {   // k: -1 yếu hơn, 0 ngang, 1 mạnh hơn
   const my = arTeamOf(), A = arState(), n = Math.max(3, my.length);
   const avgLv = my.length ? my.reduce((s, t) => s + t[1], 0) / my.length : 1, avgSt = my.length ? my.reduce((s, t) => s + t[2], 0) / my.length : 1;
