@@ -350,8 +350,10 @@ function tkhUp(id) { const o = S.owned[id], L = o.tk || 0, c = tkhCost(L); if (L
 function resonate() { const L = Object.values(S.owned || {}).map(o => o.lv || 1).sort((a, b) => b - a); if (L.length < 6) return 0; const r = L[4]; let n = 0;
   for (const id in S.owned) { const t = Math.min(r, lvCap(id)); if ((S.owned[id].lv || 1) < t) { S.owned[id].lv = t; n++; } } return n; }
 const resLv = () => { const L = Object.values(S.owned || {}).map(o => o.lv || 1).sort((a, b) => b - a); return L.length >= 6 ? L[4] : 0; };
-// TRẦN CẤP THEO SAO (28/11): 1★ 30 · mỗi sao +10 (5★ 70, UR 6★ 80). Cộng hưởng cấp không vượt trần của từng tướng.
-const lvCap = id => 30 + 10 * (((S.owned[id] || {}).star || 1) - 1);
+// TRẦN CẤP THEO SAO (28/11): 1★30 · 2★40 · 3★60 · 4★80 · 5★100 · UR 6★ 120 (Vô Song). Cộng hưởng cấp không vượt trần của từng tướng.
+const LV_CAP = [30, 40, 60, 80, 100, 120];   // theo sao 1..6 (6★ chỉ UR: cấp 101-120 gọi là Vô Song)
+const lvCapS = st => LV_CAP[Math.max(1, Math.min(6, st || 1)) - 1], lvCap = id => lvCapS((S.owned[id] || {}).star || 1);
+const lvTxt = lv => lv > 100 ? `Vô Song ${lv - 100}` : 'Cấp ' + lv;
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
   const hs = heroStats(id);   // ĐỒNG BỘ với màn chi tiết (27/11): bảng sao theo phẩm thật + hệ số phẩm + thức tỉnh R (trước đây trận đấu dùng bảng sao SSR cho UR/SSR+ và bỏ hệ số phẩm)
@@ -4636,8 +4638,8 @@ function showHeroDetail(id, tab) {
     info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
       ${potHTML(id)}<div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs hs-ic ${k === 'ult' ? 'ult' : ''}"><span class="hs-i">${skIcon(id, k)}</span><div><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div></div>`; }).join('')}</div>`,
     up: o ? `<div class="hd-up">
-        <div class="hu-row"><div><b>Cấp ${o.lv}/${lvCap(id)}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
-          <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= lvCap(id) ? 'disabled' : ''}>${o.lv >= lvCap(id) && o.star < maxStar(id) ? 'Nâng sao để mở cấp ' + (lvCap(id) + 10) + '<small>' : 'Nâng 1 cấp<small>'}${icon('vang')}${fmt(lvCost)}</small></button>
+        <div class="hu-row"><div><b>${lvTxt(o.lv)}/${lvCap(id) > 100 ? 'Vô Song ' + (lvCap(id) - 100) : lvCap(id)}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
+          <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= lvCap(id) ? 'disabled' : ''}>${o.lv >= lvCap(id) && o.star < maxStar(id) ? 'Nâng sao để mở ' + (lvCapS(o.star + 1) > 100 ? 'Vô Song' : 'cấp ' + lvCapS(o.star + 1)) + '<small>' : 'Nâng 1 cấp<small>'}${icon('vang')}${fmt(lvCost)}</small></button>
           <button class="btn" id="bLv5" ${o.lv >= lvCap(id) ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
         <div class="hu-row"><div><b>Sao ${starsHTML(o.star, maxStar(id))}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
           <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= maxStar(id) ? 'disabled' : ''}>Tăng sao</button>${o.star >= maxStar(id) && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh → ${Math.floor(o.shard * vcRate(id))} vạn năng</button>` : ''}</div></div>
@@ -4672,7 +4674,7 @@ function showHeroDetail(id, tab) {
       <div class="hd5-nm"><h2>${esc(h.name)}</h2><small>${esc(h.title)} · ${esc(h.src)}</small>
         ${o ? starsHTML(o.star, maxStar(id)) : '<em class="hd5-no">Chưa sở hữu</em>'}</div>
       <div class="hd5-tags">${roleTag(h.role)}${elTag(h.el)}${facTag(h.fac)}</div>
-      ${o ? `<div class="hd5-pw"><small>Lực Chiến</small><b>${fmt(power(id))}</b><span>Lv ${o.lv}</span></div>` : ''}
+      ${o ? `<div class="hd5-pw"><small>Lực Chiến</small><b>${fmt(power(id))}</b><span>${o.lv > 100 ? lvTxt(o.lv) : "Lv " + o.lv}</span></div>` : ''}
     </div>
     <div class="hd5-sk">${HD_SK.map(([k, lab]) => `<button class="hd5-ski k-${k} ${k === sk ? 'on' : ''}" data-sk="${k}"><span>${skIcon(id, k)}</span><small>${lab}</small></button>`).join('')}</div>
     <div class="hd5-tip k-${sk}"><i>${HD_SK.find(x => x[0] === sk)[1]}${sk === 'small' ? ' · 30 nội công' : sk === 'ult' ? ' · 60 nội công' : ''}</i><b>${esc(sel.n)}</b><p>${esc(sel.d)}</p></div>
@@ -5200,7 +5202,7 @@ function arBot(k) {   // k: -1 yếu hơn, 0 ngang, 1 mạnh hơn
   const avgLv = my.length ? my.reduce((s, t) => s + t[1], 0) / my.length : 1, avgSt = my.length ? my.reduce((s, t) => s + t[2], 0) / my.length : 1;
   const RK = { R: 1, SR: 2, SSR: 3, 'SSR+': 4, UR: 5, 'UR+': 6 }, top = Math.max(1, ...my.map(t => RK[tierOf(t[0])] || 1));
   const pool = Object.keys(HEROES).filter(id => !NO_ART.has(id) && (RK[tierOf(id)] || 1) <= Math.min(5, top + (k > 0 ? 1 : 0)));
-  const team = pool.sort(() => Math.random() - 0.5).slice(0, n).map(id => [id, clamp(Math.round(avgLv + k * 3 + rand(-1, 1)), 1, 30 + 10 * (maxStar(id) - 1)), clamp(Math.round(avgSt + (k > 0 ? 0.5 : k < 0 ? -0.5 : 0)), 1, maxStar(id))]);
+  const team = pool.sort(() => Math.random() - 0.5).slice(0, n).map(id => [id, clamp(Math.round(avgLv + k * 3 + rand(-1, 1)), 1, lvCapS(maxStar(id))), clamp(Math.round(avgSt + (k > 0 ? 0.5 : k < 0 ? -0.5 : 0)), 1, maxStar(id))]);
   const used = new Set(((arState().opp) || []).map(o => o.name)), nm = AR_BOT_NAMES.filter(x => !used.has(x));
   return { bot: 1, name: pick(nm.length ? nm : AR_BOT_NAMES), r: Math.max(800, Math.round(A.r + k * 60 + rand(-25, 25))), team, power: arPower(team) };
 }
@@ -5262,7 +5264,7 @@ function arenaSetup(st) {
   B.arena = { other: { projs: [], fx: [], fxb: [], decals: [], ghosts: [], sparks: [], parts: [], later: [], zones: [], warns: [], cap: null, capTgt: null, comboCd: {}, lastUlt: {}, mods: {}, capRegen: 0, dom: null, pt: null, rift: null, field: {} }, owned: {} };
   for (const u of B.heroes) u.ah = true;
   const team = st.arena.team.filter(t => HEROES[t[0]]), ids = team.map(t => t[0]);
-  for (const [id, lv, star, cg] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, 30 + 10 * (clamp(star | 0, 1, maxStar(id)) - 1)), star: clamp(star | 0, 1, maxStar(id)), shard: 0, cg: clamp(cg | 0, 0, cgCap(id)) };
+  for (const [id, lv, star, cg] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, lvCapS(clamp(star | 0, 1, maxStar(id)))), star: clamp(star | 0, 1, maxStar(id)), shard: 0, cg: clamp(cg | 0, 0, cgCap(id)) };
   arSwap();
   try {
     const info = teamInfo(ids);
