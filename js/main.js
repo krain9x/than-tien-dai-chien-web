@@ -2830,7 +2830,7 @@ const UCFG = {
   tanhoan: {"t": "rain", "obj": "thunder_bolt", "size": 30, "col": "#ff7a3a", "n": 10},
   lucdinhlucgiap: {"t": "drop", "obj": "guardian_shield", "size": 230, "col": "#7fe08a"},
   tycan: {"t": "heal", "obj": "wenqu_star", "size": 210, "col": "#7fe08a"},
-  toho: {"t": "drop", "obj": "jizhou_spear", "size": 240, "col": "#d0a060"},
+  toho: {"t": "drop", "obj": "jizhou_spear", "size": 40, "col": "#d0a060"},
   hoangcon: {"t": "smash", "obj": "pass_guandao", "size": 460, "col": "#ffd34d"},
   baotinh: {"t": "summon", "obj": "leopard_spirit", "size": 240, "col": "#ff7a3a", "waves": 1},
   hungsonquan: {"t": "summon", "obj": "bear_ox", "size": 250, "col": "#d0a060", "waves": 1},
