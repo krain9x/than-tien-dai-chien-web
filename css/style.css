@@ -1416,3 +1416,9 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .xfer .eq-row .btn.small { flex-direction: row; gap: 4px; display: inline-flex; align-items: center; }
 .xfer .eq-row .btn.small .ic, .xfer .eq-row .btn.small img.icon { width: 14px; height: 14px; }
 .hd5-ski span .sk-f, .hs-i .sk-f { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 2; }
+
+/* tiềm năng theo sao (28/11) */
+.pot { display: grid; gap: 4px; margin: 6px 0 10px; }
+.pot h4 { margin: 0 0 2px; }
+.pot-r { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 8px; font-size: 12.5px; padding: 5px 8px; border-radius: 6px; background: rgba(0,0,0,.25); opacity: .5; }
+.pot-r b { color: #c8b48a; white-space: nowrap; } .pot-r.on { opacity: 1; } .pot-r.on b { color: #ffd76a; }

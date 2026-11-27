@@ -285,11 +285,46 @@ const coreBonus = u => RM(u, 'core') ? 0.20 * Math.min(5, sysTang(u.role)) : 0; 
 const AMMO = 5;   // VLĐMT: loạt đánh ngắn rồi điều khí lâu
 const ammoMax = u => AMMO + M('ammo');
 
+// ---- TIỀM NĂNG: 4 tầng/tướng theo sao, sinh từ chiêu thật của tướng (mô tả + hàm áp lên bản sao dữ liệu chiêu)
+const POT_STAR = [2, 3, 4, 5];
+function potOf(id) {
+  const h = HEROES[id]; if (!h) return [];
+  const sm = h.small || {}, ul = h.ult || {}, pa = h.passive || {}, fxS = sm.fx || [], fxU = ul.fx || [];
+  const has = (fx, t) => fx.some(f => f.t === t), dmgU = fxU.some(f => f.mult && f.t !== 'heal'), stunU = fxU.some(f => f.stun), healS = has(fxS, 'heal'), healU = has(fxU, 'heal');
+  const T = [];
+  // tầng 1 (2★): tiểu chiêu mạnh hơn
+  T.push(healS ? { n: 'Linh Tức', d: `${sm.name}: lượng hồi máu +25%.`, a: d => d.small.fx.forEach(f => { if (f.t === 'heal') f.mult *= 1.25; }) }
+       : has(fxS, 'shield') ? { n: 'Kiên Thủ', d: `${sm.name}: khiên +40%.`, a: d => d.small.fx.forEach(f => { if (f.t === 'shield') f.pct *= 1.4; }) }
+       : { n: 'Tinh Tiến', d: `${sm.name}: sát thương +25%.`, a: d => d.small.fx.forEach(f => { if (f.mult && f.t !== 'heal') f.mult *= 1.25; if (f.dps) f.dps *= 1.25; }) });
+  // tầng 2 (3★): tuyệt kỹ thêm hiệu ứng theo kiểu chiêu
+  T.push(stunU ? { n: 'Định Thần', d: `${ul.name}: thời gian choáng +0,6 giây.`, a: d => d.ult.fx.forEach(f => { if (f.stun) f.stun += 0.6; }) }
+       : healU ? { n: 'Tịnh Hoá', d: `${ul.name}: giải mọi khống chế cho cả đội.`, a: d => d.ult.fx.forEach(f => { if (f.t === 'heal') f.cleanse = true; }) }
+       : fxU.some(f => f.r) ? { n: 'Khuếch Trương', d: `${ul.name}: phạm vi +30%.`, a: d => d.ult.fx.forEach(f => { if (f.r) f.r = Math.round(f.r * 1.3); }) }
+       : { n: 'Xuyên Phá', d: `${ul.name}: sát thương +20%.`, a: d => d.ult.fx.forEach(f => { if (f.mult && f.t !== 'heal') f.mult *= 1.2; }) });
+  // tầng 3 (4★): nội tại mạnh gấp rưỡi
+  const pk = ['crit', 'dr', 'healPct', 'skillPct', 'regen', 'lowHpAtk', 'burnHit', 'teamMp'].find(k => pa[k]);
+  T.push(pk ? { n: 'Bản Nguyên', d: `${pa.name}: hiệu quả nội tại ×1,5.`, a: d => { d.passive[pk] *= 1.5; } }
+            : { n: 'Bản Nguyên', d: `${pa.name}: thêm +8% công.`, a: d => { d.passive.lowHpAtk = (d.passive.lowHpAtk || 0); d.potAtk = 0.08; } });
+  // tầng 4 (5★): tuyệt kỹ đại thành
+  T.push(healU && !dmgU ? { n: 'Đại Thành', d: `${ul.name}: hồi máu +25% và cả đội nhận khiên 10%.`, a: d => { d.ult.fx.forEach(f => { if (f.t === 'heal') f.mult *= 1.25; }); d.ult.fx.push({ t: 'shield', who: 'team', pct: 0.1, dur: 6 }); } }
+       : { n: 'Đại Thành', d: `${ul.name}: sát thương +25%, đồng đội hồi 20 nội công.`, a: d => { d.ult.fx.forEach(f => { if (f.mult && f.t !== 'heal') f.mult *= 1.25; if (f.dps) f.dps *= 1.25; }); d.ult.fx.push({ t: 'mp', v: 20 }); } });
+  return T.map((x, i) => ({ ...x, star: POT_STAR[i] }));
+}
+function potD(id, star) {   // bản sao dữ liệu tướng đã áp tiềm năng đã mở
+  const h = HEROES[id], L = potOf(id).filter(t => star >= t.star); if (!L.length) return h;
+  const d = { ...h, small: { ...h.small, fx: (h.small.fx || []).map(f => ({ ...f })) }, ult: { ...h.ult, fx: (h.ult.fx || []).map(f => ({ ...f })) }, passive: { ...h.passive } };
+  for (const t of L) t.a(d);
+  return d;
+}
+function potHTML(id) {
+  const st = (S.owned[id] || {}).star || 0;
+  return `<div class="pot"><h4>Tiềm năng</h4>${potOf(id).map(t => `<div class="pot-r ${st >= t.star ? 'on' : ''}"><b>${'★'.repeat(t.star)} ${esc(t.n)}</b><span>${esc(t.d)}</span></div>`).join('')}</div>`;
+}
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
   const hs = heroStats(id);   // ĐỒNG BỘ với màn chi tiết (27/11): bảng sao theo phẩm thật + hệ số phẩm + thức tỉnh R (trước đây trận đấu dùng bảng sao SSR cho UR/SSR+ và bỏ hệ số phẩm)
   return {
-    side: 'h', id, d: h, look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
+    side: 'h', id, d: potD(id, o.star || 1), look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
     base: { hp: hs.hp, atk: hs.atk, def: hs.def },
     bonus: { hpPct: 0, atkPct: 0, crit: Math.min(o.cg || 0, cgCap(id)) >= 3 ? 0.05 : 0, dmgTaken: 0 },
     aspd: hs.aspd, range: 680, move: h.move, ranged: true, front: !h.ranged, proj: (ATK_STYLE[id] && ATK_STYLE[id].proj) || h.proj || MELEE_PROJ[id] || 'palm',
@@ -337,6 +372,7 @@ function getAtk(u) {
     if (M('tuthan') && trongOf(u) >= 5) p += M('tuthan');                                     // Đắc Đạo
     const pa = u.d.passive;
     if (pa && pa.lowHpAtk && u.hp < maxHp(u) * 0.5) p += pa.lowHpAtk;
+    if (u.d.potAtk) p += u.d.potAtk;
   }
   return u.base.atk * (1 + p) * (u.clone ? 0.5 : 1);
 }
@@ -4563,7 +4599,7 @@ function showHeroDetail(id, tab) {
   const tabs = [['info', 'Thông tin'], ['up', 'Bồi dưỡng'], ['eq', 'Trang bị'], ['bond', 'Duyên phận']];
   const body = {
     info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
-      <div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs hs-ic ${k === 'ult' ? 'ult' : ''}"><span class="hs-i">${skIcon(id, k)}</span><div><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div></div>`; }).join('')}</div>`,
+      ${potHTML(id)}<div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs hs-ic ${k === 'ult' ? 'ult' : ''}"><span class="hs-i">${skIcon(id, k)}</span><div><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div></div>`; }).join('')}</div>`,
     up: o ? `<div class="hd-up">
         <div class="hu-row"><div><b>Cấp ${o.lv}/${MAX_LV}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
           <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng 1 cấp<small>${icon('vang')}${fmt(lvCost)}</small></button>
