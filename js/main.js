@@ -4522,6 +4522,14 @@ function hcDeco(id) {   // lớp trang trí chung cho thẻ tướng: khung + v�
   return (r >= 4 ? '<i class="hc2-glow"></i>' : '') + (urp ? '<i class="hc2-neb"></i><i class="hc2-meteor"><b></b><b></b></i><i class="hc2-band"></i>' : '') + '<i class="hc2-fr"></i>' + (urp ? '<i class="hc2-tj"></i>' : '')
     + (r >= 5 ? '<i class="hc2-shine"></i>' : '') + (r >= 6 ? '<i class="hc2-tw"><b></b><b></b><b></b></i>' : '');
 }
+// icon kỹ năng ở màn Thần Tướng (27/11): huy hiệu vẽ tay theo loại (art/ui/sk_*.webp) + hình riêng của tướng (tuyệt kỹ = pháp bảo tuyệt kỹ, tiểu chiêu = cận cảnh dáng tung chiêu, đòn thường = đạn vẽ tay của SSR)
+function skIcon(id, k) {
+  const base = `<img class="sk-b" src="art/ui/sk_${k}.webp" alt="">`;
+  if (k === 'ult') { const o = UCFG[id] && UCFG[id].obj; if (o) return base + `<img class="sk-o" src="art/ultc/${o}.webp" alt="" onerror="this.remove()">`; }
+  if (k === 'small' && window.HPOSE && HPOSE[poseDir(id)]) return base + `<img class="sk-p" src="art/poses/${poseDir(id)}/skill.webp" alt="" onerror="this.remove()">`;
+  if (k === 'atk' && SSR_FX[id]) return base + `<img class="sk-o" src="art/ssrfx/proj_${id}.webp" alt="" onerror="this.remove()">`;
+  return base;
+}
 const HD_SK = [['atk', 'Đòn thường', '⚔'], ['small', 'Tiểu chiêu', '✦'], ['ult', 'Tuyệt kỹ', '☯'], ['passive', 'Nội tại', '❖'], ['cap', 'Đội trưởng', '♛']];
 const FAC_BG = { xien: 'khuongtanha', triet: 'giaochu', thien: 'duongtien', phat: 'quanam', yeu: 'ngumavuong', nhan: 'litinh', dao: 'thailaoquan' };   // nền khi tướng chưa có cảnh riêng
 const HD_FIX = { giaochu: 0.7, thailaoquan: 0.74 };   // màn chi tiết: chừa chỗ cho quạt kiếm sau lưng
@@ -4544,7 +4552,7 @@ function showHeroDetail(id, tab) {
   const tabs = [['info', 'Thông tin'], ['up', 'Bồi dưỡng'], ['eq', 'Trang bị'], ['bond', 'Duyên phận']];
   const body = {
     info: `<div class="hd-stats"><div><span>Máu</span><b>${fmt(st.hp)}</b></div><div><span>Công</span><b>${fmt(st.atk)}</b></div><div><span>Thủ</span><b>${fmt(st.def)}</b></div><div><span>Tốc đánh</span><b>${st.aspd.toFixed(2)}/s</b></div></div>
-      <div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs ${k === 'ult' ? 'ult' : ''}"><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div>`; }).join('')}</div>`,
+      <div class="hd-skills">${HD_SK.map(([k, lab]) => { const s2 = hdSkill(id, k); return `<div class="hs hs-ic ${k === 'ult' ? 'ult' : ''}"><span class="hs-i">${skIcon(id, k)}</span><div><i>${lab}</i><b>${esc(s2.n)}</b><p>${esc(s2.d)}</p></div></div>`; }).join('')}</div>`,
     up: o ? `<div class="hd-up">
         <div class="hu-row"><div><b>Cấp ${o.lv}/${MAX_LV}</b><small>Máu ${fmt(st.hp)} ${next ? delta(st.hp, next.hp) : ''} · Công ${fmt(st.atk)} ${next ? delta(st.atk, next.atk) : ''}</small></div>
           <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng 1 cấp<small>${icon('vang')}${fmt(lvCost)}</small></button>
@@ -4583,7 +4591,7 @@ function showHeroDetail(id, tab) {
       <div class="hd5-tags">${roleTag(h.role)}${elTag(h.el)}${facTag(h.fac)}</div>
       ${o ? `<div class="hd5-pw"><small>Lực Chiến</small><b>${fmt(power(id))}</b><span>Lv ${o.lv}</span></div>` : ''}
     </div>
-    <div class="hd5-sk">${HD_SK.map(([k, lab, ic]) => `<button class="hd5-ski k-${k} ${k === sk ? 'on' : ''}" data-sk="${k}"><span>${ic}</span><small>${lab}</small></button>`).join('')}</div>
+    <div class="hd5-sk">${HD_SK.map(([k, lab]) => `<button class="hd5-ski k-${k} ${k === sk ? 'on' : ''}" data-sk="${k}"><span>${skIcon(id, k)}</span><small>${lab}</small></button>`).join('')}</div>
     <div class="hd5-tip k-${sk}"><i>${HD_SK.find(x => x[0] === sk)[1]}${sk === 'small' ? ' · 30 nội công' : sk === 'ult' ? ' · 60 nội công' : ''}</i><b>${esc(sel.n)}</b><p>${esc(sel.d)}</p></div>
     <div class="hd5-roster">${list.map(k => `<button class="${k === id ? 'on' : ''} ${tierCls(HEROES[k].tier)}" data-ro="${k}"><img src="${por(k, 48)}" alt=""></button>`).join('')}</div>
     <div class="hd5-panel"><div class="hd-body">${body[HD_TAB] || body.info}</div></div>

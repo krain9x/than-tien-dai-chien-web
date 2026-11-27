@@ -1376,3 +1376,16 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .kn-box img { width: 96px; height: 96px; border-radius: 14px; object-fit: cover; border: 2px solid #c08a1a; } .kn-box small { font-weight: 900; color: #b0761a; } .kn-box h3 { margin: 2px 0 4px; color: #4a2a10; } .kn-box p { margin: 0; font-weight: 600; font-size: 14px; color: #4a2a10; }
 .kn-opts { display: grid; gap: 8px; max-width: 520px; margin: 0 auto; } .kn-opts .btn { text-align: center; } .kn-opts .btn b { font-size: 15px; } .kn-opts .btn small { font-size: 12px; font-weight: 700; }
 :root[data-theme="dem"] .bc-card, :root[data-theme="dem"] .kn-box { background: #2f2812; } :root[data-theme="dem"] .bc-card p, :root[data-theme="dem"] .kn-box p, :root[data-theme="dem"] .kn-box h3 { color: #e8dcc8; }
+
+/* icon kỹ năng vẽ tay (27/11) */
+.hd5-ski span { position: relative; overflow: hidden; background: none !important; border-color: rgba(255,226,150,.9); }
+.hd5-ski span .sk-b { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hd5-ski span .sk-o { position: absolute; inset: 14%; width: 72%; height: 72%; object-fit: contain; filter: drop-shadow(0 1px 2px #000); }
+.hd5-ski span .sk-p { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; transform: scale(1.9); transform-origin: 50% 10%; }
+.hd5-ski span:has(.sk-o) .sk-b, .hd5-ski span:has(.sk-p) .sk-b { filter: brightness(.55) saturate(.8); }
+.hs.hs-ic { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; align-items: start; }
+.hs-i { position: relative; width: 40px; height: 40px; border-radius: 50%; overflow: hidden; border: 2px solid rgba(255,226,150,.85); }
+.hs-i .sk-b { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.hs-i .sk-o { position: absolute; inset: 14%; width: 72%; height: 72%; object-fit: contain; filter: drop-shadow(0 1px 2px #000); }
+.hs-i .sk-p { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 8%; transform: scale(1.9); transform-origin: 50% 10%; }
+.hs-i:has(.sk-o) .sk-b, .hs-i:has(.sk-p) .sk-b { filter: brightness(.55) saturate(.8); }
