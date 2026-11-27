@@ -4416,6 +4416,7 @@ function showHome() {
       ${hi('hShop', 'fb_tubao', 'Cửa Hàng')}
       ${hi('hPet', 'ic_pet', 'Linh Thú')}
       ${hi('hDp', 'ic_dongphu', 'Động Phủ', dpPending().h >= 6)}
+      ${hi('hVc', 'ic_quest', 'Viễn Chinh', vcReady())}
     </div>
     <div class="h4-cards">
       <button class="h4-main ${nx.kind === 'boss' ? 'boss' : ''}" id="hFight" style="background-image:url(art/scene/${CH_ART[nx.chap] || 'datky'}_bg.webp)"><span class="h4-st">${nx.kind === 'boss' ? '☠ Ải Boss' : '⭐ ' + chapStars(nx.chap) + '/30'}</span>
@@ -4440,7 +4441,7 @@ function showHome() {
   $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = () => showQuests(); $('#hQuest2').onclick = () => showQuests(); $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
   if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hFb').onclick = () => showFabao(); $('#hTd').onclick = showThanhDien;
-  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; titleCheckNew(); $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu;
+  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; titleCheckNew(); $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu; $('#hVc').onclick = () => showVc();
   lockWire();
 }
 function topBar(title) {
@@ -4637,7 +4638,7 @@ function showHeroDetail(id, tab) {
           <div class="hu-btns"><button class="btn gold" id="bLv" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng 1 cấp<small>${icon('vang')}${fmt(lvCost)}</small></button>
           <button class="btn" id="bLv5" ${o.lv >= MAX_LV ? 'disabled' : ''}>Nâng tối đa<small>theo vàng đang có</small></button></div></div>
         <div class="hu-row"><div><b>Sao ${starsHTML(o.star, maxStar(id))}</b><small>Mảnh ${o.shard}/${starNeed || '–'} · Vạn năng ${S.univ} · Mỗi sao ×${(starMul(h.rar, Math.min(5, o.star + 1)) / starMul(h.rar, o.star)).toFixed(2)} chỉ số</small></div>
-          <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= maxStar(id) ? 'disabled' : ''}>Tăng sao</button>${o.star >= maxStar(id) && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh</button>` : ''}</div></div>
+          <div class="hu-btns"><button class="btn red" id="bStar" ${o.star >= maxStar(id) ? 'disabled' : ''}>Tăng sao</button>${o.star >= maxStar(id) && o.shard > 0 ? `<button class="btn" id="bDis">Phân giải ${o.shard} mảnh → ${Math.floor(o.shard * vcRate(id))} vạn năng</button>` : ''}</div></div>
         ${realmRowHTML(id)}
         ${isUR(id) ? `<div class="hu-row ur ${o.star >= 6 ? 'on' : ''}"><div><b>Thành Thánh · 6★</b><small>${o.star >= 6 ? 'Đã Thành Thánh: tuyệt kỹ +50%, khoác trang phục Thánh nhân' : 'Đạt 6★: tuyệt kỹ +50% và trang phục Thánh nhân'}</small></div></div>
           <div class="hu-row ur on"><div><b>Thánh nhân</b><small>${tierOf(id) === 'UR+' ? 'Pháp Tướng khổng lồ sau lưng khi tung tuyệt kỹ · ' : ''}${DOM_GROUP(id) ? `Vực ${esc(DOMAIN[DOM_GROUP(id)].n)} khi ${esc(DOM_NEED[DOM_GROUP(id)].toLowerCase())} · ` : ''}Bất tử một lần mỗi trận · Miễn khống chế</small></div></div>` : ''}
@@ -4697,7 +4698,7 @@ function showHeroDetail(id, tab) {
   if (q('#bEq')) q('#bEq').onclick = () => showEquip(id);
   if (q('#bSkin')) q('#bSkin').onclick = () => { skinSet(id, !skinOn(id)); showHeroDetail(id); };
   if (q('#bLore')) q('#bLore').onclick = () => showLore(id);
-  if (q('#bDis')) q('#bDis').onclick = () => { S.univ += o.shard; toast('Phân giải ' + o.shard + ' mảnh'); o.shard = 0; save(); showHeroDetail(id); };
+  if (q('#bDis')) q('#bDis').onclick = () => { S.univ += Math.floor(o.shard * vcRate(id)); toast('Phân giải ' + o.shard + ' mảnh'); o.shard = 0; save(); showHeroDetail(id); };
   if (q('#bStar')) q('#bStar').onclick = () => {
     if (o.shard + S.univ < starNeed) { toast('Chưa đủ mảnh'); return; }
     const useOwn = Math.min(o.shard, starNeed); o.shard -= useOwn; S.univ -= starNeed - useOwn; o.star++; save(); showHeroDetail(id);
@@ -5379,9 +5380,9 @@ function showTienLuc(tab) {
 }
 
 // ---- MỞ DẦN TÍNH NĂNG theo số ải đã qua (chỉ áp cho bản lưu tạo sau khi có luật này: S.gated). Bản lưu cũ giữ nguyên.
-const UNLOCK = { hAch: 3, hTl: 5, hTdl: 8, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
+const UNLOCK = { hVc: 8, hAch: 3, hTl: 5, hTdl: 8, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
                  trPB: 10, trTower: 20, trNan: 30, trRaid: 40, trArena: 15, trRank: 10, trBc: 12 };
-const UNLOCK_NAME = { hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hTdl: 'Thiên Đạo Lệnh', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
+const UNLOCK_NAME = { hVc: 'Viễn Chinh', hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hTdl: 'Thiên Đạo Lệnh', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
                       trPB: 'Phó Bản Tài Nguyên', trTower: 'Tháp Thập Tuyệt', trNan: 'Tám Mươi Mốt Nạn', trRaid: 'Boss Xâm Lược', trArena: 'Luận Kiếm', trRank: 'Bảng Xếp Hạng', trBc: 'Bí Cảnh' };
 const clearedN = () => STAGES.filter(st => S.cleared[st.id]).length;
 const locked = k => !!S.gated && !S.unlockAll && (UNLOCK[k] || 0) > clearedN();
@@ -5416,6 +5417,76 @@ function dpState() {
 }
 const dpLv = k => (dpState().lv[k] || 1);
 function dpPending() { const D = dpState(), h = Math.min(12, (nowS() - D.t) / 3600), lv = dpLv('duoc'); return { lt: Math.floor(h * 6 * lv), lq: Math.floor(h * 4 * lv), h }; }
+// ===================== VIỄN CHINH (phái tướng đi nhiệm vụ theo giờ) · LUYỆN HOÁ MẢNH · LÒ TRANG BỊ =====================
+const VC_Q = [['Hộ tống thương đoàn Triều Ca', 'nhan'], ['Tuần tra Nam Thiên Môn', 'thien'], ['Hái linh dược núi Côn Lôn', 'xien'], ['Dò thám Hoa Quả Sơn', 'yeu'], ['Trừ yêu Bàn Ty Động', 'phat'],
+  ['Canh vườn Bàn Đào', 'thien'], ['Tìm pháp bảo dưới Đông Hải', 'triet'], ['Cứu dân lành Tây Kỳ', 'xien'], ['Thu hồn oan Phong Đô', 'dao'], ['Hộ pháp Lôi Âm Tự', 'phat'], ['Phá trận Bích Du Cung', 'triet'], ['Săn yêu Hắc Phong Sơn', 'yeu']];
+const VC_H = [1, 2, 4, 8], VC_SLOTS = 3, VC_RATE = { A: 0.2, R: 0.3, SR: 0.5, SSR: 1, 'SSR+': 1, UR: 1, 'UR+': 1 };
+const vcRate = id => VC_RATE[tierOf(id)] || 0.3;
+let VC_TAB = 'vc';
+function vcState() { const V = S.vc = S.vc || { run: [], board: [], day: '', rr: 0 }; if (V.day !== dayKey() || !V.board.length) { V.day = dayKey(); V.rr = 1; V.board = vcRoll(); } return V; }
+function vcRoll() { const L = [...VC_Q].sort(() => Math.random() - 0.5).slice(0, 5); return L.map(([n, fac], i) => { const h = VC_H[Math.min(3, Math.floor(Math.random() * 4))], need = 1 + Math.floor(Math.random() * 3);
+  return { id: Date.now().toString(36) + i, n, fac, h, need, role: pick(['sat', 'phap', 'tran', 'the', 'dan']) }; }); }
+function vcReward(q, bonus) { const c = clearedN(), k = bonus ? 1.5 : 1;
+  return { vang: Math.round(700 * q.h * (1 + c / 25) * k), univ: q.h >= 4 ? Math.round(q.h * k) : 0, lt: Math.round(8 * q.h * k), ngoc: q.h >= 8 ? Math.round(20 * k) : 0 }; }
+const vcBonusOk = (q, ids) => ids.some(id => HEROES[id].fac === q.fac) && ids.some(id => HEROES[id].role === q.role);
+const vcReady = () => { const V = S.vc; return !!(V && V.run.some(r => nowS() >= r.t0 + r.h * 3600)); };
+function vcRewTxt(r) { return [r.vang && icon('vang') + fmt(r.vang), r.univ && icon('univ') + r.univ, r.lt && '🌿' + r.lt, r.ngoc && icon('ngoc') + r.ngoc].filter(Boolean).join(' '); }
+const vcBusy = () => new Set(vcState().run.flatMap(r => r.ids));
+function showVc(tab) {
+  if (tab) VC_TAB = tab; const V = vcState();
+  const tabs = `<div class="hd-tabs q-tabs">${[['vc', 'Viễn Chinh'], ['lh', 'Luyện Hoá Mảnh'], ['lo', 'Lò Trang Bị']].map(([k, n]) => `<button class="${VC_TAB === k ? 'on' : ''}" data-vct="${k}">${n}</button>`).join('')}</div>`;
+  let body = '';
+  if (VC_TAB === 'vc') {
+    const run = V.run.map((r, i) => { const left = r.t0 + r.h * 3600 - nowS(), done = left <= 0;
+      return `<div class="vc-q run"><div><b>${esc(r.n)}</b><small>${r.ids.map(id => esc(HEROES[id].name)).join(', ')} · ${vcRewTxt(r.rew)}${r.bonus ? ' · <em>+50% đúng yêu cầu</em>' : ''}</small></div>
+        ${done ? `<button class="btn small gold" data-vcget="${i}">Nhận thưởng</button>` : `<span class="vc-t">còn ${Math.floor(left / 3600)}g ${Math.ceil(left % 3600 / 60)}p</span>`}</div>`; }).join('');
+    const board = V.board.map((q, i) => `<div class="vc-q"><div><b>${esc(q.n)} · ${q.h} giờ · ${q.need} tướng</b><small>Thưởng thêm 50% nếu có tướng phe ${FACTIONS[q.fac] || q.fac} và tướng ${SYS_NAME[q.role] || q.role} · ${vcRewTxt(vcReward(q, false))}</small></div>
+      <button class="btn small ${V.run.length < VC_SLOTS ? 'gold' : ''}" data-vcgo="${i}" ${V.run.length < VC_SLOTS ? '' : 'disabled'}>Phái đi</button></div>`).join('');
+    body = `<p class="hint">Phái tướng đi làm nhiệm vụ, hết giờ quay lại nhận thưởng. Tối đa ${VC_SLOTS} đội cùng lúc; tướng đi viễn chinh vẫn ra trận được. Bảng nhiệm vụ đổi mỗi ngày.</p>
+      <h4>Đang đi (${V.run.length}/${VC_SLOTS})</h4>${run || '<small>Chưa có đội nào.</small>'}
+      <h4>Bảng nhiệm vụ hôm nay <button class="btn small" id="vcRr" ${V.rr ? '' : 'disabled'}>Làm mới (${V.rr})</button></h4>${board || '<small>Đã nhận hết nhiệm vụ hôm nay.</small>'}`;
+  } else if (VC_TAB === 'lh') {
+    const L = Object.keys(S.owned).filter(id => HEROES[id] && S.owned[id].shard > 0).map(id => { const o = S.owned[id], t = tierOf(id); let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[t] || [])[st - 1] || 0;
+      return { id, ex: Math.max(0, o.shard - need), o }; }).filter(x => x.ex > 0).sort((a, b) => b.ex - a.ex);
+    const tot = L.reduce((a, x) => a + Math.floor(x.ex * vcRate(x.id)), 0);
+    body = `<p class="hint">Mảnh dư = mảnh vượt quá số cần để lên sao tối đa. Phân giải ra mảnh vạn năng (dùng nâng sao bất kỳ tướng nào). Tỉ lệ theo phẩm: A 0,2 · R 0,3 · SR 0,5 · SSR trở lên 1.</p>
+      <div class="vc-q"><div><b>Phân giải toàn bộ mảnh dư</b><small>${L.length} tướng · nhận ${icon('univ')}${tot}</small></div><button class="btn small ${tot ? 'gold' : ''}" id="lhAll" ${tot ? '' : 'disabled'}>Phân giải</button></div>
+      ${L.slice(0, 40).map(x => `<div class="vc-q"><div><b>${esc(HEROES[x.id].name)} <em>${tierOf(x.id)}</em></b><small>${x.o.shard} mảnh · dư ${x.ex} → ${icon('univ')}${Math.floor(x.ex * vcRate(x.id))}</small></div><button class="btn small" data-lh="${x.id}">Phân giải</button></div>`).join('') || '<small>Chưa có mảnh dư.</small>'}`;
+  } else {
+    const used = new Set(); for (const k in S.owned) for (const s2 in (S.owned[k].eq || {})) used.add(S.owned[k].eq[s2]);
+    const free = r => (S.items || []).filter(it => it.r === r && !used.has(it.id) && !it.lk), TT = { R: 1, SR: 3, SSR: 10, UR: 30 }, NX = { R: 'SR', SR: 'SSR', SSR: 'UR' }, GC = { R: 20, SR: 60, SSR: 200 };
+    body = `<p class="hint">Phân giải trang bị chưa mặc ra Tinh Thiết; ghép 3 món cùng phẩm (+Tinh Thiết) thành 1 món phẩm cao hơn, bộ ngẫu nhiên trong 3 món. Đồ đang mặc không bị đụng tới.</p>
+      <div class="dp-res"><span>⚙ Tinh Thiết <b>${fmt(S.tt || 0)}</b></span></div>
+      ${['R', 'SR', 'SSR', 'UR'].map(r => { const L = free(r); return `<div class="vc-q"><div><b style="color:${EQ_RAR[r].c}">${EQ_RAR[r].name}: ${L.length} món chưa mặc</b><small>Phân giải: ⚙${TT[r]}/món${NX[r] ? ` · Ghép 3 → 1 ${EQ_RAR[NX[r]].name} (⚙${GC[r]})` : ''}</small></div>
+        <div class="vc-b"><button class="btn small" data-eqd="${r}" ${L.length ? '' : 'disabled'}>Phân giải hết</button>${NX[r] ? `<button class="btn small ${L.length >= 3 && (S.tt || 0) >= GC[r] ? 'gold' : ''}" data-eqc="${r}" ${L.length >= 3 && (S.tt || 0) >= GC[r] ? '' : 'disabled'}>Ghép</button>` : ''}</div></div>`; }).join('')}`;
+    showVc.lo = { free, TT, NX, GC };
+  }
+  ui.innerHTML = `<div class="screen panel-screen vc-screen">${topBar('Viễn Chinh')}${tabs}<div class="vc-body">${body}</div></div>`;
+  $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-vct]').forEach(b => b.onclick = () => showVc(b.dataset.vct));
+  ui.querySelectorAll('[data-vcgo]').forEach(b => b.onclick = () => vcPick(+b.dataset.vcgo));
+  ui.querySelectorAll('[data-vcget]').forEach(b => b.onclick = () => { const r = V.run.splice(+b.dataset.vcget, 1)[0]; S.vang += r.rew.vang; S.univ += r.rew.univ; S.ngoc += r.rew.ngoc; dpState().lt += r.rew.lt; save(); toast('Viễn chinh trở về: ' + vcRewTxt(r.rew).replace(/<[^>]+>/g, '')); showVc(); });
+  if ($('#vcRr')) $('#vcRr').onclick = () => { V.rr--; V.board = vcRoll(); save(); showVc(); };
+  if ($('#lhAll')) $('#lhAll').onclick = () => { let n = 0; for (const id in S.owned) { const o = S.owned[id]; if (!HEROES[id]) continue; let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[tierOf(id)] || [])[st - 1] || 0; const ex = Math.max(0, o.shard - need); if (ex) { o.shard -= ex; n += Math.floor(ex * vcRate(id)); } } S.univ += n; save(); toast('Nhận ' + n + ' mảnh vạn năng'); showVc(); };
+  ui.querySelectorAll('[data-lh]').forEach(b => b.onclick = () => { const id = b.dataset.lh, o = S.owned[id]; let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[tierOf(id)] || [])[st - 1] || 0; const ex = Math.max(0, o.shard - need); o.shard -= ex; const n = Math.floor(ex * vcRate(id)); S.univ += n; save(); toast('Nhận ' + n + ' mảnh vạn năng'); showVc(); });
+  ui.querySelectorAll('[data-eqd]').forEach(b => b.onclick = () => { const r = b.dataset.eqd, X = showVc.lo, L = X.free(r); if ((r === 'SSR' || r === 'UR') && !b.dataset.ok) { b.dataset.ok = 1; b.textContent = 'Bấm lần nữa'; b.classList.add('gold'); return; }
+    const ids = new Set(L.map(it => it.id)); S.items = S.items.filter(it => !ids.has(it.id)); S.tt = (S.tt || 0) + L.reduce((a, it) => a + X.TT[r] * (1 + (it.st || 0)), 0); save(); toast('Phân giải ' + L.length + ' món'); showVc(); });
+  ui.querySelectorAll('[data-eqc]').forEach(b => b.onclick = () => { const r = b.dataset.eqc, X = showVc.lo, L = X.free(r).sort((a, c) => a.v - c.v).slice(0, 3); if (L.length < 3 || (S.tt || 0) < X.GC[r]) return;
+    const ids = new Set(L.map(it => it.id)); S.items = S.items.filter(it => !ids.has(it.id)); S.tt -= X.GC[r];
+    const it = rollEquip({ kind: 'boss', chap: Math.max(1, Math.floor(clearedN() / 10)), forceR: X.NX[r], forceSet: pick(L.map(x => x.set).filter(Boolean)) || undefined }); S.items.push(it); save(); toast('Ghép được: ' + it.n + ' (' + EQ_RAR[it.r].name + ')'); showVc(); });
+}
+function vcPick(i) {   // chọn tướng cho nhiệm vụ
+  const V = vcState(), q = V.board[i], busy = vcBusy(); let sel = [];
+  const L = Object.keys(S.owned).filter(id => HEROES[id] && !busy.has(id)).sort((a, b) => power(b) - power(a));
+  const w = document.createElement('div'); w.className = 'modal';
+  const draw = () => { w.innerHTML = `<div class="xfer"><h3>${esc(q.n)} · chọn ${q.need} tướng</h3><p class="hint">Thưởng thêm 50% nếu đội có tướng phe ${FACTIONS[q.fac] || q.fac} và tướng ${SYS_NAME[q.role] || q.role}. ${vcBonusOk(q, sel) ? '<b style="color:#3a9a4a">Đủ điều kiện thưởng thêm!</b>' : ''}</p>
+    <div class="vc-pick">${L.map(id => `<button class="vc-h ${sel.includes(id) ? 'on' : ''} ${HEROES[id].fac === q.fac ? 'f' : ''} ${HEROES[id].role === q.role ? 'r' : ''}" data-h="${id}"><img src="${por(id, 56)}" alt=""><small>${esc(HEROES[id].name)}</small></button>`).join('')}</div>
+    <div class="res-btns"><button class="btn" id="vcX">Huỷ</button><button class="btn gold" id="vcOk" ${sel.length === q.need ? '' : 'disabled'}>Phái đi (${sel.length}/${q.need})</button></div></div>`;
+    w.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { const id = b.dataset.h; sel = sel.includes(id) ? sel.filter(x => x !== id) : sel.length < q.need ? [...sel, id] : sel; draw(); });
+    w.querySelector('#vcX').onclick = () => w.remove();
+    w.querySelector('#vcOk').onclick = () => { const bonus = vcBonusOk(q, sel); V.run.push({ n: q.n, h: q.h, ids: sel, t0: nowS(), bonus, rew: vcReward(q, bonus) }); V.board.splice(i, 1); save(); w.remove(); showVc(); }; };
+  draw(); ui.appendChild(w);
+}
 function showDongPhu() {
   const D = dpState(), P = dpPending(), today = dayKey();
   ui.innerHTML = `<div class="screen panel-screen dp-screen" style="background:linear-gradient(rgba(255,248,230,.3), rgba(255,248,230,.55)), url('art/bg/dongphu_bg.webp') center / cover no-repeat">${topBar('Động Phủ')}
@@ -6000,8 +6071,8 @@ function loadCloud() {   // tải Firebase sau khi game đã hiện (không ch�
 // ---- Trang bị (rơi từ ải; 3 ô mỗi tướng)
 function rollEquip(st) {
   const sl = pick(Object.keys(EQ_SLOT)), q = Math.random(), boss = st.kind === 'boss', ur = st.bicanh || st.evtT ? 0.05 : boss ? 0.02 : 0;
-  const r = q < ur ? 'UR' : q < ur + (boss ? 0.15 : 0.04) ? 'SSR' : q < ur + (boss ? 0.55 : 0.3) ? 'SR' : 'R';
-  const set = pick(Object.keys(EQ_SETS)), ch = st.chap || 0, subs = [];
+  const r = st.forceR || (q < ur ? 'UR' : q < ur + (boss ? 0.15 : 0.04) ? 'SSR' : q < ur + (boss ? 0.55 : 0.3) ? 'SR' : 'R');
+  const set = st.forceSet || pick(Object.keys(EQ_SETS)), ch = st.chap || 0, subs = [];
   const pool = Object.keys(EQ_SUB).filter(k => k !== EQ_SLOT[sl].stat);
   for (let i = 0; i < EQ_SUBN[r]; i++) { const k = pool.splice(Math.floor(Math.random() * pool.length), 1)[0], [a, b] = EQ_SUB[k]; subs.push([k, Math.round((a + Math.random() * (b - a)) * (1 + ch * 0.05) * 1000) / 1000]); }
   return { id: Date.now().toString(36) + Math.floor(Math.random() * 1e4), s: sl, r, set, sub: subs, n: EQ_SETS[set].n + ' · ' + EQ_NAMES[sl][['R', 'SR', 'SSR', 'UR'].indexOf(r)], v: EQ_RAR[r].v * (1 + ch * 0.15) };
@@ -6367,6 +6438,8 @@ function route() {
     for (let i = 0; i < 6; i++) S.items.push(rollEquip({ kind: 'boss', chap: 5, bicanh: 1 }));
     ensureHeroAssets([id]).then(() => { showHeroDetail(id); showEquip(id); console.log('EQ_BONUS', JSON.stringify(eqBonus(id))); }); }
   else if (k === 'tktest') { const id = HEROES[v] ? v : 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); const lm = h.match(/(?:^|&)tk=(\d+)/); S.owned[id].tk = lm ? +lm[1] : 25; S.owned[id].shard = 99; S.vang = 1e6; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'tk')); }
+  else if (k === 'vc') { S.unlockAll = 1; for (const id of ['ngokhong', 'duongtien', 'nata', 'quanam', 'litinh', 'batgioi', 'datky']) if (!S.owned[id]) S.owned[id] = newRec(); S.owned.ngokhong.shard = 300; S.items = S.items || []; for (let i = 0; i < 7; i++) S.items.push(rollEquip({ kind: 'elite', chap: 2 })); S.tt = 300;
+    const V = vcState(); if (/(^|&)run(&|$)/.test(h) && !V.run.length) V.run.push({ n: 'Thử', h: 1, ids: ['ngokhong'], t0: nowS() - 4000, bonus: true, rew: vcReward({ h: 1 }, true) }); showVc(v || 'vc'); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
