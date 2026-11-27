@@ -1218,7 +1218,7 @@ const DOM_NEED = { tamthanh: 'Có Hồng Quân, hoặc đủ Tam Thanh (Thái Th
 })();
 HEROES.ngokhong.ult.name = 'Như Ý Định Hải'; HEROES.ngokhong.ult.desc = 'Kim Cô Bổng trong tay lớn dần thành cột chống trời rồi nện thẳng xuống chỗ quái đông nhất 520% công, đất nứt; tạo 2 phân thân 7 giây.';
 HEROES.nata.ult.name = 'Hoả Tiêm Thương Vạn Ảnh'; HEROES.nata.ult.desc = 'Lao tới đâm liên hoàn hàng chục ảnh thương lửa (5 × 50% công), nhát cuối đâm thủng không trung, thương lửa xuyên cả sân 250% công và thiêu đốt.';
-const NO_ART = new Set(["dunguyen", "khaudan", "handoclong", "phonglam", "tanhoan", "lucdinhlucgiap"]);   // đợt 9: bỏ khỏi đây khi đủ ảnh (tướng ẩn không vào Chiêu Mộ/đội hình)
+const NO_ART = new Set([]);   // đợt 9: bỏ khỏi đây khi đủ ảnh (tướng ẩn không vào Chiêu Mộ/đội hình)
 (function hideNoArt() {
   for (const L of [SSR_POOL, SR_POOL, R_POOL]) for (let i = L.length - 1; i >= 0; i--) if (NO_ART.has(L[i])) L.splice(i, 1);
   for (const k in TIER_TABLE) TIER_TABLE[k] = TIER_TABLE[k].filter(id => !NO_ART.has(id));
