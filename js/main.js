@@ -1938,7 +1938,7 @@ function poseFor(u) {
 //   Hiển thị = 108px × look.size × SIZE_K × (UR 1,08). SIZE_K bù phần thú cưỡi/toà để NGƯỜI luôn cùng cỡ.
 //   SIZE_K[id] = tổng chiều cao khối / chiều cao người (chỉ tướng cưỡi thú, ngồi toà, áo dài lơ lửng, dáng khom). Kiểm bằng tools/size_sheet.py:
 //   đỉnh đầu NGƯỜI phải chạm vạch đỏ. Vẽ lại tướng có thú cưỡi -> chạy lại size_sheet.py và chỉnh số của tướng đó.
-const SIZE_K = { truongkhue: 1.1, namcuc: 0.94, nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
+const SIZE_K = { truongkhue: 1.1, hoanglongchannhan: 1.15, namcuc: 0.94, nuoa: 1.05, tiepdan: 1.08, chuande: 1.05, nhulai: 1.02, giaochu: 1.04, thailaoquan: 1.06, phohien: 1.32, vanthu: 1.28, hoangphiho: 1.16, nguyenthuy: 0.98, hongquan: 1.0, kimgiac: 1.1, thaisu: 1.12 };
 const heroK = id => (SIZE_K[id] || 1) * (isUR(id) ? 1.08 : 1);
 const HFIX = new Proxy({}, { get: (_, id) => typeof id === 'string' && HEROES[id] ? heroK(id) : undefined });   // tương thích chỗ cũ dùng HFIX[id]
 const _bright = new WeakMap();
@@ -2786,9 +2786,9 @@ const UCFG = {
   nguytrung: {"t": "smash", "obj": "dragon_slayer_sword", "size": 470, "col": "#ffd34d"},
   phucloctho: {"t": "heal", "obj": "blessing_scroll", "size": 210, "col": "#7fe08a"},
   daohanhthientoan: {"t": "drop", "obj": "golden_seal", "size": 230, "col": "#ffd34d"},
-  linhbaodaiphapsu: {"t": "throw", "obj": "ruyi_scepter", "size": 150, "col": "#ff7a3a", "n": 2},
+  linhbaodaiphapsu: {"t": "throw", "obj": "ruyi_scepter", "size": 73, "col": "#ff7a3a", "n": 2},
   hoanglongchannhan: {"t": "summon", "obj": "golden_crane", "size": 240, "col": "#ffd34d", "waves": 1},
-  truongnhidinhquang: {"t": "drop", "obj": "soul_banner", "size": 240, "col": "#7fc8ff", "beam": 1},
+  truongnhidinhquang: {"t": "drop", "obj": "soul_banner", "size": 65, "col": "#7fc8ff", "beam": 1},
   ovantien: {"t": "smash", "obj": "hunyuan_mace", "size": 470, "col": "#ffd34d"},
   thienlynhan: {"t": "bolt", "obj": "thousand_li_eye", "size": 180, "col": "#7fe08a"},
   truongquephuong: {"t": "pit", "obj": "shout_hole", "size": 210, "col": "#d0a060"},
