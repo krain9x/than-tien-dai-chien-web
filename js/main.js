@@ -436,6 +436,7 @@ function applyBonuses(u, info) {
   for (const b of (info.coll || [])) if (b.members.includes(u.id)) for (const k in b.g) u.bonus[k] = (u.bonus[k] || 0) + b.g[k] * BOND_COLL;
   { const L = hasTkh(u.id) ? tkhLv(u.id) : 0; if (L) { u.bonus.atkPct += 0.01 * L + 0.05; u.bonus.hpPct += 0.01 * L + 0.05; } }
   { const n = (info.tk40 != null ? info.tk40 : 0); if (n) u.bonus.atkPct += 0.05 * n; }
+  if (u.side === 'h' && !(B && B.st && B.st.arena) && S.tm && S.tm.gid) { const t = tmBuff(); u.bonus.atkPct += t; u.bonus.hpPct += t; }   // Tiên Minh: Tụ Linh Điện
   const eq = eqBonus(u.id); u.bonus.atkPct += eq.atkPct; u.bonus.hpPct += eq.hpPct; u.bonus.crit += eq.crit; u.bonus.dmgTaken += eq.dr; u.base.def *= 1 + eq.defPct;
   u.eqm = { aspdPct: eq.aspdPct, skillPct: eq.skillPct, critDmg: eq.critDmg, healPct: eq.healPct };   // đọc qua RM()
   if (eq.startShield && B && B.later) B.later.push({ t: 0.2, fn: () => { if (!u.dead) { u.shield = Math.max(u.shield || 0, maxHp(u) * eq.startShield); u.shieldT = 8; } } });   // trang bị
@@ -1820,7 +1821,8 @@ function endBattle(win, reason) {
   B.endT = win ? 1.2 : 1.0;
   B.stars = win ? 1 + (B.deaths === 0 ? 1 : 0) + (B.time <= B.st.par ? 1 : 0) : 0;
   B.reward = { ngoc: 0, vang: 0 };
-  if (B.st.raid) { const d = Math.round(B.raidDmg || 0), wk = weekKey(); S.raidBest = S.raidBest || {}; if (d > (S.raidBest[wk] || 0)) S.raidBest[wk] = d;
+  if (B.st.tmBoss) { const d = Math.round(B.raidDmg || 0); B.raidScore = d; B.st.reward = tmBossEnd(d); win = true; }
+  if (B.st.raid && !B.st.tmBoss) { const d = Math.round(B.raidDmg || 0), wk = weekKey(); S.raidBest = S.raidBest || {}; if (d > (S.raidBest[wk] || 0)) S.raidBest[wk] = d;
     const tier = RAID_TIER.filter(t => d >= t[0]).pop(); B.st.reward = { ngoc: tier ? tier[1] : 20, vang: Math.round(d / 50) }; B.raidScore = d; lbPush(); win = true; }
   if (B.st.arena) arenaEnd(win);
   if (B.st.evtT) { const d = Math.round(B.raidDmg || 0); B.raidScore = d; B.st.reward = { ngoc: 0, vang: Math.round(d / 80) }; evtBossEnd(d); }
@@ -4422,6 +4424,7 @@ function showHome() {
       ${hi('hPet', 'ic_pet', 'Linh Thú')}
       ${hi('hDp', 'ic_dongphu', 'Động Phủ', dpPending().h >= 6)}
       ${hi('hVc', 'ic_quest', 'Viễn Chinh', vcReady())}
+      ${hi('hTm', 'ic_team', 'Tiên Minh', tmDot())}
     </div>
     <div class="h4-cards">
       <button class="h4-main ${nx.kind === 'boss' ? 'boss' : ''}" id="hFight" style="background-image:url(art/scene/${CH_ART[nx.chap] || 'datky'}_bg.webp)"><span class="h4-st">${nx.kind === 'boss' ? '☠ Ải Boss' : '⭐ ' + chapStars(nx.chap) + '/30'}</span>
@@ -4446,7 +4449,7 @@ function showHome() {
   $('#hFight').onclick = showStages; $('#hLineup').onclick = showLineup; $('#hGacha').onclick = showGacha; $('#hHeroes').onclick = showHeroes;
   $('#hQuest').onclick = () => showQuests(); $('#hQuest2').onclick = () => showQuests(); $('#hBt').onclick = showTangKinh; $('#hIdle').onclick = claimIdle; $('#hEv').onclick = showEvents;
   if ($('#hGift')) $('#hGift').onclick = showGift; $('#hRank').onclick = () => showRank(); $('#hTrial').onclick = showTrials; $('#hFb').onclick = () => showFabao(); $('#hTd').onclick = showThanhDien;
-  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; titleCheckNew(); $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu; $('#hVc').onclick = () => showVc();
+  $('#hProf').onclick = showSettings; $('#hSet').onclick = showSettings; $('#hShop').onclick = () => showShop(); $('#hAch').onclick = showAch; $('#hTl').onclick = () => showTienLuc(); $('#hTdl').onclick = showPass; titleCheckNew(); $('#hPet').onclick = () => showPets(); $('#hDp').onclick = showDongPhu; $('#hVc').onclick = () => showVc(); $('#hTm').onclick = () => showTm();
   lockWire();
 }
 function topBar(title) {
@@ -5385,9 +5388,9 @@ function showTienLuc(tab) {
 }
 
 // ---- MỞ DẦN TÍNH NĂNG theo số ải đã qua (chỉ áp cho bản lưu tạo sau khi có luật này: S.gated). Bản lưu cũ giữ nguyên.
-const UNLOCK = { hVc: 8, hAch: 3, hTl: 5, hTdl: 8, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
+const UNLOCK = { hTm: 18, hVc: 8, hAch: 3, hTl: 5, hTdl: 8, hShop: 10, hFb: 10, hTrial: 10, hRank: 10, hBt: 15, hDp: 20, hPet: 25, hTd: 60,
                  trPB: 10, trTower: 20, trNan: 30, trRaid: 40, trArena: 15, trRank: 10, trBc: 12 };
-const UNLOCK_NAME = { hVc: 'Viễn Chinh', hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hTdl: 'Thiên Đạo Lệnh', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
+const UNLOCK_NAME = { hTm: 'Tiên Minh', hVc: 'Viễn Chinh', hAch: 'Thành Tựu', hTl: 'Thần Tiên Lục', hTdl: 'Thiên Đạo Lệnh', hShop: 'Cửa Hàng', hFb: 'Pháp Bảo', hTrial: 'Thử Luyện', hRank: 'Xếp Hạng', hBt: 'Tàng Kinh', hDp: 'Động Phủ', hPet: 'Linh Thú', hTd: 'Thánh Điện',
                       trPB: 'Phó Bản Tài Nguyên', trTower: 'Tháp Thập Tuyệt', trNan: 'Tám Mươi Mốt Nạn', trRaid: 'Boss Xâm Lược', trArena: 'Luận Kiếm', trRank: 'Bảng Xếp Hạng', trBc: 'Bí Cảnh' };
 const clearedN = () => STAGES.filter(st => S.cleared[st.id]).length;
 const locked = k => !!S.gated && !S.unlockAll && (UNLOCK[k] || 0) > clearedN();
@@ -5470,7 +5473,7 @@ function showVc(tab) {
   $('#bBack').onclick = showHome;
   ui.querySelectorAll('[data-vct]').forEach(b => b.onclick = () => showVc(b.dataset.vct));
   ui.querySelectorAll('[data-vcgo]').forEach(b => b.onclick = () => vcPick(+b.dataset.vcgo));
-  ui.querySelectorAll('[data-vcget]').forEach(b => b.onclick = () => { const r = V.run.splice(+b.dataset.vcget, 1)[0]; S.vang += r.rew.vang; S.univ += r.rew.univ; S.ngoc += r.rew.ngoc; dpState().lt += r.rew.lt; save(); toast('Viễn chinh trở về: ' + vcRewTxt(r.rew).replace(/<[^>]+>/g, '')); showVc(); });
+  ui.querySelectorAll('[data-vcget]').forEach(b => b.onclick = () => { const r = V.run.splice(+b.dataset.vcget, 1)[0]; S.vcDone = (S.vcDone || 0) + 1; S.vang += r.rew.vang; S.univ += r.rew.univ; S.ngoc += r.rew.ngoc; dpState().lt += r.rew.lt; save(); toast('Viễn chinh trở về: ' + vcRewTxt(r.rew).replace(/<[^>]+>/g, '')); showVc(); });
   if ($('#vcRr')) $('#vcRr').onclick = () => { V.rr--; V.board = vcRoll(); save(); showVc(); };
   if ($('#lhAll')) $('#lhAll').onclick = () => { let n = 0; for (const id in S.owned) { const o = S.owned[id]; if (!HEROES[id]) continue; let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[tierOf(id)] || [])[st - 1] || 0; const ex = Math.max(0, o.shard - need); if (ex) { o.shard -= ex; n += Math.floor(ex * vcRate(id)); } } S.univ += n; save(); toast('Nhận ' + n + ' mảnh vạn năng'); showVc(); };
   ui.querySelectorAll('[data-lh]').forEach(b => b.onclick = () => { const id = b.dataset.lh, o = S.owned[id]; let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[tierOf(id)] || [])[st - 1] || 0; const ex = Math.max(0, o.shard - need); o.shard -= ex; const n = Math.floor(ex * vcRate(id)); S.univ += n; save(); toast('Nhận ' + n + ' mảnh vạn năng'); showVc(); });
@@ -5491,6 +5494,94 @@ function vcPick(i) {   // chọn tướng cho nhiệm vụ
     w.querySelector('#vcX').onclick = () => w.remove();
     w.querySelector('#vcOk').onclick = () => { const bonus = vcBonusOk(q, sel); V.run.push({ n: q.n, h: q.h, ids: sel, t0: nowS(), bonus, rew: vcReward(q, bonus) }); V.board.splice(i, 1); save(); w.remove(); showVc(); }; };
   draw(); ui.appendChild(w);
+}
+// ===================== TIÊN MINH =====================
+const TM_LIST = [['conlon', 'Côn Lôn Các', 'xien', '#7fe08a'], ['bichdu', 'Bích Du Cung', 'triet', '#c07aff'], ['linhson', 'Linh Sơn Tự', 'phat', '#ffd34d'], ['thiendinh', 'Thiên Đình Điện', 'thien', '#7fc8ff'], ['vanyeu', 'Vạn Yêu Động', 'yeu', '#ff7a5a']];
+const TM_EXP = [0, 400, 1000, 2000, 3500, 5500, 8000, 11000, 15000, 20000];   // kinh nghiệm lên cấp minh 1..10
+const TM_NAMES = ['Tiêu Dao Tử', 'Bạch Vân Khách', 'Thanh Phong Kiếm', 'Huyền Cơ Tán Nhân', 'Lãnh Nguyệt Tiên Tử', 'Hồng Trần Lãng Khách', 'Tử Vi Đạo Nhân', 'Lạc Hà Tiên Cô', 'Vô Ảnh Kiếm Khách', 'Kim Đỉnh Thượng Nhân', 'Thuỷ Nguyệt Am Chủ', 'Phong Lôi Tôn Giả', 'Ngọc Hư Tán Tiên', 'Bích Lạc Hành Giả', 'Thiên Cơ Lão Nhân', 'Hàn Sương Kiếm Cơ', 'Liệt Hoả Chân Nhân', 'Tịnh Thuỷ Thiền Sư', 'Mặc Vân Thư Sinh', 'Kinh Hồng Tiên Tử', 'Cửu U Tán Nhân', 'Tử Điện Đao Khách'];
+const TM_DON = [[{ vang: 20000 }, 30], [{ ngoc: 100 }, 80], [{ ngoc: 300 }, 250]];
+const TM_SHOP = [['univ', 'Mảnh vạn năng ×10', 80, 3, 1], ['pcd', 'Thăng Tiên Đan ×1', 150, 1, 2], ['tt', 'Tinh Thiết ×50', 60, 3, 1], ['eq', 'Trang bị Thần binh ngẫu nhiên', 300, 1, 3], ['ssr', 'Mảnh SSR ngẫu nhiên ×5 (tướng đã có)', 200, 1, 5]];
+let TM_TAB = 'home';
+function tmRng(seed) { let x = seed; return () => (x = (x * 1103515245 + 12345) % 2147483648) / 2147483648; }
+function tmState() {
+  const T = S.tm = S.tm || { gid: null, exp: 0, cd: 0 }; if (!T.gid) return T;
+  if (T.day !== dayKey()) {   // sang ngày mới: thành viên ảo góp kinh nghiệm, làm mới điểm danh/boss/nhiệm vụ/cửa hàng
+    if (T.day) T.exp += (T.mem || []).length * 25;
+    T.day = dayKey(); T.signed = 0; T.don = 0; T.buy = {}; T.boss = { hp: tmBossHp(), my: 0, hits: 0, got: 0 };
+    T.task0 = { win: (S.life || {}).win || 0, vc: S.vcDone || 0 }; T.taskGot = {};
+  }
+  return T;
+}
+const tmLv = () => { const e = (S.tm || {}).exp || 0; let l = 1; for (let i = 0; i < TM_EXP.length; i++) if (e >= TM_EXP[i]) l = i + 1; return Math.min(10, l); };
+const tmBuff = () => 0.01 * tmLv();   // Tụ Linh Điện: +1% công/máu mỗi cấp minh
+const tmInfo = () => TM_LIST.find(x => x[0] === (S.tm || {}).gid) || ['tu', (S.tm || {}).name || 'Tiên Minh của ta', 'dao', '#ffd76a'];
+function tmMakeMembers(gid) { const r = tmRng([...gid].reduce((a, c) => a * 31 + c.charCodeAt(0), 7) % 99991), pw = Math.max(3000, Object.keys(S.owned).reduce((a, id) => a + power(id), 0) / Math.max(1, Object.keys(S.owned).length) * 5);
+  return TM_NAMES.slice().sort(() => r() - 0.5).slice(0, 14 + Math.floor(r() * 6)).map((n, i) => ({ n, pw: Math.round(pw * (0.5 + r() * 1.3)), role: i === 0 ? 'Minh Chủ' : i < 3 ? 'Trưởng Lão' : 'Đệ Tử' })); }
+const tmBossHp = () => Math.round(Math.max(50000, Object.keys(S.owned).map(id => power(id)).sort((a, b) => b - a).slice(0, 5).reduce((a, b) => a + b, 0) * 35));   // ~ thành viên 60% + bạn 3 lượt là hạ (đo: 1 lượt ≈ 4×lực chiến top 5)
+const tmBossName = () => ENEMIES[RAID_BOSS[(new Date().getDay() + 3) % RAID_BOSS.length]].name;
+function tmBossMem() { const T = tmState(), h = new Date().getHours() + new Date().getMinutes() / 60; return Math.round(T.boss.hp * 0.6 * Math.min(1, h / 20)); }   // thành viên ảo đánh dần trong ngày
+const tmBossLeft = () => { const T = tmState(); return Math.max(0, T.boss.hp - tmBossMem() - T.boss.my); };
+function tmTasks() { const T = tmState(), w = ((S.life || {}).win || 0) - T.task0.win, v = (S.vcDone || 0) - T.task0.vc;
+  return [['win', 'Thắng 3 trận bất kỳ', Math.min(3, w), 3], ['vc', 'Nhận thưởng 1 lần Viễn Chinh', Math.min(1, v), 1], ['boss', 'Đánh boss Tiên Minh', Math.min(1, T.boss.hits), 1], ['don', 'Cống hiến 1 lần', T.don ? 1 : 0, 1]]; }
+const tmDot = () => { const T = S.tm; if (!T || !T.gid) return false; tmState(); return !T.signed || !T.don || T.boss.hits < 2 || tmTasks().some(([k, , n, m]) => n >= m && !T.taskGot[k]); };
+function tmBossStage() {
+  const b = RAID_BOSS[(new Date().getDay() + 3) % RAID_BOSS.length], lv = 10 + Math.floor(clearedN() / 4);
+  return { id: 'TMB', raid: 90, tmBoss: 1, eatk: 0.6, kind: 'boss', name: 'Boss Tiên Minh · ' + ENEMIES[b].name, lvl: lv, par: 90, gate: 999999, theme: 'heaven', seed: 7, chap: 0,
+    reward: { ngoc: 0, vang: 0 }, waves: [{ list: [[b, 1], ['tieuyeu', 6]], boss: true }, { list: [['tieuyeu', 10]], gap: 20 }, { list: [['tieuyeu', 12]], gap: 20 }] };
+}
+function tmBossEnd(d) { const T = tmState(); T.boss.my += d; T.boss.hits++; const c = Math.round(20 + d / Math.max(1, T.boss.hp) * 2000); T.cd += c; T.exp += 10; save(); return { ngoc: 0, vang: Math.round(d / 60), tmcd: c }; }
+function showTm(tab) {
+  if (tab) TM_TAB = tab; const T = tmState();
+  if (!T.gid) {   // chưa vào minh
+    ui.innerHTML = `<div class="screen panel-screen tm-screen">${topBar('Tiên Minh')}<div class="vc-body"><p class="hint">Gia nhập một Tiên Minh để nhận cộng chỉ số Tụ Linh Điện, cửa hàng cống hiến, boss minh mỗi ngày. (Bản thử: thành viên là đồng đạo ảo; khi mở máy chủ sẽ là người chơi thật.)</p>
+      ${TM_LIST.map(([id, n, fac, c]) => `<div class="vc-q"><div><b style="color:${c}">${n}</b><small>Phe ${FACTIONS[fac] || fac} · ${tmMakeMembers(id).length} thành viên</small></div><button class="btn small gold" data-tmj="${id}">Gia nhập</button></div>`).join('')}
+      <div class="vc-q"><div><b>Tự lập Tiên Minh</b><small>Tốn ${icon('ngoc')}200 · bạn làm Minh Chủ</small></div><button class="btn small" id="tmNew">Lập minh</button></div></div></div>`;
+    $('#bBack').onclick = showHome;
+    ui.querySelectorAll('[data-tmj]').forEach(b => b.onclick = () => { Object.assign(T, { gid: b.dataset.tmj, mem: tmMakeMembers(b.dataset.tmj), exp: 800, day: '' }); save(); showTm('home'); });
+    $('#tmNew').onclick = () => { if (S.ngoc < 200) { toast('Không đủ ngọc'); return; } S.ngoc -= 200; Object.assign(T, { gid: 'tu', name: (S.name || 'Chấp Bảng Sứ') + ' Minh', mem: tmMakeMembers('tu').slice(0, 6), exp: 0, day: '', owner: 1 }); save(); showTm('home'); };
+    return;
+  }
+  const [, gname, , gc] = tmInfo(), lv = tmLv(), nx = TM_EXP[lv] || null;
+  const tabs = `<div class="hd-tabs q-tabs">${[['home', 'Đại Điện'], ['boss', 'Boss Minh'], ['shop', 'Tàng Bảo Các'], ['mem', 'Thành Viên']].map(([k, n]) => `<button class="${TM_TAB === k ? 'on' : ''}" data-tmt="${k}">${n}</button>`).join('')}</div>`;
+  let body = '';
+  if (TM_TAB === 'home') {
+    body = `<div class="tm-head"><b style="color:${gc}">${esc(gname)}</b><span>Cấp ${lv}/10 · ${nx ? `${fmt(T.exp)}/${fmt(nx)} kinh nghiệm` : 'tối đa'} · Cống hiến của bạn <b>${fmt(T.cd)}</b></span><div class="tm-bar"><i style="width:${nx ? Math.min(100, 100 * (T.exp - TM_EXP[lv - 1]) / (nx - TM_EXP[lv - 1])) : 100}%"></i></div></div>
+      <div class="vc-q"><div><b>Điểm danh</b><small>+20 cống hiến, +10 kinh nghiệm minh</small></div><button class="btn small ${T.signed ? '' : 'gold'}" id="tmSign" ${T.signed ? 'disabled' : ''}>${T.signed ? 'Đã điểm danh' : 'Điểm danh'}</button></div>
+      <h4>Cống hiến (1 lần/ngày)</h4>${TM_DON.map(([c, v], i) => `<div class="vc-q"><div><b>${c.vang ? icon('vang') + fmt(c.vang) : icon('ngoc') + c.ngoc}</b><small>+${v} cống hiến · +${v} kinh nghiệm minh</small></div><button class="btn small" data-tmd="${i}" ${T.don ? 'disabled' : ''}>Cống hiến</button></div>`).join('')}
+      <h4>Công trình</h4>
+      <div class="vc-q"><div><b>Tụ Linh Điện · cấp ${lv}</b><small>Mọi tướng +${lv}% công và máu (trừ Luận Kiếm). Lên theo cấp minh.</small></div></div>
+      <div class="vc-q"><div><b>Luyện Đan Phòng</b><small>Mỗi ngày nhận Tẩy Tuỷ Đan ×1${lv >= 6 ? ' + Thăng Tiên Đan ×1' : ' (cấp 6: thêm Thăng Tiên Đan)'}</small></div><button class="btn small ${T.dan === dayKey() ? '' : 'gold'}" id="tmDan" ${T.dan === dayKey() ? 'disabled' : ''}>Nhận</button></div>
+      <h4>Nhiệm vụ minh (mỗi việc +30 cống hiến)</h4>${tmTasks().map(([k, n, a, m]) => `<div class="vc-q"><div><b>${n}</b><small>${a}/${m}</small></div><button class="btn small ${a >= m && !T.taskGot[k] ? 'gold' : ''}" data-tmq="${k}" ${a >= m && !T.taskGot[k] ? '' : 'disabled'}>${T.taskGot[k] ? 'Đã nhận' : 'Nhận'}</button></div>`).join('')}
+      <div style="text-align:right;margin-top:8px"><button class="btn small" id="tmLeave">Rời minh</button></div>`;
+  } else if (TM_TAB === 'boss') {
+    const left = tmBossLeft(), dead = left <= 0;
+    body = `<div class="tm-head"><b>${esc(tmBossName())}</b><span>Máu chung của cả minh: ${fmt(left)}/${fmt(T.boss.hp)} · thành viên đã đánh ${fmt(tmBossMem())} · bạn ${fmt(T.boss.my)}</span><div class="tm-bar boss"><i style="width:${100 * left / T.boss.hp}%"></i></div></div>
+      <p class="hint">Mỗi lượt 90 giây, gây càng nhiều sát thương càng nhiều cống hiến. ${3 - T.boss.hits}/3 lượt hôm nay. Khi cả minh hạ được boss: mọi người nhận rương thưởng.</p>
+      <div style="text-align:center"><button class="btn gold big" id="tmFight" ${T.boss.hits >= 3 ? 'disabled' : ''}>Khiêu chiến</button></div>
+      <div class="vc-q"><div><b>Rương hạ boss</b><small>${dead ? 'Boss đã bị hạ!' : 'Chưa hạ boss'} · ${icon('ngoc')}80 · 100 cống hiến · mảnh vạn năng ×10</small></div><button class="btn small ${dead && !T.boss.got ? 'gold' : ''}" id="tmChest" ${dead && !T.boss.got ? '' : 'disabled'}>${T.boss.got ? 'Đã nhận' : 'Nhận'}</button></div>`;
+  } else if (TM_TAB === 'shop') {
+    body = `<p class="hint">Đổi điểm cống hiến lấy vật phẩm. Một số món mở theo cấp minh. Cống hiến hiện có: <b>${fmt(T.cd)}</b></p>${TM_SHOP.map(([k, n, c, lim, need]) => { const b = (T.buy || {})[k] || 0, ok = lv >= need && b < lim && T.cd >= c;
+      return `<div class="vc-q"><div><b>${n}</b><small>${c} cống hiến · còn ${lim - b}/${lim} hôm nay${lv < need ? ` · cần minh cấp ${need}` : ''}</small></div><button class="btn small ${ok ? 'gold' : ''}" data-tms="${k}" ${ok ? '' : 'disabled'}>Đổi</button></div>`; }).join('')}`;
+  } else {
+    const L = [{ n: (S.name || 'Bạn'), pw: Object.keys(S.owned).map(id => power(id)).sort((a, b) => b - a).slice(0, 5).reduce((a, b) => a + b, 0), role: T.owner ? 'Minh Chủ' : 'Đệ Tử', me: 1 }, ...(T.mem || [])].sort((a, b) => b.pw - a.pw);
+    body = `<p class="hint">${L.length} thành viên. Đồng đạo ảo trong bản thử; khi mở máy chủ sẽ là người chơi thật (chat, xin vào, chiến trường minh).</p>${L.map((m, i) => `<div class="vc-q ${m.me ? 'run' : ''}"><div><b>${i + 1}. ${esc(m.n)}</b><small>${m.role} · Lực chiến ${fmt(m.pw)}</small></div></div>`).join('')}`;
+  }
+  ui.innerHTML = `<div class="screen panel-screen tm-screen">${topBar('Tiên Minh')}${tabs}<div class="vc-body">${body}</div></div>`;
+  $('#bBack').onclick = showHome;
+  ui.querySelectorAll('[data-tmt]').forEach(b => b.onclick = () => showTm(b.dataset.tmt));
+  const done = m => { save(); if (m) toast(m); showTm(); };
+  if ($('#tmSign')) $('#tmSign').onclick = () => { T.signed = 1; T.cd += 20; T.exp += 10; done('Điểm danh: +20 cống hiến'); };
+  ui.querySelectorAll('[data-tmd]').forEach(b => b.onclick = () => { const [c, v] = TM_DON[+b.dataset.tmd]; if ((c.vang || 0) > S.vang || (c.ngoc || 0) > S.ngoc) { toast('Không đủ'); return; } S.vang -= c.vang || 0; S.ngoc -= c.ngoc || 0; T.don = 1; T.cd += v; T.exp += v; done('Cống hiến: +' + v); });
+  if ($('#tmDan')) $('#tmDan').onclick = () => { const D = dpState(); D.ttd = (D.ttd || 0) + 1; if (lv >= 6) D.pcd = (D.pcd || 0) + 1; T.dan = dayKey(); done('Nhận đan dược'); };
+  ui.querySelectorAll('[data-tmq]').forEach(b => b.onclick = () => { T.taskGot[b.dataset.tmq] = 1; T.cd += 30; T.exp += 15; done('+30 cống hiến'); });
+  if ($('#tmLeave')) $('#tmLeave').onclick = () => { if (!$('#tmLeave').dataset.ok) { $('#tmLeave').dataset.ok = 1; $('#tmLeave').textContent = 'Bấm lần nữa để rời (giữ cống hiến)'; return; } T.gid = null; T.exp = 0; T.mem = []; T.owner = 0; done('Đã rời Tiên Minh'); };
+  if ($('#tmFight')) $('#tmFight').onclick = () => enterStage(tmBossStage());
+  if ($('#tmChest')) $('#tmChest').onclick = () => { T.boss.got = 1; S.ngoc += 80; T.cd += 100; S.univ += 10; done('Nhận rương hạ boss'); };
+  ui.querySelectorAll('[data-tms]').forEach(b => b.onclick = () => { const it = TM_SHOP.find(x => x[0] === b.dataset.tms), [k, , c] = it; T.cd -= c; T.buy[k] = (T.buy[k] || 0) + 1;
+    if (k === 'univ') S.univ += 10; else if (k === 'pcd') dpState().pcd = (dpState().pcd || 0) + 1; else if (k === 'tt') S.tt = (S.tt || 0) + 50;
+    else if (k === 'eq') { (S.items = S.items || []).push(rollEquip({ kind: 'boss', chap: Math.max(1, Math.floor(clearedN() / 10)), forceR: 'SSR' })); }
+    else if (k === 'ssr') { const L = Object.keys(S.owned).filter(id => ['SSR', 'SSR+'].includes(tierOf(id))); if (L.length) S.owned[pick(L)].shard += 5; else S.univ += 5; }
+    done('Đã đổi: ' + it[1]); });
 }
 function showDongPhu() {
   const D = dpState(), P = dpPending(), today = dayKey();
@@ -6445,6 +6536,12 @@ function route() {
   else if (k === 'tktest') { const id = HEROES[v] ? v : 'ngokhong'; S.owned[id] = S.owned[id] || newRec(); const lm = h.match(/(?:^|&)tk=(\d+)/); S.owned[id].tk = lm ? +lm[1] : 25; S.owned[id].shard = 99; S.vang = 1e6; ensureHeroAssets([id]).then(() => showHeroDetail(id, 'tk')); }
   else if (k === 'vc') { S.unlockAll = 1; for (const id of ['ngokhong', 'duongtien', 'nata', 'quanam', 'litinh', 'batgioi', 'datky']) if (!S.owned[id]) S.owned[id] = newRec(); S.owned.ngokhong.shard = 300; S.items = S.items || []; for (let i = 0; i < 7; i++) S.items.push(rollEquip({ kind: 'elite', chap: 2 })); S.tt = 300;
     const V = vcState(); if (/(^|&)run(&|$)/.test(h) && !V.run.length) V.run.push({ n: 'Thử', h: 1, ids: ['ngokhong'], t0: nowS() - 4000, bonus: true, rew: vcReward({ h: 1 }, true) }); showVc(v || 'vc'); }
+  else if (k === 'tmfight') { S.unlockAll = 1; S.tut = { all: 1 }; for (const id of ['ngokhong', 'duongtien', 'nata', 'quanam', 'litinh']) if (!S.owned[id]) S.owned[id] = newRec(); S.lineup = ['ngokhong', 'duongtien', 'nata', 'quanam', 'litinh'];
+    const T = S.tm = S.tm || {}; Object.assign(T, { gid: 'conlon', mem: tmMakeMembers('conlon'), exp: 2500, day: '', cd: 0 }); tmState(); const st = tmBossStage();
+    Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(st))]).then(() => { startBattleNow(st); B.auto = true; for (let i = 0; i < 95 * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; } } for (let i = 0; i < 200 && B; i++) update(1 / 60);
+      console.log('TM_RESULT', JSON.stringify({ over: B && B.over, dmg: Math.round(B.raidDmg || 0), tm: S.tm.boss, cd: S.tm.cd, raidBest: S.raidBest })); }); }
+  else if (k === 'tm') { S.unlockAll = 1; for (const id of ['ngokhong', 'duongtien', 'nata', 'quanam', 'litinh']) if (!S.owned[id]) S.owned[id] = newRec(); S.vang = 1e6; S.ngoc = 5000;
+    if (v && v !== 'join') { const T = S.tm = S.tm || {}; Object.assign(T, { gid: 'conlon', mem: tmMakeMembers('conlon'), exp: 2500, day: '', cd: 400 }); } showTm(v === 'join' ? 'home' : v); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const lm = h.match(/(?:^|&)lv=(\d+)/); if (lm) S.owned[v].lv = +lm[1]; } { const tm = h.match(/(?:^|&)tab=(\w+)/); if (tm) HD_TAB = tm[1]; } { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }

@@ -1443,3 +1443,10 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .vc-h { background: rgba(0,0,0,.08); border: 2px solid transparent; border-radius: 8px; padding: 3px; display: grid; justify-items: center; cursor: pointer; }
 .vc-h img { width: 48px; height: 48px; border-radius: 50%; } .vc-h small { font-size: 10px; line-height: 1.1; text-align: center; }
 .vc-h.f, .vc-h.r { background: rgba(80,160,80,.15); } .vc-h.f.r { background: rgba(80,160,80,.32); } .vc-h.on { border-color: #e0a020; background: rgba(255,200,80,.4); }
+
+/* tiên minh (28/11) */
+.tm-screen { background: linear-gradient(rgba(255,248,230,.6), rgba(255,248,230,.8)), url('../art/scene/nhiendang_bg.webp') center / cover no-repeat; }
+.tm-head { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: rgba(40,24,10,.82); color: #fff3d0; }
+.tm-head b { font-size: 18px; } .tm-head span { font-size: 12.5px; }
+.tm-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; } .tm-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd76a, #ff9f1a); }
+.tm-bar.boss i { background: linear-gradient(90deg, #ff6a5a, #c0302a); }
