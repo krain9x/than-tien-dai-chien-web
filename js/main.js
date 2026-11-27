@@ -2797,7 +2797,7 @@ const UCFG = {
   longtuho: {"t": "rain", "obj": "rolling_boulder", "size": 80, "col": "#d0a060", "n": 14},
   tayhailongvuong: {"t": "summon", "obj": "west_sea_wave", "size": 260, "col": "#7fc8ff", "waves": 1},
   nambaihailongvuong: {"t": "summon", "obj": "south_sea_wave", "size": 260, "col": "#ff7a3a", "waves": 1},
-  tudainguyensoai: {"t": "throw", "obj": "gold_brick", "size": 140, "col": "#ff7a3a", "n": 3},
+  tudainguyensoai: {"t": "throw", "obj": "gold_brick", "size": 79, "col": "#ff7a3a", "n": 3},
   cuudieutinhquan: {"t": "rain", "obj": "luminary_star", "size": 120, "col": "#ffd34d", "n": 9},
   thatbatlahan: {"t": "summon", "obj": "golden_tiger", "size": 240, "col": "#ffd34d", "waves": 1},
   osaothienseu: {"t": "heal", "obj": "heart_sutra_scroll", "size": 210, "col": "#7fe08a"},
