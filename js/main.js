@@ -237,7 +237,7 @@ function fullImg(id, size) {
 // ------------------------------------------------------------------ HERO STATS (menu)
 function heroStats(id) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * (o.cg || 0)), bt = btBonus(h.role);   // tuy: Tẩy Tuỷ Đan · cg: cảnh giới
+  const m = (1 + 0.06 * (o.lv - 1)) * starMul(tierOf(id), o.star) * (TIER_BASE[tierOf(id)] || 1) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * Math.min(o.cg || 0, cgCap(id))), bt = btBonus(h.role);   // tuy: Tẩy Tuỷ Đan · cg: cảnh giới
   const aw = h.rar === 'R' && o.star >= 5 ? 1.15 : 1;   // tướng R thức tỉnh
   return { hp: h.hp * m * bt.hp * aw, atk: h.atk * m * bt.atk * aw, def: h.def * m * bt.def * aw, aspd: h.aspd * (aw > 1 ? 1.1 : 1) };
 }
@@ -246,6 +246,10 @@ function bondLv(b) {   // cấp duyên phận 0–10: mỗi sao trên 1 sao và 
   let n = 0; for (const id of b.members) { const o = S.owned[id]; if (!o) return 0; n += (o.star - 1) + Math.floor(o.lv / 10); }
   return Math.min(10, n);
 }
+// DUYÊN PHẬN 2 MỨC: sưu tầm (sở hữu đủ thành viên, mỗi người >= BOND_STAR sao) -> thành viên ra trận nhận BOND_COLL chỉ số duyên;
+// đồng trận (đủ thành viên cùng ra trận) -> 100% chỉ số duyên + cấp duyên.
+const BOND_STAR = 3, BOND_COLL = 0.6;
+const bondColl = b => b.members.every(m => S.owned && S.owned[m] && S.owned[m].star >= BOND_STAR);
 function teamInfo(ids) {
   const cnt = {};
   ids.forEach(id => { const f = HEROES[id].fac; cnt[f] = (cnt[f] || 0) + 1; });
@@ -254,7 +258,8 @@ function teamInfo(ids) {
     return { f, n: cnt[f], pct: tier ? tier[1] : 0 };
   }).sort((a, b) => b.n - a.n);
   const bonds = BONDS.filter(b => b.members.every(m => ids.includes(m)));
-  return { facs, bonds };
+  const coll = BONDS.filter(b => !bonds.includes(b) && b.g && b.members.some(m => ids.includes(m)) && bondColl(b));
+  return { facs, bonds, coll };
 }
 
 // =====================================================================
@@ -277,12 +282,12 @@ const ammoMax = u => AMMO + M('ammo');
 
 function makeHero(id, isCap) {
   const h = HEROES[id], o = S.owned[id] || newRec();
-  const m = (1 + 0.06 * (o.lv - 1)) * starMul(h.rar, o.star) * (1 + 0.02 * (o.tuy || 0)) * (1 + CG_STAT * (o.cg || 0));
+  const hs = heroStats(id);   // ĐỒNG BỘ với màn chi tiết (27/11): bảng sao theo phẩm thật + hệ số phẩm + thức tỉnh R (trước đây trận đấu dùng bảng sao SSR cho UR/SSR+ và bỏ hệ số phẩm)
   return {
     side: 'h', id, d: h, look: h.look, name: h.name, el: h.el, role: h.role, fac: h.fac, level: 4 + o.lv,
-    base: { hp: h.hp * m * btBonus(h.role).hp, atk: h.atk * m * btBonus(h.role).atk, def: h.def * m * btBonus(h.role).def },
-    bonus: { hpPct: 0, atkPct: 0, crit: (o.cg || 0) >= 3 ? 0.05 : 0, dmgTaken: 0 },
-    aspd: h.aspd, range: 680, move: h.move, ranged: true, front: !h.ranged, proj: (ATK_STYLE[id] && ATK_STYLE[id].proj) || h.proj || MELEE_PROJ[id] || 'palm',
+    base: { hp: hs.hp, atk: hs.atk, def: hs.def },
+    bonus: { hpPct: 0, atkPct: 0, crit: Math.min(o.cg || 0, cgCap(id)) >= 3 ? 0.05 : 0, dmgTaken: 0 },
+    aspd: hs.aspd, range: 680, move: h.move, ranged: true, front: !h.ranged, proj: (ATK_STYLE[id] && ATK_STYLE[id].proj) || h.proj || MELEE_PROJ[id] || 'palm',
     x: 200, y: H / 2, hp: 1, mp: 40, cdA: 0, cdS: 1, cdU: 3, dk: 0,
     shield: 0, shieldT: 0, buffs: [], stun: 0, slow: 0, burn: 0, burnDps: 0, inv: 0,
     cg: o.cg || 0, isCap: !!isCap, ammo: AMMO, trong: 1, dead: false, f: 1, t: Math.random() * 5, atkAnim: -1, castT: 0, hurt: 0, walk: false,
@@ -353,6 +358,7 @@ function applyBonuses(u, info) {
       if (u.id === 'honghainhi') u.bonus.dmgTaken += 0.15;
     }
   }
+  for (const b of (info.coll || [])) if (b.members.includes(u.id)) for (const k in b.g) u.bonus[k] = (u.bonus[k] || 0) + b.g[k] * BOND_COLL;
   const eq = eqBonus(u.id); u.bonus.atkPct += eq.atkPct; u.bonus.hpPct += eq.hpPct; u.bonus.crit += eq.crit;   // trang bị
   const pa = u.d.passive || {};
   if (pa.crit) u.bonus.crit += pa.crit;
@@ -2740,7 +2746,7 @@ const UCFG = {
   kimmaohong: {"t": "drop", "obj": "purple_bell", "size": 200, "col": "#ff7a2e"},
   loicong: {"t": "bolt", "obj": "thunder_hammer", "col": "#9fd0ff"},
   ngoctho: {"t": "heal", "obj": "medicine_mortar", "size": 190, "col": "#e0e8ff"},
-  linhcam: {"t": "drop", "obj": "bronze_mace", "size": 190, "col": "#7fc8ff"},
+  linhcam: {"t": "drop", "obj": "bronze_mace", "size": 117, "col": "#7fc8ff"},
   maonhat: {"t": "summon", "obj": "golden_rooster", "size": 240, "col": "#ffb060", "waves": 1},
   hongquan: {"t": "drop", "obj": "creation_tablet", "size": 108, "col": "#d8a0ff", "beam": 1},
   phuchy: {"t": "drop", "obj": "xiantian_bagua", "size": 250, "col": "#9fffc0", "beam": 1},
@@ -4385,10 +4391,10 @@ function showStages() {
 function synergyHTML(ids) {
   const info = teamInfo(ids);
   const facs = info.facs.map(f => `<div class="syn ${f.pct ? 'on' : ''}">${sysIco('fac_' + f.f)}<b>${FACTIONS[f.f]}</b> ${f.n} người ${f.pct ? `<em>+${Math.round(f.pct * 100)}% máu, công</em>` : '<small>cần 3 người</small>'}</div>`).join('');
-  const rel = BONDS.filter(b => b.members.some(x => ids.includes(x))).sort((x, y) => info.bonds.includes(y) - info.bonds.includes(x));
+  const rel = BONDS.filter(b => b.members.some(x => ids.includes(x))).sort((x, y) => (info.bonds.includes(y) * 2 + (info.coll || []).includes(y)) - (info.bonds.includes(x) * 2 + (info.coll || []).includes(x)));
   const bonds = rel.map(b => {
-    const on = info.bonds.includes(b), have = b.members.filter(x => ids.includes(x)).length;
-    return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <i>${have}/${b.members.length}</i> <small>${b.members.map(m => `<span class="${ids.includes(m) ? 'got' : ''}">${HEROES[m].name}</span>`).join(' + ')}</small>${on ? `<em>${b.desc}${bondLv(b) ? ` · Cấp ${bondLv(b)}: +${Math.round(BOND_LV[bondLv(b)] * 100)}% công, máu` : ''}</em>` : ''}</div>`;
+    const on = info.bonds.includes(b), co = !on && (info.coll || []).includes(b), have = b.members.filter(x => ids.includes(x)).length;
+    return `<div class="syn ${on ? 'on' : ''}"><b>${b.name}</b> <i>${have}/${b.members.length}</i> <small>${b.members.map(m => `<span class="${ids.includes(m) ? 'got' : ''}">${HEROES[m].name}</span>`).join(' + ')}</small>${on ? `<em>${b.desc}${bondLv(b) ? ` · Cấp ${bondLv(b)}: +${Math.round(BOND_LV[bondLv(b)] * 100)}% công, máu` : ''}</em>` : co ? `<em>Duyên sưu tầm: ${Math.round(BOND_COLL * 100)}% hiệu quả (cho đủ người ra trận để nhận 100%)</em>` : `<em class="off">Sưu tầm đủ thành viên, mỗi người ${BOND_STAR}★: nhận ${Math.round(BOND_COLL * 100)}% hiệu quả</em>`}</div>`;
   }).join('');
   const cs = ids[0] ? capSkill(ids[0]) : null;
   const cb = COMBOS.filter(c => ids.includes(c.a) && ids.includes(c.b)).map(c => `<div class="syn on"><b>${esc(c.name)}</b> <small>${HEROES[c.a].name} + ${HEROES[c.b].name}</small><em>Hai người tung tuyệt kỹ cách nhau ≤3 giây → hợp kích</em></div>`).join('');
@@ -4515,7 +4521,7 @@ function showHeroDetail(id, tab) {
       <div class="hu-btns"><button class="btn gold" id="bEq">Thay / cường hoá trang bị</button></div>` : '',
     bond: bonds.length ? bonds.map(b => { const lv = bondLv(b);
         return `<div class="hb"><b>${esc(b.name)}</b> <span class="lvl">Cấp ${lv}/10</span><div class="hb-m">${b.members.map(k => `<img class="${S.owned[k] ? '' : 'off'}" src="${por(k, 40)}" title="${esc(HEROES[k].name)}">`).join('')}</div>
-          <p>${esc(b.desc)}${lv ? ` · Thêm +${Math.round(BOND_LV[lv] * 100)}% công, máu` : ''}</p><div class="hb-bar"><i style="width:${lv * 10}%"></i></div></div>`; }).join('') + '<small>Cấp duyên phận tăng theo tổng sao và cấp của các thành viên.</small>' : '<p class="hint">Tướng này chưa có duyên phận.</p>',
+          <p>${esc(b.desc)}${lv ? ` · Thêm +${Math.round(BOND_LV[lv] * 100)}% công, máu` : ''}</p><p class="hint">${bondColl(b) ? `Đã kích hoạt duyên sưu tầm (${Math.round(BOND_COLL * 100)}%). Cùng ra trận: 100%.` : `Sưu tầm đủ thành viên, mỗi người ${BOND_STAR}★ để kích hoạt ${Math.round(BOND_COLL * 100)}% mà không cần cùng ra trận.`}</p><div class="hb-bar"><i style="width:${lv * 10}%"></i></div></div>`; }).join('') + '<small>Cấp duyên phận tăng theo tổng sao và cấp của các thành viên. Duyên sưu tầm: sở hữu đủ thành viên (mỗi người ' + BOND_STAR + '★) thì tướng ra trận nhận ' + Math.round(BOND_COLL * 100) + '% chỉ số duyên; cùng ra trận nhận đủ 100%.</small>' : '<p class="hint">Tướng này chưa có duyên phận.</p>',
   };
   const tc = tierCls(h.tier), pd = poseDir(id), urx = isUR(id);
   const sk = HD_SK.find(x => x[0] === HD_SKSEL) ? HD_SKSEL : 'ult', sel = hdSkill(id, sk);
@@ -4663,7 +4669,7 @@ function showBuffs() {
   const row = (b, d, cls) => `<div class="bf ${cls || ''}"><b>${b}</b><span>${d}</span></div>`;
   const capH = cap ? row('👑 ' + esc(cap.name) + ' · ' + esc(cs.n), esc(cs.d) + ' (cả đội)') + row('Riêng đội trưởng', '+20% tốc đánh · +10% sát thương chiêu và tuyệt kỹ · chạm quái để nhắm mục tiêu') : '';
   const facH = info.facs.filter(f => f.pct).map(f => row(FACTIONS[f.f] + ' × ' + f.n, pct(f.pct) + ' máu và công')).join('');
-  const bondH = info.bonds.map(b => row(esc(b.name), esc(b.desc))).join('');
+  const bondH = info.bonds.map(b => row(esc(b.name), esc(b.desc))).join('') + (info.coll || []).map(b => row(esc(b.name) + ' · sưu tầm', esc(b.desc) + ' (' + Math.round(BOND_COLL * 100) + '%)')).join('');
   const cpH = B.slots.map(sl => { const c = cpOf(sl.id); return c ? row(esc(c.name) + (sl.lv > 1 ? ' · Cấp ' + sl.lv : '') + (sl.e2 ? ' · Tiến bậc 2' : ''), esc((c.desc || '').replace(/ ?\[VLĐMT\]/g, ''))) : ''; }).join('');
   const modH = Object.keys(MOD_LABEL).filter(k => B.mods[k]).map(k => row(MOD_LABEL[k][0], MOD_LABEL[k][1] ? pct(B.mods[k]) : '+' + B.mods[k], 'num')).join('');
   const tierH = [...B.heroes, ...B.deploy].filter(h => !h.clone && trongOf(h) > 1).map(h => row(esc(h.name) + ' · ' + (trongOf(h) >= 5 ? 'Đại thành' : 'Tầng ' + trongOf(h)), (h.d.tang || []).slice(0, trongOf(h) - 1).map(t => esc(t.d)).join(' · '))).join('');
@@ -5123,7 +5129,7 @@ function arenaSetup(st) {
   B.arena = { other: { projs: [], fx: [], fxb: [], decals: [], ghosts: [], sparks: [], parts: [], later: [], zones: [], warns: [], cap: null, capTgt: null, comboCd: {}, lastUlt: {}, mods: {}, capRegen: 0, dom: null, pt: null, rift: null, field: {} }, owned: {} };
   for (const u of B.heroes) u.ah = true;
   const team = st.arena.team.filter(t => HEROES[t[0]]), ids = team.map(t => t[0]);
-  for (const [id, lv, star, cg] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, MAX_LV), star: clamp(star | 0, 1, maxStar(id)), shard: 0, cg: clamp(cg | 0, 0, CG_MAX) };
+  for (const [id, lv, star, cg] of team) B.arena.owned[id] = { lv: clamp(lv | 0, 1, MAX_LV), star: clamp(star | 0, 1, maxStar(id)), shard: 0, cg: clamp(cg | 0, 0, cgCap(id)) };
   arSwap();
   try {
     const info = teamInfo(ids);
@@ -5428,17 +5434,19 @@ const CG = [
   { n: 'Hỗn Nguyên', c: '#ff6a3a', lt: 650, dan: 6, vang: 150000, perk: 'tuyệt kỹ +15%' },
 ];
 const CG_MAX = CG.length - 1, CG_STAT = 0.08;
-const cgOf = id => ((S.owned[id] || {}).cg || 0);
+const CG_CAP = { A: 2, R: 3, SR: 4 };   // trần Tiên Vị theo phẩm: A tới Kim Tiên, R tới Thái Ất, SR tới Đại La; SSR trở lên tới Hỗn Nguyên
+const cgCap = id => Math.min(CG_MAX, CG_CAP[tierOf(id)] ?? CG_MAX);
+const cgOf = id => Math.min((S.owned[id] || {}).cg || 0, cgCap(id));
 const cgMul = id => 1 + CG_STAT * cgOf(id);
 function realmRowHTML(id) {
   const o = S.owned[id]; if (!o) return '';
-  const g = o.cg || 0, nx = CG[g + 1], D = dpState(), ok = nx && o.lv >= MAX_LV && D.lt >= nx.lt && (D.pcd || 0) >= nx.dan && S.vang >= nx.vang;
+  const g = o.cg || 0, nx = g < cgCap(id) ? CG[g + 1] : null, D = dpState(), ok = nx && o.lv >= MAX_LV && D.lt >= nx.lt && (D.pcd || 0) >= nx.dan && S.vang >= nx.vang;
   return `<div class="hu-row cg-row" style="--cg:${CG[g].c}"><div><b>Tiên Vị · <span class="cg-n">${CG[g].n}</span></b>
     <small>${g ? `+${Math.round(CG_STAT * g * 100)}% máu, công, thủ${CG.slice(1, g + 1).filter(x => x.perk).map(x => ' · ' + x.perk).join('')}` : 'Chưa phong tiên vị'}${nx ? ` → <b>${nx.n}</b>: ${o.lv < MAX_LV ? `cần cấp ${MAX_LV}` : `🌿${nx.lt} · Thăng Tiên Đan ${D.pcd || 0}/${nx.dan} · ${fmt(nx.vang)} vàng`}` : ' · Đã đạt tiên vị cao nhất'}</small></div>
     ${nx ? `<div class="hu-btns"><button class="btn ${ok ? 'gold' : ''}" id="bCg" ${ok ? '' : 'disabled'}>Thăng vị</button></div>` : ''}</div>`;
 }
 function realmBreak(id) {
-  const o = S.owned[id], g = o.cg || 0, nx = CG[g + 1], D = dpState(); if (!nx || o.lv < MAX_LV || D.lt < nx.lt || (D.pcd || 0) < nx.dan || S.vang < nx.vang) return;
+  const o = S.owned[id], g = o.cg || 0, nx = g < cgCap(id) ? CG[g + 1] : null, D = dpState(); if (!nx || o.lv < MAX_LV || D.lt < nx.lt || (D.pcd || 0) < nx.dan || S.vang < nx.vang) return;
   D.lt -= nx.lt; D.pcd -= nx.dan; S.vang -= nx.vang; o.cg = g + 1; save();
   const el = document.createElement('div'); el.className = 'cg-burst'; el.style.setProperty('--cg', nx.c);
   el.innerHTML = `<div class="cg-ring"></div><div class="cg-txt"><small>${esc(HEROES[id].name)}</small><b>${nx.n}</b><em>+${Math.round(CG_STAT * 100)}% máu, công, thủ${nx.perk ? ' · ' + nx.perk : ''}</em></div>`;
