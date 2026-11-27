@@ -1141,11 +1141,36 @@ const SSR_ATK = {
   vantieu: { vortex: 5 },                   // cứ 5 đòn: Kim Đấu xoáy hút quái quanh mục tiêu
   giaochu: { swords: 4 },                   // cứ 4 đòn: bốn kiếm Tru Tiên giáng quanh mục tiêu
   khongtuyen: { seal: 0.18 },               // 18% thần quang thu binh: quái thường đứng hình
+  // ---- 27/11: 24 SSR/SSR+ còn lại (đạn/nổ vẽ tay ở art/ssrfx, tools/ssr_atk_spec.py)
+  trieucongminh: { sky: 0.18, skyCol: '#ffe08a', skyFx: 'burst_gold', skyR: 85, skyM: 1.5 },   // Định Hải Châu rơi
+  thaiatchannhan: { zone: { r: 70, dps: 0.3, dur: 2.5, col: '#ff6a2a' } },                     // Cửu Long Thần Hoả Tráo để lại lửa
+  thanhnguutinh: { seal: 0.15, every: 7, shield: 0.08 },                                         // Kim Cương Trác thu binh + che chắn
+  nhiendang: { healEvery: 5, healPct: 0.06 },                                                    // đèn Lưu Ly: hồi đồng đội yếu nhất
+  thaisu: { chain: 2, chainM: 0.5, chainCol: '#ffe08a' },                                        // Kim Tiên lôi giật lan 2 quái
+  vanthu: { shadow: 2, shadowType: 'light' },                                                    // kiếm trí tuệ đẻ kiếm ảnh
+  ngochoang: { sky: 0.15, skyCol: '#ffe58a', skyFx: 'lightning', skyR: 80, skyM: 1.6, stun: 0.5 },   // thiên lôi giáng
+  dilac: { pull: 60 },                                                                           // túi vải hút quái lại gần
+  quangthanh: { sky: 0.2, skyCol: '#d0a060', skyFx: 'burst_tho', skyR: 70, skyM: 1.8, stun: 0.6 },   // Phiên Thiên Ấn nện
+  kimlinh: { swords: 5, swCol: '#ffd34d', swFx: 'burst_gold' },                                  // Tứ Tượng Tháp: 4 trụ sáng
+  chanvu: { shadow: 2, shadowType: 'light', seal: 0.1 },                                         // Thất Tinh kiếm khí
+  vuongmau: { healEvery: 6, healPct: 0.05, healAll: 1 },                                         // đào tiên hồi cả đội
+  phohien: { every: 6, shield: 0.1 },                                                            // Phổ Hiền hộ trì
+  daibang: { shadow: 2 },                                                                        // kích vàng đẻ bóng kích
+  ngocdinh: { talis: 3 },                                                                        // điều khí xong phóng 3 phi kiếm đuổi quái
+  phuchy: { zone: { r: 80, dps: 0.25, dur: 3, col: '#7fe08a' }, seal: 0.08 },                    // trận Tiên Thiên Bát Quái
+  thannong: { healEvery: 5, healPct: 0.05, healAll: 1 },                                         // thảo dược hồi cả đội
+  hienvien: { swords: 4, swCol: '#ffd34d', swFx: 'burst_gold' },                                 // Hiên Viên kiếm giáng
+  dabao: { talis: 4 },                                                                           // vạn bảo loạn phóng sau điều khí
+  lucap: { sky: 0.15, skyCol: '#ffffff', skyFx: 'slash', skyR: 60, skyM: 2.0 },                  // Trảm Tiên Phi Đao
+  namcuc: { healEvery: 6, healPct: 0.06 },                                                       // đào thọ hồi đồng đội yếu nhất
+  diatang: { every: 6, shield: 0.08, pull: 40 },                                                 // U Minh hút + che chắn
+  lucnhi: { shadow: 2 },                                                                         // bổng ảnh lục nhĩ
+  cuukho: { vortex: 6, vxCol: '#7fc8ff', vxFx: 'burst_blue' },                                   // cam lộ xoáy nước
 };
 function ssrAtk(u, tgt, base) {
   const A = SSR_ATK[u.id]; if (!A || u.clone) return;
   const tx = tgt.x, ty = tgt.y;
-  if (A.shadow) for (let k = 1; k <= A.shadow; k++) B.later.push({ t: 0.12 * k, fn: () => { if (!B || B.over || u.dead) return; fireProj(u, tgt, { kind: 'atk', type: 'spear', angle: base + (k % 2 ? 0.08 : -0.08), mult: 0.35, pierce: true, pl: 2, r: 10, life: 1.4, speed: 760 }); } });
+  if (A.shadow) for (let k = 1; k <= A.shadow; k++) B.later.push({ t: 0.12 * k, fn: () => { if (!B || B.over || u.dead) return; fireProj(u, tgt, { kind: 'atk', type: A.shadowType || 'spear', angle: base + (k % 2 ? 0.08 : -0.08), mult: 0.35, pierce: true, pl: 2, r: 10, life: 1.4, speed: 760 }); } });
   if (A.sky && Math.random() < A.sky) B.later.push({ t: 0.35, fn: () => { if (!B || B.over) return; fxBurst(tx, ty - 50, A.skyFx, 200); B.fx.push({ k: 'ring', x: tx, y: ty, r: A.skyR * 2, color: A.skyCol, t: 0, dur: 0.45 }); B.shake = Math.max(B.shake, 0.25);
     for (const e of enemiesIn({ x: tx, y: ty }, A.skyR)) { dealDmg(u, e, A.skyM, 'skill'); if (A.stun && !e.dead) e.stun = Math.max(e.stun || 0, e.boss ? A.stun * 0.4 : A.stun); } } });
   if (A.every) { u.ssrN = (u.ssrN || 0) + 1; if (u.ssrN >= A.every) { u.ssrN = 0; const lo = alliesAlive().sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b))[0]; if (lo) { lo.shield = Math.max(lo.shield, maxHp(lo) * A.shield); lo.shieldT = 5; particles(lo.x, lo.y - 30, '#bfffe8', 10, 120, 4); } } }
@@ -1153,10 +1178,15 @@ function ssrAtk(u, tgt, base) {
   if (A.blood) { u.hp = Math.max(1, u.hp - maxHp(u) * A.blood); }
   if (A.talis && u.talisReady) { u.talisReady = false; for (let k = 0; k < A.talis; k++) fireProj(u, tgt, { kind: 'atk', type: 'light', angle: base + (k - 1) * 0.22, homing: true, mult: 0.5, r: 9, life: 1.6, speed: 600 }); }
   if (A.vortex) { u.vxN = (u.vxN || 0) + 1; if (u.vxN >= A.vortex) { u.vxN = 0; B.later.push({ t: 0.4, fn: () => { if (!B || B.over) return; B.fx.push({ k: 'ring', x: tx, y: ty, r: 220, color: '#ffd34d', t: 0, dur: 0.6 });
-      for (const e of enemiesIn({ x: tx, y: ty }, 130)) { if (!e.boss && !e.dead) { e.x += (tx - e.x) * 0.6; e.y += (ty - e.y) * 0.6; } dealDmg(u, e, 0.9, 'skill'); } fxBurst(tx, ty - 30, 'fire', 160); } }); } }
+      for (const e of enemiesIn({ x: tx, y: ty }, 130)) { if (!e.boss && !e.dead) { e.x += (tx - e.x) * 0.6; e.y += (ty - e.y) * 0.6; } dealDmg(u, e, 0.9, 'skill'); } fxBurst(tx, ty - 30, A.vxFx || 'fire', 160); } }); } }
   if (A.swords) { u.swN = (u.swN || 0) + 1; if (u.swN >= A.swords) { u.swN = 0; [[-50, -20], [50, -20], [-30, 30], [30, 30]].forEach(([ox, oy], i) => B.later.push({ t: 0.25 + i * 0.1, fn: () => { if (!B || B.over) return;
-      const x = tx + ox, y = ty + oy; fxBurst(x, y - 40, 'fire', 120); B.fx.push({ k: 'ring', x, y, r: 90, color: '#ff7a5a', t: 0, dur: 0.35 }); B.shake = Math.max(B.shake, 0.2); for (const e of enemiesIn({ x, y }, 60)) dealDmg(u, e, 0.6, 'skill'); } })); } }
+      const x = tx + ox, y = ty + oy; fxBurst(x, y - 40, A.swFx || 'fire', 120); B.fx.push({ k: 'ring', x, y, r: 90, color: A.swCol || '#ff7a5a', t: 0, dur: 0.35 }); B.shake = Math.max(B.shake, 0.2); for (const e of enemiesIn({ x, y }, 60)) dealDmg(u, e, 0.6, 'skill'); } })); } }
   if (A.seal && Math.random() < A.seal && !tgt.boss) B.later.push({ t: 0.3, fn: () => { if (!B || B.over || tgt.dead) return; tgt.stun = Math.max(tgt.stun || 0, 1.2); floater(tgt.x, tgt.y - 70, 'Thu binh!', '#9fffc0', 13); } });
+  if (A.chain) B.later.push({ t: 0.2, fn: () => { if (!B || B.over) return; let from = tgt; const hit = new Set([tgt]);
+      for (let k = 0; k < A.chain; k++) { const nx = B.enemies.filter(e => !e.dead && !hit.has(e) && Math.hypot(e.x - from.x, e.y - from.y) < 220).sort((a, b) => Math.hypot(a.x - from.x, a.y - from.y) - Math.hypot(b.x - from.x, b.y - from.y))[0]; if (!nx) break;
+        hit.add(nx); B.fx.push({ k: 'beam', x1: from.x, y1: from.y - 30, x2: nx.x, y2: nx.y - 30, w: 6, color: A.chainCol || '#bfe0ff', t: 0, dur: 0.25 }); dealDmg(u, nx, A.chainM || 0.5, 'skill'); from = nx; } } });
+  if (A.healEvery) { u.heN = (u.heN || 0) + 1; if (u.heN >= A.healEvery) { u.heN = 0; const L = alliesAlive(); const tg = A.healAll ? L : L.sort((a, b) => a.hp / maxHp(a) - b.hp / maxHp(b)).slice(0, 1);
+      for (const a of tg) { healAmD(u, a, maxHp(a) * A.healPct); particles(a.x, a.y - 25, '#7dffb0', 6, 90, 3.5); } } }
   if (A.pull) B.later.push({ t: 0.5, fn: () => { if (!B || B.over) return; for (const e of enemiesIn({ x: tx, y: ty }, 110)) if (!e.boss && !e.dead) { e.x += (tx - e.x) * 0.5; e.y += (ty - e.y) * 0.5; } } });
 }
 function ssrReload(u) {   // gọi khi điều khí xong
@@ -2140,6 +2170,7 @@ function drawSprite(u, img, alpha) {
   const h = spriteH(u), w = h * img.width / img.height;
   if (hasRig(u.id)) {
     if ((ssrFxOn(u) || auraOn(u)) && !u.dead) drawSsrAura(u, h);
+    else if (srAuraOn(u) && !u.dead) drawSrAura(u, h);
     if (u.urRise > 0) { u.urRise -= 1 / 60; ctx.save(); ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(0, -h * 0.5, 4, 0, -h * 0.5, h * 0.9); g.addColorStop(0, 'rgba(255,240,170,0.9)'); g.addColorStop(1, 'rgba(255,200,80,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, -h * 0.5, h * 0.9, 0, TAU); ctx.fill(); ctx.restore(); }
     if (u.castT > 0 && !u.dead) {
       const g = ctx.createRadialGradient(0, -h * 0.5, 4, 0, -h * 0.5, h * 0.6);
@@ -3282,6 +3313,15 @@ const SSR_FX = {
 };
 const SFI = {}; function sfImg(n) { let i = SFI[n]; if (!i) { i = SFI[n] = new Image(); i.src = 'art/ssrfx/' + n + '.webp'; } return i.complete && i.naturalWidth ? i : null; }
 function ssrFxOn(u) { return u && (u.side === 'h' || u.ah) && SSR_FX[u.id] && !u.clone && S.gfx !== 'low' && (HEROES[u.id].rar === 'SSR' || ((S.owned[u.id] || {}).star || 0) >= 5); }   // SR có bộ VFX (Ngưu Ma) giữ khi thức tỉnh
+// SR: vòng hệ dưới chân (ảnh vòng vẽ tay theo hệ, xoay chậm) + hạt hệ bay lên thưa — để nhìn là biết phẩm (27/11)
+const SR_RING = { kim: 'ring', moc: 'ring_moc', thuy: 'ring_thuy', hoa: 'ring_hoa', tho: 'ring_tho' }, SR_PT = { kim: 3, moc: 4, thuy: 7, hoa: 2, tho: 9 };
+function srAuraOn(u) { return u && (u.side === 'h' || u.ah) && !u.clone && S.gfx !== 'low' && tierOf(u.id) === 'SR' && !SSR_FX[u.id]; }
+function drawSrAura(u, h) {
+  const im = FXT[SR_RING[u.el]] || FXT.ring; if (!im || !im.complete || !im.naturalWidth) return;
+  const col = (ELEMENTS[u.el] || {}).color || '#ffe58a', w = h * 0.95;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.32 + 0.08 * Math.sin(u.t * 2.4); ctx.scale(1, 0.3); ctx.rotate(u.t * 0.6); ctx.drawImage(im, -w / 2, -w / 2, w, w); ctx.restore();
+  if (B && Math.random() < 0.05) B.parts.push({ x: u.x + rand(-h * 0.25, h * 0.25), y: u.y - rand(0, h * 0.3), vx: rand(-10, 10), vy: -rand(30, 60), life: 1, max: 1, color: col, size: 7 + Math.random() * 4, img: SR_PT[u.el] ?? 3, rot: Math.random() * 6, vr: rand(-3, 3), nograv: 1 });
+}
 function auraOn(u) { const t = u && (u.side === 'h' || u.ah) && !u.clone && S.gfx !== 'low' && tierOf(u.id); return (t === 'SSR+' || t === 'SSR') && !!sfImg('aura_' + u.id); }   // SSR+/SSR: vòng sáng quanh người
 function drawSsrAura(u, h) {   // hào quang sau lưng: đứng yên đúng tâm thân, đập nhịp, sáng hơn khi đầy nộ
   if (UR_LAYERS[u.id]) return;   // UR tách lớp đã có hào quang riêng sau đầu -> bỏ vòng lớn quanh người cho đỡ rối
@@ -3302,6 +3342,7 @@ const PT_FX = {   // hạt bay quanh người cho SSR+/SSR chưa có bộ SSR_FX
   thannong: { col: '#9fff9a', pt: [4] }, hienvien: { col: '#ffd34d', pt: [10] }, dabao: { col: '#ffd34d', pt: [6] }, lucap: { col: '#ffffff', pt: [10] },
   namcuc: { col: '#ffb0a0', pt: [8] }, diatang: { col: '#ffd76a', pt: [3] }, lucnhi: { col: '#c070ff', pt: [11] }, cuukho: { col: '#7fc8ff', pt: [7] },
 };
+for (const id of ['trieucongminh', 'thaiatchannhan', 'thanhnguutinh', 'nhiendang', 'thaisu', 'vanthu', 'ngochoang', 'dilac', 'quangthanh', 'kimlinh', 'chanvu', 'vuongmau', 'phohien', 'daibang', 'ngocdinh', 'phuchy', 'thannong', 'hienvien', 'dabao', 'lucap', 'namcuc', 'diatang', 'lucnhi', 'cuukho']) if (!SSR_FX[id] && PT_FX[id]) SSR_FX[id] = { col: PT_FX[id].col, pt: [PT_FX[id].pt[0], 3] };   // 27/11: bộ đạn/nổ vẽ tay cho SSR/SSR+ còn lại
 function ssrPart(id, x, y, vx, vy, life) { const F = SSR_FX[id] || PT_FX[id]; if (!F || !B) return; B.parts.push({ x, y, vx, vy, life, max: life, color: F.col, size: 9 + Math.random() * 6, img: F.pt[0], rot: Math.random() * 6, vr: rand(-4, 4), nograv: 1 }); }
 // ===== ĐẠN RIÊNG UR / UR+ : sheet vẽ tay 6 khung chạy vòng (art/sigfx) + quầng sáng + nổ trúng riêng + hiệu ứng phụ theo truyện =====
 const UR_PROJ = {
@@ -6101,6 +6142,7 @@ function route() {
   else if (k === 'battle') {
     const tm = h.match(/(?:^|&)team=([\w,]+)/); // &team=nata,quanam (chụp thử): đội hình tạm
     if (tm) { const ids = tm[1].split(',').filter(id => HEROES[id]); ids.forEach(id => { if (!S.owned[id]) S.owned[id] = newRec(); }); S.lineup = ids; }
+    { const lm = h.match(/(?:^|&)lv=([0-9]+)/), sm = h.match(/(?:^|&)star=([0-9])/); for (const id of S.lineup) if (S.owned[id]) { if (lm) S.owned[id].lv = Math.min(MAX_LV, +lm[1]); if (sm) S.owned[id].star = Math.min(maxStar(id), +sm[1]); } }   // &lv=30&star=3 (mô phỏng cân bằng)
     { const fm = h.match(/(?:^|&)fm=([a-z]+):?([0-9]?)/); if (fm && FORMS[fm[1]]) { fmCur(); S.fm.lv[fm[1]] = +fm[2] || 1; S.fm.cur = fm[1]; } }   // &fm=batquai:3 (thử trận pháp)
     { const cm = h.match(/(?:^|&)cg=([0-9])/); if (cm) for (const id of S.lineup) if (S.owned[id]) { S.owned[id].lv = MAX_LV; S.owned[id].cg = +cm[1]; } }   // &cg=4 (thử cảnh giới)
     { const pm = h.match(/(?:^|&)pet=([a-z]+)/); if (pm && PETS[pm[1]]) { petRec(pm[1]).own = 1; S.pet = pm[1]; S.unlockAll = 1; } }   // &pet=chutuoc (thử linh thú)
@@ -6119,6 +6161,7 @@ function route() {
         if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; }
       }
       if (secs) { B.banner = null; B.cutin = null; updateHUD(); }
+      if (/simlog/.test(h)) console.log('SIM_RESULT', JSON.stringify({ st: v, over: B.over, win: B.win, t: Math.round(B.time), wave: B.wave, hp: Math.round(100 * B.heroes.filter(x => !x.clone).reduce((a, x) => a + (x.dead ? 0 : x.hp / maxHp(x)), 0) / Math.max(1, B.heroes.filter(x => !x.clone).length)), dead: B.heroes.filter(x => !x.clone && x.dead).length, revive: B.reviveAsk || 0, stat: Object.fromEntries(Object.entries(B.stat || {}).filter(([k]) => HEROES[k]).map(([k, r]) => [k, [Math.round(r.d), Math.round(r.t), Math.round(r.h)]])), deadIds: B.heroes.filter(x => !x.clone && x.dead).map(x => x.id + '@' + Math.round(x.deadT || 0)) }));
       if (/(^|&)end(&|$)/.test(h) && !B.over) { ui.querySelectorAll(".modal").forEach(x => x.remove()); endBattle(true); B.endT = null; B.paused = false; showResult(); }   // (chụp thử) kết thúc trận để xem bảng thống kê
       // &ult=ngokhong:0.9 — (chụp thử) cho tướng tung tuyệt kỹ rồi tua thêm 0.9 giây
       if (/(^|&)cp(&|$)/.test(h)) openCongPhap();
