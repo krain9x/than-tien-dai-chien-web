@@ -7087,6 +7087,7 @@ function route() {
   else if (k === 'create') { showHome(); showCreate(h => guideTalk(['Thử lời dẫn ' + h], () => {})); }
   else if (k === 'gtalk') { S.pname = 'Lý Lăng Vân'; showHome(); guideTalk(['Ha ha, Chưởng Môn ' + S.pname + ' đã tới! Lão là Thái Bạch Kim Tinh, phụng mệnh Thái Thượng Lão Quân dẫn đường cho ngươi.'], () => {}); }
   else if (k === 'first') { delete S.pname; firstTime(); }
+  else if (k === 'eboss') { S.tut = { all: 1 }; const b = STAGES[4]; for (const id of ['ngokhong', 'duongtien', 'nata']) if (!S.owned[id]) S.owned[id] = newRec(); S.lineup = ['ngokhong', 'duongtien', 'nata']; startBattle({ ...b, id: 'EB', waves: [{ list: [[v, 1]], boss: true }], gate: 999999 }); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const lm = h.match(/(?:^|&)lv=(\d+)/); if (lm) S.owned[v].lv = +lm[1]; } { const tm = h.match(/(?:^|&)tab=(\w+)/); if (tm) HD_TAB = tm[1]; } { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
