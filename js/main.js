@@ -4271,7 +4271,7 @@ function frame(now) {
 const ICIMG = { lt: 'res_linhthao', lq: 'res_linhqua', ttd: 'res_taytuy', pcd: 'res_thangtien', tt: 'res_tinhthiet', petsh: 'res_manhthu', tk: 'res_thelu' };
 function icon(k) { return ICIMG[k] ? `<img class="ic ic-img" src="art/ui/${ICIMG[k]}.webp" alt="">` : `<i class="ic ic-${k}"></i>`; }
 function resBar() {
-  return `<div class="resbar"><span>${icon('ngoc')}${fmt(S.ngoc)}</span><span>${icon('vang')}${fmt(S.vang)}</span><span title="Mảnh vạn năng">${icon('univ')}${fmt(S.univ)}</span><span title="Tiên Khí (hồi 1 điểm / 6 phút)">⚡${tkNow()}/${TK_MAX}</span></div>`;
+  return `<div class="resbar"><span data-r="ngoc">${icon('ngoc')}${fmt(S.ngoc)}</span><span data-r="vang">${icon('vang')}${fmt(S.vang)}</span><span data-r="univ" title="Mảnh vạn năng">${icon('univ')}${fmt(S.univ)}</span><span title="Tiên Khí (hồi 1 điểm / 6 phút)">⚡${tkNow()}/${TK_MAX}</span></div>`;
 }
 function toast(msg) {
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
@@ -4825,6 +4825,57 @@ function ssrReveal(ids, done) {   // lá thẻ vàng rung, nứt sáng rồi v�
   setTimeout(() => el.classList.add('ready'), 2300);
   el.onclick = () => { if (!el.classList.contains('ready')) return; el.remove(); if (ids.length > 1) ssrReveal(ids.slice(1), done); else done(); };
 }
+// ---- sheet hiệu ứng vẽ tay chạy trong DOM (dùng cho chiêu mộ, nhận thưởng, trò chơi nhỏ)
+const FEEL_N = { gc_comet_r: 6, gc_comet_sr: 6, gc_comet_ssr: 6, gc_comet_ur: 6, gc_vortex: 8, gc_burst: 6, gc_starline: 6, gc_star: 6, gc_clouds: 6, fx_coins: 8, fx_sparkle: 6, fx_splash: 6, fx_ripple: 6, fx_rock: 6, fx_chest: 8, fx_levelup: 8, fx_lightning: 6 };
+function fxEl(name, dur, opt) {   // trả về <div> tự chạy chuỗi khung; opt: { loop, cls, style, add (blend sáng) }
+  opt = opt || {}; const n = FEEL_N[name] || 6, cols = n === 6 ? 3 : 4, rows = 2, d = document.createElement('div');
+  d.className = 'fxs ' + (opt.cls || ''); d.style.cssText = (opt.style || '') + `;background-image:url(art/sigfx/${name}.webp);background-size:${cols * 100}% ${rows * 100}%;` + (opt.add === false ? '' : 'mix-blend-mode:screen;');
+  const t0 = performance.now(); let raf;
+  const step = t => { if (!d.isConnected && t - t0 > 200) return; let p = (t - t0) / (dur * 1000); if (opt.loop) p %= 1; else if (p >= 1) { if (!opt.keep) d.remove(); return; }
+    const f = Math.min(n - 1, Math.floor(p * n)); d.style.backgroundPosition = `${(f % cols) / (cols - 1) * 100}% ${Math.floor(f / cols) / (rows - 1) * 100}%`; raf = requestAnimationFrame(step); };
+  raf = requestAnimationFrame(step); return d;
+}
+const GC_COL = { A: '#8fb3c8', R: '#5aa8ff', SR: '#b07aff', SSR: '#ffcf3a', 'SSR+': '#ff9a2a', UR: '#ff3a5a', 'UR+': '#ff3aff' };
+const gcComet = t => ({ A: 'gc_comet_r', R: 'gc_comet_r', SR: 'gc_comet_sr', SSR: 'gc_comet_ssr', 'SSR+': 'gc_comet_ssr', UR: 'gc_comet_ur', 'UR+': 'gc_comet_ur' })[t] || 'gc_comet_r';
+function gachaCine(res, done) {
+  const T = res.map(r => r.id ? tierOf(r.id) : 'R'), best = T.slice().sort((a, b) => TIER_RANK[b] - TIER_RANK[a])[0], hi = TIER_RANK[best] >= TIER_RANK.SSR;
+  const el = document.createElement('div'); el.className = 'gcx'; el.style.setProperty('--gc', GC_COL[best]); ui.appendChild(el);
+  let i = -1, skip = false, busy = false; const timers = []; const later = (f, ms) => timers.push(setTimeout(() => { if (!skip) f(); }, ms));
+  const sb = document.createElement('button'); sb.className = 'gcx-skip'; sb.textContent = 'Bỏ qua ›'; el.appendChild(sb);
+  const finish = () => { skip = true; timers.forEach(clearTimeout); el.remove(); done(); };
+  sb.onclick = e => { e.stopPropagation(); finish(); };
+  // 1. lao xuyên mây
+  el.insertAdjacentHTML('beforeend', '<div class="gcx-sky"></div>'); el.appendChild(fxEl('gc_clouds', 1.4, { cls: 'gcx-full', loop: true }));
+  snd('whoosh', 1, 0.7); later(() => snd('charge_big'), 300);
+  // 2. sao chổi
+  later(() => { el.appendChild(fxEl(gcComet(best), 0.9, { cls: 'gcx-comet' })); snd('whoosh', 1, 1.2); }, 1100);
+  // 3. xoáy (SSR trở lên) / nổ sáng
+  later(() => { el.querySelectorAll('.gcx-full').forEach(x => x.remove());
+    if (hi) { el.appendChild(fxEl('gc_vortex', 1.6, { cls: 'gcx-mid big' })); snd('gong'); el.classList.add('shake'); later(() => el.classList.remove('shake'), 600); later(() => { el.insertAdjacentHTML('beforeend', '<div class="gcx-flash"></div>'); snd('roar', 1, 0.8); }, 1300); }
+    else { el.appendChild(fxEl('gc_burst', 0.8, { cls: 'gcx-mid' })); snd('gong', 0.7); later(() => el.insertAdjacentHTML('beforeend', '<div class="gcx-flash soft"></div>'), 500); } }, 1900);
+  // 4. lần lượt từng tướng
+  const next = () => { if (skip || busy) return; i++; if (i >= res.length) { finish(); return; } busy = true;
+    el.querySelectorAll('.gcx-card,.gcx-sl,.gcx-flash,.gcx-mid').forEach(x => x.remove());
+    const r = res[i], id = r.id, t = T[i], h = HEROES[id], nStar = Math.min(7, TIER_RANK[t] || 1), big = TIER_RANK[t] >= TIER_RANK.SR;
+    el.style.setProperty('--gc', GC_COL[t]);
+    const sl = document.createElement('div'); sl.className = 'gcx-sl'; sl.appendChild(fxEl('gc_starline', 0.7, { cls: 'gcx-line', keep: true }));
+    const stars = document.createElement('div'); stars.className = 'gcx-stars'; sl.appendChild(stars); el.appendChild(sl); snd('magic', 0.6);
+    for (let k = 0; k < nStar; k++) later(() => { const st = fxEl('gc_star', 0.5, { cls: 'gcx-star', keep: true }); stars.appendChild(st); snd('pickup', 0.5, 1 + k * 0.08); }, 250 + k * (big ? 170 : 90));
+    const at = 300 + nStar * (big ? 170 : 90) + (big ? 350 : 100);
+    later(() => { sl.remove(); el.insertAdjacentHTML('beforeend', '<div class="gcx-flash ' + (big ? '' : 'soft') + '"></div>');
+      const sc = id && (TIER_RANK[t] >= TIER_RANK.SR) ? `art/scene/${skinOn(id) ? id + '_s2' : id}_hero.webp` : '', bg = id ? `art/scene/${id}_bg.webp` : '';
+      const card = document.createElement('div'); card.className = 'gcx-card t-' + t.replace('+', 'P') + (big ? ' big' : '');
+      card.innerHTML = `<div class="gcx-bg" style="background-image:url(${bg}), url(art/scene/${FAC_BG[h.fac] || 'giaochu'}_bg.webp)"></div>
+        <img class="gcx-hero" src="${sc || fullImg(id, 400)}" onerror="this.onerror=null;this.src='${fullImg(id, 400)}'" alt="">
+        <div class="gcx-tier"><b>${t}</b></div>
+        <div class="gcx-name"><small>${esc(h.title)}</small><h2>${esc(h.name)}</h2><div class="gcx-st">${'★'.repeat(nStar)}</div>${r.isNew ? '<em class="gcx-new">MỚI</em>' : r.dup ? `<em class="gcx-dup">+${r.dup} mảnh</em>` : ''}</div>
+        <div class="gcx-tap">${i < res.length - 1 ? `Chạm để xem tiếp (${i + 1}/${res.length})` : 'Chạm để tiếp tục'}</div>`;
+      el.appendChild(card); if (big) { snd('gong', 0.8); el.classList.add('shake'); later(() => el.classList.remove('shake'), 400); if (TIER_RANK[t] >= TIER_RANK.SSR) later(() => snd('roar', 1, 0.9), 200); }
+      later(() => { busy = false; if (!big) later(next, 650); }, big ? 700 : 250); }, at);
+  };
+  later(next, hi ? 3500 : 2800);
+  el.onclick = () => { if (!busy && i >= 0) next(); };
+}
 function doPull(n) {
   const cost = n === 10 ? GACHA.cost10 : GACHA.cost1 * n;
   if (S.ngoc < cost) { toast('Không đủ Ngọc'); return; }
@@ -4843,8 +4894,7 @@ function doPull(n) {
         ${r.isNew ? '<em class="new">MỚI</em>' : r.dup ? `<em>+${r.dup} mảnh</em>` : ''}
       </div></div>`).join('')}</div>
     <button class="btn gold" id="pullOk" style="animation-delay:${0.4 + n * 0.12}s">Xác nhận</button>`;
-  const ssrs = res.filter(r => r.rar === 'SSR' && r.id);
-  if (ssrs.length) { wrap.style.visibility = 'hidden'; ssrReveal(ssrs.map(r => r.id), () => { wrap.style.visibility = ''; }); }
+  wrap.style.visibility = 'hidden'; gachaCine(res, () => { wrap.style.visibility = ''; });
   ui.appendChild(wrap);
   $('#pullOk').onclick = () => { wrap.remove(); showGacha(); };
 }
@@ -5748,6 +5798,33 @@ function showDq() {
   if ($('#dkGo')) $('#dkGo').onclick = () => enterStage(dkStage(q + 1));
   tutor('i_dq', '<b>Đạo Quả</b> là cảnh giới của chính bạn. Tích đạo hạnh rồi vượt <b>Lôi Kiếp</b> để mọi tướng mạnh lên.');
 }
+// ===================== CẢM GIÁC NHẬN THƯỞNG (dùng chung) =====================
+function fxAt(name, dur, x, y, size, opt) { const n = FEEL_N[name] || 6, h = size * (n === 8 ? 4 / 3 : 1), d = fxEl(name, dur, opt);
+  d.style.cssText += `;position:fixed;z-index:75;left:${x - size / 2}px;top:${y - h / 2}px;width:${size}px;height:${h}px;`; document.body.appendChild(d); return d; }
+function floatNum(txt, x, y, cls) { const d = document.createElement('div'); d.className = 'fnum ' + (cls || ''); d.textContent = txt; d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 1700); }
+const floatAt = (el, txt, cls) => { if (!el) return; const r = el.getBoundingClientRect(); floatNum(txt, r.left + r.width / 2, r.top + r.height * 0.35, cls); };
+const rcMid = el => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+function scrShake(big) { const e = ui; e.classList.remove('scr-shake', 'scr-shake2'); void e.offsetWidth; e.classList.add(big ? 'scr-shake2' : 'scr-shake'); setTimeout(() => e.classList.remove('scr-shake', 'scr-shake2'), 600); }
+function countUp(el, k, to) { if (!el) return; const from = +(el.textContent.replace(/\D/g, '')) || 0, t0 = performance.now(), D = 650;
+  const st = t => { const p = Math.min(1, (t - t0) / D), v = Math.round(from + (to - from) * (1 - Math.pow(1 - p, 3))); el.innerHTML = icon(k) + fmt(v); if (p < 1) requestAnimationFrame(st); }; requestAnimationFrame(st); }
+function flyRes(k, x, y, n) {   // icon tài nguyên bay từ (x,y) về ô trên thanh trên cùng, ô nảy lên và số đếm tăng
+  const tg = document.querySelector(`.resbar [data-r="${k}"]`); if (!tg) return; const [tx, ty] = rcMid(tg); n = n || 7;
+  for (let j = 0; j < n; j++) { const d = document.createElement('div'); d.className = 'fly-res'; d.innerHTML = icon(k); d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d);
+    const ox = (Math.random() - 0.5) * 110, oy = (Math.random() - 0.5) * 80;
+    setTimeout(() => { d.style.transform = `translate(${ox}px, ${oy}px) scale(1.25)`; }, 20);
+    setTimeout(() => { d.style.transition = 'transform .55s cubic-bezier(.6,0,.9,.5), opacity .55s'; d.style.transform = `translate(${tx - x}px, ${ty - y}px) scale(.6)`; }, 260 + j * 45);
+    setTimeout(() => { d.remove(); if (j === n - 1) { tg.classList.remove('pop'); void tg.offsetWidth; tg.classList.add('pop'); snd('pickup', 0.5, 1.3); countUp(tg, k, S[k] || 0); } }, 830 + j * 45); }
+}
+const RW_NAME = { vang: 'Vàng', ngoc: 'Ngọc', univ: 'Mảnh vạn năng', tt: 'Tinh Thiết', lq: 'Linh Quả', lt: 'Linh Thảo', petsh: 'Mảnh Linh Thú', tk: 'Thể lực', ttd: 'Tẩy Tuỷ Đan', pcd: 'Thăng Tiên Đan' };
+function rewardPop(rew, title, onDone) {   // màn nhận thưởng: ô quà bật ra từng ô, số đếm tăng, chạm "Nhận" -> bay về thanh trên
+  const ks = Object.keys(rew).filter(k => rew[k] > 0); if (!ks.length) { onDone && onDone(); return; }
+  const el = document.createElement('div'); el.className = 'rwp';
+  el.innerHTML = `<div class="rwp-rays"></div><div class="rwp-box"><h3>${title || 'Nhận Thưởng'}</h3><div class="rwp-items">${ks.map((k, j) => `<div class="rwp-i" style="animation-delay:${0.15 + j * 0.12}s" data-k="${k}">${icon(k)}<b data-v="${rew[k]}">0</b><small>${RW_NAME[k] || k}</small></div>`).join('')}</div><button class="btn gold big" id="rwpOk">Nhận</button></div>`;
+  document.body.appendChild(el); snd('gong', 0.8); const [cx, cy] = rcMid(el.querySelector('.rwp-box')); fxAt('fx_sparkle', 1.2, cx, cy - 40, 320);
+  el.querySelectorAll('.rwp-i b').forEach((b, j) => setTimeout(() => { const to = +b.dataset.v, t0 = performance.now(); const st = t => { const p = Math.min(1, (t - t0) / 600); b.textContent = fmt(Math.round(to * (1 - Math.pow(1 - p, 3)))); if (p < 1) requestAnimationFrame(st); }; requestAnimationFrame(st); snd('pickup', 0.4, 1 + j * 0.1); }, 250 + j * 120));
+  el.querySelector('#rwpOk').onclick = () => { el.querySelectorAll('.rwp-i').forEach(it => { const [x, y] = rcMid(it); if (['vang', 'ngoc', 'univ'].includes(it.dataset.k)) flyRes(it.dataset.k, x, y, 6); }); el.classList.add('out'); setTimeout(() => { el.remove(); onDone && onDone(); }, 350); };
+}
+function critBanner(txt) { const d = document.createElement('div'); d.className = 'crit-banner'; d.innerHTML = `<b>${txt}</b>`; document.body.appendChild(d); setTimeout(() => d.remove(), 1500); }
 // ===================== DU NGOẠN: Thám Hiểm · Câu Cá · Đào Mỏ · Cây Tiền =====================
 let DN_TAB = 'th';
 function dnState() { const D = S.dn = S.dn || {}; if (D.day !== dayKey()) { D.day = dayKey(); D.th = thNew(); D.fish = 5; D.mine = mineNew(); D.pick = 10; D.tree = 3; D.treeBuy = 0; } D.album = D.album || {}; return D; }
@@ -5764,10 +5841,28 @@ const thSt = () => dnState().th;
 const thTilePw = (i) => { const y = Math.floor(i / TH_W), base = 1500 + 260 * clearedN(); return Math.round(base * (1 + (TH_H - 1 - y) * 0.25) * (thSt().g[i] === 'boss' ? 2.2 : 1)); };
 const TH_IC = { start: '', mob: 'th_mob', chest: 'th_chest', bless: 'th_bless', spring: 'th_spring', trap: 'th_trap', empty: '', boss: 'th_boss' };
 const thImg = k => TH_IC[k] ? `<img src="art/ui/${TH_IC[k]}.webp" alt="">` : '';
-function thMove(i) { const T = thSt(); if (T.done || T.steps <= 0) return; const ax = T.at % TH_W, ay = Math.floor(T.at / TH_W), x = i % TH_W, y = Math.floor(i / TH_W);
+let dnBusy = false;
+function thAnim(cell, k, msg, won) {
+  dnBusy = true; const [x, y] = cell ? rcMid(cell) : [innerWidth / 2, innerHeight / 2], end = ms => setTimeout(() => { dnBusy = false; showDn(); }, ms);
+  if (cell) { cell.classList.add('th-step'); cell.innerHTML = '<img src="art/ui/th_hero.webp" alt="">'; }
+  if (won) {   // trận nhỏ: đội ta vs quái, thanh lực chiến va nhau
+    const ov = document.createElement('div'); ov.className = 'th-clash'; const boss = k === 'boss';
+    ov.innerHTML = `<div class="thc-side l"><img src="${fullImg(S.lineup[0] || 'ngokhong', 200)}" alt=""><b>${fmt(won.pw)}</b><i style="--w:${Math.min(100, won.pw / Math.max(won.pw, won.need) * 100)}%"></i></div><div class="thc-vs">VS</div><div class="thc-side r"><img src="art/ui/${boss ? 'th_boss' : 'th_mob'}.webp" alt=""><b>${fmt(won.need)}</b><i style="--w:${Math.min(100, won.need / Math.max(won.pw, won.need) * 100)}%"></i></div><div class="thc-res"></div>`;
+    document.body.appendChild(ov); snd('whoosh');
+    setTimeout(() => { ov.classList.add('hit'); fxAt('gc_burst', 0.7, innerWidth / 2, innerHeight / 2, 340); snd('impact'); scrShake(boss); }, 650);
+    setTimeout(() => { const r = ov.querySelector('.thc-res'); r.textContent = won.ok ? (boss ? 'HẠ BOSS!' : 'THẮNG!') : 'THẤT BẠI'; r.className = 'thc-res ' + (won.ok ? 'win' : 'lose'); snd(won.ok ? 'gong' : 'thunder', 0.8); }, 1100);
+    setTimeout(() => { ov.remove(); if (won.ok) { fxAt('fx_coins', 1.1, x, y, 160); floatNum(msg.replace(/^.*?\+/, '+'), x, y, 'gold'); } else floatNum('−2 bước', x, y, 'bad'); }, 2000);
+    end(2700); return; }
+  if (k === 'chest') { fxAt('fx_chest', 1.1, x, y, 170); snd('magic'); setTimeout(() => { snd('gong', 0.7); floatNum(msg, x, y - 20, 'gold'); }, 600); end(1500); return; }
+  if (k === 'bless') { fxAt('fx_levelup', 1.2, x, y - 20, 150); snd('heal'); floatNum('Lực chiến +10%', x, y, 'gold'); end(1300); return; }
+  if (k === 'spring') { fxAt('fx_splash', 0.9, x, y, 150); snd('water'); floatNum('+3 bước', x, y, 'blue'); end(1200); return; }
+  if (k === 'trap') { fxAt('fx_rock', 0.7, x, y, 150); snd('impact'); scrShake(); floatNum('Trúng bẫy −2 bước', x, y, 'bad'); end(1200); return; }
+  end(260);
+}
+function thMove(i) { if (dnBusy) return; const T = thSt(); if (T.done || T.steps <= 0) return; const ax = T.at % TH_W, ay = Math.floor(T.at / TH_W), x = i % TH_W, y = Math.floor(i / TH_W);
   if (Math.abs(ax - x) + Math.abs(ay - y) !== 1) { toast('Chỉ đi sang ô kề bên'); return; }
-  T.steps--; T.at = i; if (!T.open.includes(i)) T.open.push(i); const k = T.g[i]; let msg = '';
-  if (k === 'mob' || k === 'boss') { const need = thTilePw(i), pw = thPw(), ok = pw >= need * (0.7 + Math.random() * 0.5);
+  T.steps--; T.at = i; if (!T.open.includes(i)) T.open.push(i); const k = T.g[i]; let msg = '', won = null; const cell = ui.querySelector(`[data-th="${i}"]`);
+  if (k === 'mob' || k === 'boss') { const need = thTilePw(i), pw = thPw(), ok = pw >= need * (0.7 + Math.random() * 0.5); won = { ok, pw, need };
     if (ok) { const v = Math.round(need * 0.6); T.loot.vang += v; if (Math.random() < 0.35 || k === 'boss') T.loot.univ += k === 'boss' ? 20 : 2; if (k === 'boss') { T.loot.ngoc += 100; T.done = 1; } T.g[i] = 'empty'; msg = (k === 'boss' ? 'Hạ Boss Bí Cảnh! ' : 'Thắng! ') + '+' + fmt(v) + ' vàng'; }
     else { T.steps = Math.max(0, T.steps - 2); msg = 'Thua (cần lực chiến ~' + fmt(need) + '), mất 2 bước'; } }
   else if (k === 'chest') { const r = Math.random(); if (r < 0.5) { T.loot.vang += 3000 + 150 * clearedN(); msg = 'Rương vàng'; } else if (r < 0.75) { T.loot.tt += 20; msg = 'Rương Tinh Thiết'; } else if (r < 0.92) { T.loot.univ += 3; msg = 'Rương mảnh vạn năng'; } else { T.loot.ngoc += 30; msg = 'Rương ngọc!'; } T.g[i] = 'empty'; }
@@ -5775,29 +5870,58 @@ function thMove(i) { const T = thSt(); if (T.done || T.steps <= 0) return; const
   else if (k === 'spring') { T.steps += 3; T.g[i] = 'empty'; msg = 'Linh tuyền: +3 bước'; }
   else if (k === 'trap') { T.steps = Math.max(0, T.steps - 2); T.g[i] = 'empty'; msg = 'Trúng bẫy: mất 2 bước'; }
   for (const d of [-TH_W, TH_W, -1, 1]) { const j = i + d; if (j >= 0 && j < TH_W * TH_H && !(d === -1 && x === 0) && !(d === 1 && x === TH_W - 1) && !T.open.includes(j)) T.open.push(j); }
-  save(); if (msg) toast(msg); showDn(); }
+  save(); thAnim(cell, k, msg, won); }
 // ---- Câu Cá: thanh ngắm, bấm Kéo khi kim nằm trong vùng xanh
 const FISH = [['Cá Chép Vàng', 'vang', 2500, 0.55, 'fi_chep'], ['Cá Kình Bạc', 'tt', 15, 0.25, 'fi_kinh'], ['Linh Ngư', 'lq', 20, 0.12, 'fi_linh'], ['Kim Long Ngư', 'ngoc', 40, 0.06, 'fi_kimlong'], ['Cá Thần Đông Hải', 'univ', 10, 0.02, 'fi_than']];
 let fishAnim = null;
-function fishStart() { const D = dnState(); if (D.fish <= 0) return; const bar = $('#fiBar'), mk = $('#fiMk'); if (!bar || !mk) return; let t0 = performance.now(); const zone = [0.4 + Math.random() * 0.25]; zone.push(zone[0] + 0.16);
-  $('#fiZone').style.left = zone[0] * 100 + '%'; $('#fiZone').style.width = (zone[1] - zone[0]) * 100 + '%';
-  const sp = 0.9 + Math.random() * 0.6; cancelAnimationFrame(fishAnim);
-  const step = t => { const p = (Math.sin((t - t0) / 1000 * sp * Math.PI) + 1) / 2; mk.style.left = p * 100 + '%'; mk.dataset.p = p; fishAnim = requestAnimationFrame(step); }; fishAnim = requestAnimationFrame(step);
-  $('#fiGo').textContent = 'Kéo!'; $('#fiGo').onclick = () => { cancelAnimationFrame(fishAnim); const p = +mk.dataset.p, hit = p >= zone[0] && p <= zone[1]; D.fish--;
-    if (hit) { let r = Math.random(), f = FISH[0]; for (const x of FISH) { if (r < x[3]) { f = x; break; } r -= x[3]; } const k = f[1], v = k === 'vang' ? f[2] + 100 * clearedN() : f[2];
-      const rw = {}; if (k === 'tt') S.tt = (S.tt || 0) + v; else { rw[k] = v; grant(rw); } D.album[f[0]] = (D.album[f[0]] || 0) + 1; toast('Câu được ' + f[0] + '!'); }
-    else toast('Cá sổng mất rồi...'); save(); showDn(); }; }
+function fishStart() { const D = dnState(); if (D.fish <= 0 || dnBusy) return; dnBusy = true;
+  const go = $('#fiGo'), bob = $('#fiBob'), pond = $('#fiPond'), bar = $('#fiBar'), mk = $('#fiMk'); if (!go || !bob) { dnBusy = false; return; }
+  go.disabled = true; go.textContent = 'Đang chờ cá...'; bob.className = 'fi-bob cast'; snd('whoosh', 0.6); const rp = fxEl('fx_ripple', 1.8, { cls: 'fi-rip', loop: true }); pond.appendChild(rp);
+  setTimeout(() => { if (!bob.isConnected) { dnBusy = false; return; } bob.className = 'fi-bob bite'; snd('water'); floatAt(pond, 'Cá cắn câu!', 'gold');
+    const zone = [0.35 + Math.random() * 0.3]; zone.push(zone[0] + 0.17); $('#fiZone').style.left = zone[0] * 100 + '%'; $('#fiZone').style.width = (zone[1] - zone[0]) * 100 + '%'; bar.classList.remove('off');
+    const t0 = performance.now(), sp = 0.9 + Math.random() * 0.7; cancelAnimationFrame(fishAnim);
+    const step = t => { const p = (Math.sin((t - t0) / 1000 * sp * Math.PI - Math.PI / 2) + 1) / 2; mk.style.left = p * 100 + '%'; mk.dataset.p = p; fishAnim = requestAnimationFrame(step); }; fishAnim = requestAnimationFrame(step);
+    go.disabled = false; go.textContent = 'Kéo!'; go.classList.add('pulse');
+    go.onclick = () => { cancelAnimationFrame(fishAnim); go.disabled = true; go.classList.remove('pulse'); const p = +mk.dataset.p, hit = p >= zone[0] && p <= zone[1]; D.fish--; rp.remove();
+      const [px, py] = rcMid(pond); fxAt('fx_splash', 0.8, px, py, hit ? 260 : 160); bob.className = 'fi-bob';
+      if (hit) { let r = Math.random(), f = FISH[0]; for (const x of FISH) { if (r < x[3]) { f = x; break; } r -= x[3]; } const k = f[1], v = k === 'vang' ? f[2] + 100 * clearedN() : f[2];
+        const isNew = !D.album[f[0]]; if (k === 'tt') S.tt = (S.tt || 0) + v; else { const rw = {}; rw[k] = v; grant(rw); } D.album[f[0]] = (D.album[f[0]] || 0) + 1; save(); snd('water'); scrShake();
+        setTimeout(() => fishShow(f, k, v, isNew), 420); }
+      else { snd('water', 0.6); floatAt(pond, 'Cá sổng mất rồi...', 'bad'); save(); setTimeout(() => { dnBusy = false; showDn(); }, 1200); } };
+  }, 900 + Math.random() * 1800); }
+const FISH_RAR = ['Thường', 'Khá', 'Hiếm', 'Quý', 'Thần thoại'], FISH_COL = ['#9fd0ff', '#c0c0d0', '#7cf09a', '#ffd23a', '#ff7af0'];
+function fishShow(f, k, v, isNew) {
+  const ri = FISH.indexOf(f), el = document.createElement('div'); el.className = 'fi-show'; el.style.setProperty('--fc', FISH_COL[ri]);
+  el.innerHTML = `<div class="rwp-rays"></div><div class="fis-box"><img class="fis-fish" src="art/ui/${f[4]}.webp" alt="">${isNew ? '<em class="fis-new">MỚI!</em>' : ''}<small>${FISH_RAR[ri]}</small><h3>${f[0]}</h3><div class="fis-rew">${icon(k)} +${fmt(v)} ${RW_NAME[k]}</div><div class="gcx-tap">Chạm để nhận</div></div>`;
+  document.body.appendChild(el); snd(ri >= 3 ? 'gong' : 'pickup'); if (ri >= 3) { critBanner(ri === 4 ? 'THẦN NGƯ!' : 'CÁ QUÝ!'); scrShake(true); }
+  const [cx, cy] = rcMid(el.querySelector('.fis-fish')); setTimeout(() => fxAt('fx_sparkle', 1.2, cx, cy, 300), 200);
+  el.onclick = () => { const [x, y] = rcMid(el.querySelector('.fis-rew')); el.remove(); if (['vang', 'ngoc', 'univ'].includes(k)) flyRes(k, x, y); setTimeout(() => { dnBusy = false; showDn(); }, 1000); };
+}
 // ---- Đào Mỏ: lưới 6×6, cuốc đá tìm khoáng
 function mineNew() { const r = dnRng(dnSeed() + 99); return Array.from({ length: 36 }, () => { const q = r(); return { k: q < 0.35 ? 'empty' : q < 0.62 ? 'iron' : q < 0.82 ? 'gold' : q < 0.94 ? 'gem' : 'jade', hp: q > 0.82 ? 2 : 1, open: 0 }; }); }
 const MINE_IC = { empty: 'mi_rock', iron: 'mi_iron', gold: 'mi_gold', gem: 'mi_gem', jade: 'mi_jade' };
-function mineHit(i) { const D = dnState(), c = D.mine[i]; if (c.open || D.pick <= 0) return; D.pick--; c.hp--; if (c.hp > 0) { save(); toast('Đá cứng, cuốc thêm lần nữa'); showDn(); return; }
-  c.open = 1; const m = { iron: () => { S.tt = (S.tt || 0) + 8; return '⚙8 Tinh Thiết'; }, gold: () => { S.vang += 2000 + 80 * clearedN(); return 'vàng'; }, gem: () => { S.univ += 2; return '2 mảnh vạn năng'; }, jade: () => { S.ngoc += 25; return '25 ngọc'; }, empty: () => 'không có gì' }[c.k]();
-  save(); toast('Đào được: ' + m); showDn(); }
+function mineHit(i) { const D = dnState(), c = D.mine[i]; if (c.open || D.pick <= 0 || dnBusy) return; const cell = ui.querySelector(`[data-mi="${i}"]`); D.pick--; c.hp--; if (c.hp > 0) { save(); mineAnim(cell, null); return; }
+  c.open = 1; const m = { iron: () => { S.tt = (S.tt || 0) + 8; return '+8 Tinh Thiết'; }, gold: () => { const v = 2000 + 80 * clearedN(); S.vang += v; return '+' + fmt(v) + ' vàng'; }, gem: () => { S.univ += 2; return '+2 mảnh vạn năng'; }, jade: () => { S.ngoc += 25; return '+25 ngọc'; }, empty: () => 'Chỉ có đá...' }[c.k]();
+  save(); mineAnim(cell, c.k, m); }
+function mineAnim(cell, k, m) { if (!cell) { showDn(); return; } dnBusy = true; const [x, y] = rcMid(cell); cell.classList.add('mi-hit'); snd('impact', 0.8); fxAt('fx_rock', 0.6, x, y, 120);
+  if (!k) { floatNum('Nứt rồi! Cuốc thêm lần nữa', x, y, ''); setTimeout(() => { dnBusy = false; showDn(); }, 650); return; }
+  setTimeout(() => { cell.classList.add('op'); cell.innerHTML = `<img class="mi-pop" src="art/ui/${MINE_IC[k]}.webp" alt="">`; if (k !== 'empty') { fxAt('fx_sparkle', 0.9, x, y, 140); snd(k === 'jade' || k === 'gem' ? 'gong' : 'pickup', 0.7); } floatNum(m, x, y, k === 'empty' ? '' : 'gold');
+    const rk = { gold: 'vang', jade: 'ngoc', gem: 'univ' }[k]; if (rk) flyRes(rk, x, y, 5); }, 330);
+  setTimeout(() => { dnBusy = false; showDn(); }, 1400); }
 // ---- Cây Tiền: lắc ra vàng, có lúc bạo kích ×2/×5
-function treeShake() { const D = dnState(); let cost = 0; if (D.tree <= 0) { cost = [20, 40, 80, 120][Math.min(3, D.treeBuy)]; if (S.ngoc < cost) { toast('Không đủ ngọc'); return; } S.ngoc -= cost; D.treeBuy++; } else D.tree--;
-  const base = 4000 + 220 * clearedN(), r = Math.random(), k = r < 0.06 ? 5 : r < 0.3 ? 2 : 1; S.vang += base * k; save(); toast((k > 1 ? 'Bạo kích ×' + k + '! ' : '') + '+' + fmt(base * k) + ' vàng'); showDn(); }
+function treeShake() { if (dnBusy) return; const D = dnState(); let cost = 0; if (D.tree <= 0) { cost = [20, 40, 80, 120][Math.min(3, D.treeBuy)]; if (S.ngoc < cost) { toast('Không đủ ngọc'); return; } S.ngoc -= cost; D.treeBuy++; } else D.tree--;
+  const base = 4000 + 220 * clearedN(), r = Math.random(), k = r < 0.06 ? 5 : r < 0.3 ? 2 : 1; S.vang += base * k; save(); treeAnim(base * k, k); }
+function treeAnim(v, k) { const tr = ui.querySelector('.tree'), img = tr && tr.querySelector('img'); if (!img) { showDn(); return; } dnBusy = true; $('#trGo').disabled = true;
+  const r = img.getBoundingClientRect(), cx = r.left + r.width / 2, top = r.top + r.height * 0.3;
+  img.classList.remove('shake'); void img.offsetWidth; img.classList.add('shake'); snd('whoosh', 0.8);
+  for (let j = 0; j < 8 + k * 4; j++) setTimeout(() => { const c = document.createElement('div'); c.className = 'coin-fall'; c.innerHTML = icon('vang'); c.style.left = (cx + (Math.random() - 0.5) * r.width * 0.8) + 'px'; c.style.top = (top + (Math.random() - 0.5) * 40) + 'px'; c.style.setProperty('--dx', ((Math.random() - 0.5) * 80) + 'px'); c.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg'); document.body.appendChild(c); setTimeout(() => c.remove(), 1100); if (j % 3 === 0) snd('pickup', 0.35, 1.2 + Math.random() * 0.4); }, 150 + j * 45);
+  setTimeout(() => fxAt('fx_coins', 1.2, cx, r.top + r.height * 0.55, Math.min(360, r.width * 1.6)), 200);
+  if (k > 1) setTimeout(() => { critBanner('BẠO KÍCH ×' + k); scrShake(k >= 5); snd('gong'); if (k >= 5) setTimeout(() => snd('roar', 0.6, 1.2), 150); }, 450);
+  setTimeout(() => floatNum('+' + fmt(v), cx, r.top + r.height * 0.25, k > 1 ? 'gold big' : 'gold'), 520);
+  setTimeout(() => flyRes('vang', cx, r.top + r.height * 0.6, 6 + k * 2), 900);
+  setTimeout(() => { dnBusy = false; showDn(); }, 2100); }
 function showDn(tab) {
-  if (tab) DN_TAB = tab; const D = dnState();
+  if (tab) DN_TAB = tab; dnBusy = false; const D = dnState();
   const tabs = `<div class="hd-tabs q-tabs">${[['th', 'Thám Hiểm'], ['fi', 'Câu Cá'], ['mi', 'Đào Mỏ'], ['tr', 'Cây Tiền']].map(([k, n]) => `<button class="${DN_TAB === k ? 'on' : ''}" data-dnt="${k}">${n}</button>`).join('')}</div>`;
   let body = '';
   if (DN_TAB === 'th') { const T = D.th;
@@ -5806,7 +5930,7 @@ function showDn(tab) {
       <p class="hint">Đi sang ô kề bên (mỗi bước 1 lượt). Quái/boss: thắng nếu lực chiến đội đủ mạnh (số nhỏ là lực chiến cần). Rương · phúc lành (+10% lực chiến) · linh tuyền (+3 bước) · bẫy (−2 bước). Bản đồ mới mỗi ngày.</p>
       <div style="text-align:center"><button class="btn gold" id="thGet" ${T.loot.vang + T.loot.ngoc + T.loot.univ + T.loot.tt ? '' : 'disabled'}>Mang chiến lợi phẩm về</button></div>`; }
   else if (DN_TAB === 'fi') body = `<div class="tm-head"><b>Câu Cá · Đông Hải</b><span>Còn ${D.fish}/5 lượt hôm nay · bấm "Thả câu", rồi bấm "Kéo!" khi kim nằm trong vùng xanh</span></div>
-      <div class="fi-bar" id="fiBar"><i id="fiZone"></i><b id="fiMk"></b></div>
+      <div class="fi-pond" id="fiPond"><b class="fi-bob" id="fiBob"></b><i class="fi-line"></i></div><div class="fi-bar off" id="fiBar"><i id="fiZone"></i><b id="fiMk"></b></div>
       <div style="text-align:center"><button class="btn gold big" id="fiGo" ${D.fish > 0 ? '' : 'disabled'}>Thả câu</button></div>
       <h4>Bộ sưu tập</h4>${FISH.map(([n, k, v, , im]) => `<div class="vc-q tm-g"><img class="tm-gi" src="art/ui/${im}.webp" alt=""><div><b>${n}</b><small>${k === 'vang' ? 'vàng' : k === 'tt' ? 'Tinh Thiết' : k === 'lq' ? 'Linh Quả' : k === 'ngoc' ? 'ngọc' : 'mảnh vạn năng'} · đã câu ${D.album[n] || 0}</small></div></div>`).join('')}`;
   else if (DN_TAB === 'mi') body = `<div class="tm-head"><b>Đào Mỏ · Côn Lôn Sơn</b><span>Còn ${D.pick} lần cuốc · đá quý (ngọc lam, ngọc bích) cần cuốc 2 lần · mỏ mới mỗi ngày</span></div>
@@ -5817,7 +5941,7 @@ function showDn(tab) {
   $('#bBack').onclick = () => { cancelAnimationFrame(fishAnim); showHome(); };
   ui.querySelectorAll('[data-dnt]').forEach(b => b.onclick = () => { cancelAnimationFrame(fishAnim); showDn(b.dataset.dnt); });
   ui.querySelectorAll('[data-th]').forEach(b => b.onclick = () => thMove(+b.dataset.th));
-  if ($('#thGet')) $('#thGet').onclick = () => { const T = D.th, L = T.loot; grant({ vang: L.vang, ngoc: L.ngoc, univ: L.univ }); S.tt = (S.tt || 0) + L.tt; toast('Mang về: ' + (rewTxt({ vang: L.vang, ngoc: L.ngoc, univ: L.univ }) || '').replace(/<[^>]+>/g, '') + (L.tt ? ' ⚙' + L.tt : '')); T.loot = { vang: 0, ngoc: 0, univ: 0, tt: 0 }; save(); showDn(); };
+  if ($('#thGet')) $('#thGet').onclick = () => { const T = D.th, L = T.loot, rw = { vang: L.vang, ngoc: L.ngoc, univ: L.univ, tt: L.tt }; grant({ vang: L.vang, ngoc: L.ngoc, univ: L.univ }); S.tt = (S.tt || 0) + L.tt; T.loot = { vang: 0, ngoc: 0, univ: 0, tt: 0 }; save(); rewardPop(rw, 'Chiến Lợi Phẩm Bí Cảnh', () => setTimeout(showDn, 900)); };
   if ($('#fiGo')) $('#fiGo').onclick = fishStart;
   ui.querySelectorAll('[data-mi]').forEach(b => b.onclick = () => mineHit(+b.dataset.mi));
   if ($('#trGo')) $('#trGo').onclick = treeShake;
@@ -6793,6 +6917,13 @@ function route() {
     Promise.all([ensureHeroAssets(S.lineup), ensureEnemyAssets(stageEnemyIds(st))]).then(() => { startBattleNow(st); B.auto = true; for (let i = 0; i < 240 * 60 && !B.over; i++) { update(1 / 60); if (B.paused) { const m = ui.querySelector('.cp-modal'); const b = m && m.querySelector('.cp-card'); if (b) b.click(); else B.paused = false; } } for (let i = 0; i < 200 && B; i++) update(1 / 60); console.log('HT_RESULT', JSON.stringify({ over: B.over, win: B.win, ht: S.owned[id].ht, shard: S.owned[id].shard, tt: S.tt, cleared: clearedN() })); }); }
   else if (k === 'dn') { S.unlockAll = 1; for (const id of ['ngokhong', 'duongtien', 'nata']) if (!S.owned[id]) S.owned[id] = newRec(); S.lineup = ['ngokhong', 'duongtien', 'nata']; const D = dnState(); if (v === 'th') { thMove(D.th.at - 5); } if (v === 'mi') { mineHit(0); mineHit(7); } showDn(v || 'th'); if (v === 'fi') setTimeout(fishStart, 300); }
   else if (k === 'htgo') { window.addEventListener('error', e => console.log('ERR', e.message)); window.addEventListener('unhandledrejection', e => console.log('REJ', e.reason && (e.reason.stack || e.reason.message || e.reason))); const id = v || 'ngokhong'; for (const x of [id, 'nata', 'quanam']) if (!S.owned[x]) S.owned[x] = newRec(); S.tut = { all: 1 }; htGo(id, 0); setTimeout(() => console.log('HTGO_STATE', !!B, B && B.st && B.st.id, !!document.getElementById('loadov')), 6000); }
+  else if (k === 'gcx') { const ids = v === 'mix' ? ['hangnga', 'datky', 'thailaoquan'] : [v || 'ngokhong']; showGacha(); gachaCine(ids.map(id => ({ id, rar: HEROES[id].rar, isNew: true })), () => console.log('GCX_DONE')); }
+  else if (k === 'feel') { S.unlockAll = 1; for (const id of ['ngokhong', 'duongtien', 'nata']) if (!S.owned[id]) S.owned[id] = newRec(); S.lineup = ['ngokhong', 'duongtien', 'nata']; const D = dnState(); D.tree = 3;
+    if (v === 'tree') { showDn('tr'); setTimeout(() => { Math.random = () => 0.01; treeShake(); }, 600); }
+    if (v === 'fish') { showDn('fi'); setTimeout(fishStart, 400); setTimeout(() => { const mk = $('#fiMk'), z = $('#fiZone'); if (mk) { cancelAnimationFrame(fishAnim); mk.dataset.p = parseFloat(z.style.left) / 100 + 0.05; Math.random = () => 0.97; $('#fiGo').onclick(); } }, 3500); }
+    if (v === 'mine') { showDn('mi'); setTimeout(() => mineHit(3), 500); }
+    if (v === 'th') { showDn('th'); D.th.g[D.th.at - 5] = 'mob'; setTimeout(() => thMove(D.th.at - 5), 500); }
+    if (v === 'rw') { showDn('th'); rewardPop({ vang: 12500, ngoc: 100, univ: 6, tt: 40 }, 'Chiến Lợi Phẩm Bí Cảnh'); } }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const lm = h.match(/(?:^|&)lv=(\d+)/); if (lm) S.owned[v].lv = +lm[1]; } { const tm = h.match(/(?:^|&)tab=(\w+)/); if (tm) HD_TAB = tm[1]; } { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
