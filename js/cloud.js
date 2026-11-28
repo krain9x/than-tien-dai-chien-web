@@ -9,6 +9,7 @@
   if (typeof firebase === 'undefined') { C.err = 'Không tải được Firebase'; return; }
   try { firebase.initializeApp(CFG); C.ok = true; } catch (e) { C.err = String(e); return; }
   const auth = firebase.auth(), db = firebase.firestore();
+  const did = () => C.user.uid + ((window.SV_ID || 1) > 1 ? '_s' + window.SV_ID : '');   // mỗi máy chủ một bản lưu (S1 giữ id cũ)
   C.onUser = cb => { C._cbs.push(cb); if (C.user !== null) cb(C.user); };
   auth.onAuthStateChanged(u => { C.user = u || false; C._cbs.forEach(cb => { try { cb(C.user); } catch (e) { console.error(e); } }); });
   auth.getRedirectResult().catch(e => { C.err = e.message; });
@@ -18,17 +19,17 @@
     catch (e) { if (/popup|cancelled|operation-not-supported/i.test(e.code || e.message)) return auth.signInWithRedirect(p); throw e; }
   };
   C.signOut = () => auth.signOut();
-  C.pull = async () => { if (!C.user) return null; const d = await db.collection('users').doc(C.user.uid).get(); return d.exists ? d.data() : null; };
+  C.pull = async () => { if (!C.user) return null; const d = await db.collection('users').doc(did()).get(); return d.exists ? d.data() : null; };
   C.pushNow = async S => {
     if (!C.user) return;
     const data = JSON.parse(JSON.stringify(S));
-    await db.collection('users').doc(C.user.uid).set({ save: JSON.stringify(data), ts: data.ts || Date.now(), name: C.user.displayName || '', v: 1 });
+    await db.collection('users').doc(did()).set({ save: JSON.stringify(data), ts: data.ts || Date.now(), name: C.user.displayName || '', v: 1 });
     C.lastPush = Date.now();
   };
-  C.lbSet = d => C.user ? db.collection('lb').doc(C.user.uid).set(d) : Promise.resolve();
+  C.lbSet = d => C.user ? db.collection('lb').doc(did()).set(d) : Promise.resolve();
   C.lbTop = async (field, n) => { const q = await db.collection('lb').orderBy(field, 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
   // Luận Kiếm: arena/{uid} = đội thủ + điểm (cần quy tắc arena trong firestore.rules)
-  C.arenaSet = d => C.user ? db.collection('arena').doc(C.user.uid).set(d) : Promise.resolve();
+  C.arenaSet = d => C.user ? db.collection('arena').doc(did()).set(d) : Promise.resolve();
   C.arenaList = async n => { const q = await db.collection('arena').orderBy('ts', 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
   C.arenaTop = async n => { const q = await db.collection('arena').orderBy('rating', 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
   C.push = S => { if (!C.user) return; clearTimeout(C._t); C._t = setTimeout(() => C.pushNow(S).catch(e => { C.err = e.message; console.warn('cloud', e); }), 3000); };

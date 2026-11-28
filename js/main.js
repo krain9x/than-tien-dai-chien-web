@@ -22,7 +22,16 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
 // ------------------------------------------------------------------ SAVE
-const SAVE_KEY = 'ttdc_save_v1';
+// ---- MÁY CHỦ: mỗi server 1 bản lưu riêng (S1 dùng khoá cũ để giữ tiến độ cũ). Đổi server = ghi tmdk_sv rồi tải lại trang.
+const SV_CL = [['td', 'Cụm Thiên Đình'], ['pt', 'Cụm Phong Thần'], ['tdu', 'Cụm Tây Du']];
+const SV_LIST = [['Nam Thiên Môn', 'td'], ['Lăng Tiêu Điện', 'td'], ['Dao Trì', 'td'], ['Đâu Suất Cung', 'td'], ['Quảng Hàn Cung', 'td'],
+  ['Côn Lôn', 'pt'], ['Ngọc Hư Cung', 'pt'], ['Bích Du Cung', 'pt'], ['Kim Ngao Đảo', 'pt'], ['Triều Ca', 'pt'],
+  ['Hoa Quả Sơn', 'tdu'], ['Thuỷ Liêm Động', 'tdu'], ['Hoả Diệm Sơn', 'tdu'], ['Bàn Ti Động', 'tdu'], ['Linh Sơn', 'tdu']].map(([n, c], i) => ({ id: i + 1, n, c }));
+const svName = id => 'S' + id + ' ' + (SV_LIST[id - 1] || SV_LIST[0]).n;
+const svStat = id => id === SV_LIST.length ? ['new', 'Mới'] : id >= SV_LIST.length - 2 ? ['hot', 'Đông'] : ['full', 'Đầy'];
+const SV_ID = (() => { const v = +(localStorage.getItem('tmdk_sv') || 0); return v >= 1 && v <= SV_LIST.length ? v : 0; })();
+window.SV_ID = SV_ID || 1;
+const SAVE_KEY = (SV_ID || 1) > 1 ? 'ttdc_save_v1_s' + SV_ID : 'ttdc_save_v1';
 const newRec = () => ({ lv: 1, star: 1, shard: 0 });
 function defaultSave() {
   const owned = {};
@@ -38,7 +47,9 @@ function loadSave() {
   } catch (e) { /* bỏ qua */ }
   return defaultSave();
 }
-function save() { if (window.__arFoe) return; try { if (S.owned && typeof resonate === 'function') { const n = resonate(); if (n && typeof toast === 'function') setTimeout(() => toast('Cộng hưởng cấp: ' + n + ' tướng lên cấp ' + resLv()), 50); } } catch (e) { } S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
+let _svMetaT = 0;
+function svMetaSave(force) { if (!S.pname || (!force && Date.now() - _svMetaT < 15000)) return; _svMetaT = Date.now(); try { const M = JSON.parse(localStorage.getItem('tmdk_svmeta') || '{}'); M[window.SV_ID] = { n: S.pname, av: S.pav || 1, st: Object.keys(S.cleared || {}).length, pw: typeof totalPower === 'function' ? totalPower() : 0, ts: Date.now() }; localStorage.setItem('tmdk_svmeta', JSON.stringify(M)); } catch (e) {} }
+function save() { if (window.__arFoe) return; try { svMetaSave(); } catch (e) {} try { if (S.owned && typeof resonate === 'function') { const n = resonate(); if (n && typeof toast === 'function') setTimeout(() => toast('Cộng hưởng cấp: ' + n + ' tướng lên cấp ' + resLv()), 50); } } catch (e) { } S.ts = Date.now(); try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); } catch (e) { /* bỏ qua */ } if (window.Cloud && Cloud.user) Cloud.push(S); }
 let S = loadSave();
 // Tặng 10 tướng mới vào kho hiện có (một lần cho mỗi bản save) để thử ngay, không cần quay gacha
 // (đã bỏ) tặng sẵn 10 tướng mới — tân thủ đi từ thấp lên cao
@@ -4445,8 +4456,8 @@ function showHome() {
   const hi = (id, img, label, dot, extra) => `<button class="h4-ic" id="${id}"><img src="art/ui/${img}.webp" alt="">${dot ? '<i class="dot"></i>' : ''}<span>${label}</span>${extra || ''}</button>`;
   ui.innerHTML = `<div class="screen home2 home4">
     <button class="h4-prof" id="hProf" title="Hồ sơ và cài đặt">
-      <span class="h4-av">${cap ? `<img src="${por(cap, 60)}">` : ''}<i class="hm-cloud ${cloudSt}"></i><em>${chN}</em></span>
-      <span class="h4-who"><small>Lực Chiến</small><b>${fmt(totalPower())}</b><i>${esc(titleCur().n)}${window.Cloud && Cloud.user && Cloud.user.displayName ? ' · ' + esc(Cloud.user.displayName) : ''}</i>
+      <span class="h4-av">${S.pav ? `<img src="art/story/av${S.pav}.webp">` : cap ? `<img src="${por(cap, 60)}">` : ''}<i class="hm-cloud ${cloudSt}"></i><em>${chN}</em></span>
+      <span class="h4-who"><small>Lực Chiến</small><b>${fmt(totalPower())}</b><i>${S.pname ? esc(S.pname) + ' · ' : ''}${esc(titleCur().n)} · S${window.SV_ID}</i>
         <u><s style="width:${Math.round(cleared / STAGES.length * 100)}%"></s></u></span></button>
     <div class="h4-side">
       ${hi('hRank', 'ic_rank', 'Xếp Hạng')}
@@ -5119,6 +5130,141 @@ function showStory(chId, done) {
   wrap.onclick = () => { i++; if (i >= L.length) finish(); else draw(); };
   draw(); ui.appendChild(wrap);
 }
+// ===================== LUỒNG VÀO GAME =====================
+const GAME_VER = 'v1.0.0';
+function showSplash(next) {
+  const el = document.createElement('div'); el.className = 'ent-splash';
+  el.innerHTML = `<img class="ent-logo" src="art/brand/logo.webp" alt="Thần Ma Đại Kiếp"><p class="ent-warn">Chơi quá 180 phút một ngày sẽ ảnh hưởng xấu đến sức khoẻ.</p>`;
+  document.body.appendChild(el); let done = false; const go = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); next(); }, 500); };
+  setTimeout(go, 2600); el.onclick = go;
+}
+const LOAD_TIPS = ['Đặt tướng cùng phe trong đội để kích hoạt cộng hưởng phe, tăng máu và công.', 'Đội trưởng được +20% tốc đánh; chạm vào quái để ra lệnh tấn công.',
+  'Mỗi 10 lượt chiêu mộ chắc chắn có tướng SR trở lên.', 'Thần Khí Bản Mệnh giúp tướng SSR+ mạnh vượt bậc.', 'Lên 6 sao, tướng UR đạt cảnh giới Vô Song.',
+  'Ghé Du Ngoạn mỗi ngày: câu cá, đào mỏ, lắc Cây Tiền.', 'Gia nhập Tiên Minh để cùng đánh Boss Minh và nhận quà.', 'Tướng đã có ra trùng sẽ đổi thành mảnh để tăng sao.'];
+function showLoadScr(p, next) {
+  const el = document.createElement('div'); el.className = 'ent-load';
+  el.innerHTML = `<div class="ent-bg" style="background-image:url(art/brand/bg_loading.webp)"></div><img class="ent-logo sm" src="art/brand/logo.webp" alt="">
+    <div class="ld-box"><div class="ld-tip"></div><div class="ld-bar"><i></i><img class="ld-run" src="art/sprites/ngokhong.webp" alt=""><b>0%</b></div></div><small class="ent-ver">${GAME_VER} · Đang tải tài nguyên...</small>`;
+  document.body.appendChild(el); const bar = el.querySelector('.ld-bar i'), pc = el.querySelector('.ld-bar b'), run = el.querySelector('.ld-run'), tip = el.querySelector('.ld-tip');
+  let ti = Math.floor(Math.random() * LOAD_TIPS.length); const setTip = () => { tip.textContent = 'Mẹo: ' + LOAD_TIPS[ti++ % LOAD_TIPS.length]; tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); }; setTip(); const tt = setInterval(setTip, 2800);
+  let v = 0, ready = false; const t0 = performance.now(); p.then(() => { ready = true; }, () => { ready = true; });
+  const st = t => { const tgt = ready && t - t0 > 1400 ? 100 : Math.min(90, 90 * (1 - Math.exp(-(t - t0) / 1500))); v += (tgt - v) * 0.12; if (tgt === 100 && v > 99.4) v = 100;
+    bar.style.width = v + '%'; run.style.left = v + '%'; pc.textContent = Math.floor(v) + '%';
+    if (v >= 100) { clearInterval(tt); setTimeout(() => { el.classList.add('out'); setTimeout(() => { el.remove(); next(); }, 450); }, 250); return; } requestAnimationFrame(st); };
+  requestAnimationFrame(st);
+}
+const svPick0 = () => { if (SV_ID) return SV_ID; try { const M = JSON.parse(localStorage.getItem('tmdk_svmeta') || '{}'); if (Object.keys(M).length) return +Object.keys(M).sort((a, b) => M[b].ts - M[a].ts)[0]; } catch (e) {} return S.pname || !isFresh(S) ? 1 : SV_LIST.length; };
+let SV_SEL = 0;
+function showLogin() {
+  SV_SEL = SV_SEL || svPick0(); bgmSet('home');
+  const logged = window.Cloud && Cloud.user, st = svStat(SV_SEL);
+  ui.innerHTML = `<div class="screen ent-login"><div class="ent-bg kb" style="background-image:url(art/brand/bg_login.webp)"></div><div class="ent-petals">${Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 7.3 + 3) % 100}%;animation-delay:${(i * 0.83) % 7}s;animation-duration:${7 + (i % 5)}s"></i>`).join('')}</div>
+    <div class="ent-top"><button class="ent-ib" id="lgNotice"><img src="art/ui/ic_mail.webp" onerror="this.remove()" alt="">Thông báo</button><button class="ent-ib" id="lgSnd">${S.mute ? 'Âm thanh: Tắt' : 'Âm thanh: Bật'}</button></div>
+    <img class="ent-logo big" src="art/brand/logo.webp" alt="Thần Ma Đại Kiếp">
+    <div class="ent-mid">
+      <button class="sv-bar" id="lgSv"><i class="sv-dot ${st[0]}"></i><b>${svName(SV_SEL)}</b><em class="${st[0]}">${st[1]}</em><span>Đổi máy chủ ›</span></button>
+      <button class="btn gold ent-go" id="lgGo">VÀO GAME</button>
+      <div class="ent-acc">${logged ? 'Tài khoản: <b>' + esc(Cloud.user.displayName || 'Google') + '</b> · <a id="lgOut">Đổi tài khoản</a>' : 'Đang chơi bằng tài khoản <b>Khách</b> · <a id="lgIn">Đăng nhập Google</a> để lưu trên mạng'}</div>
+      <label class="ent-tos"><input type="checkbox" id="lgTos" checked> Tôi đồng ý với Điều khoản dịch vụ và Chính sách bảo mật</label>
+    </div>
+    <small class="ent-ver">${GAME_VER} · Thần Ma Đại Kiếp</small><small class="ent-warn2">Chơi quá 180 phút một ngày sẽ ảnh hưởng xấu đến sức khoẻ.</small></div>`;
+  $('#lgSv').onclick = () => { snd('pickup'); showSvPick(); };
+  $('#lgNotice').onclick = () => showNotice(true);
+  $('#lgSnd').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); audioOn(); showLogin(); };
+  if ($('#lgIn')) $('#lgIn').onclick = async () => { if (!window.Cloud || !Cloud.ok) { toast('Đang kết nối máy chủ, thử lại sau giây lát'); return; } try { await Cloud.signIn(); } catch (e) { toast('Lỗi: ' + (e.code || e.message)); } showLogin(); };
+  if ($('#lgOut')) $('#lgOut').onclick = async () => { try { await Cloud.signOut(); await Cloud.signIn(); } catch (e) { toast('Lỗi: ' + (e.code || e.message)); } showLogin(); };
+  $('#lgGo').onclick = () => { if (!$('#lgTos').checked) { toast('Hãy đồng ý điều khoản trước khi vào game'); return; } audioOn(); snd('gong'); enterServer(SV_SEL); };
+  try { if (localStorage.getItem('tmdk_notice') !== dayKey()) setTimeout(() => { if (ui.querySelector('.ent-login') && !document.querySelector('.ent-notice')) showNotice(); }, 600); } catch (e) {}
+  if (window.Cloud && Cloud.onUser && !showLogin._hook) { showLogin._hook = 1; Cloud.onUser(() => { if (ui.querySelector('.ent-login') && !document.querySelector('.ent-notice,.sv-pick')) showLogin(); }); }
+}
+const NOTICES = [
+  { tab: 'Sự kiện', t: 'Lễ Hội Tân Thủ 7 ngày', d: 'Đăng nhập và làm nhiệm vụ mỗi ngày để nhận Ngọc, vàng, mảnh vạn năng. Đủ điểm ngày 7 nhận ngay một tướng SSR!' },
+  { tab: 'Sự kiện', t: 'Chiêu mộ khởi đầu', d: 'Mỗi 10 lượt chiêu mộ chắc chắn có tướng SR trở lên; quay đủ mốc tích luỹ nhận thêm quà.' },
+  { tab: 'Cập nhật', t: 'Thần Ma Đại Kiếp chính thức ra mắt', d: 'Chào mừng Chưởng Môn! Phiên bản mới: chiêu mộ điện ảnh, Du Ngoạn (Thám Hiểm, Câu Cá, Đào Mỏ, Cây Tiền), Đạo Quả, Thử Thách Tướng, Trợ Chiến.' },
+  { tab: 'Bảo trì', t: 'Lịch bảo trì', d: 'Hiện không có lịch bảo trì. Khi bảo trì, máy chủ sẽ thông báo trước ít nhất 30 phút.' }];
+function showNotice(manual) {
+  try { localStorage.setItem('tmdk_notice', dayKey()); } catch (e) {}
+  const tabs = [...new Set(NOTICES.map(n => n.tab))]; let cur = tabs[0];
+  const el = document.createElement('div'); el.className = 'modal ent-notice';
+  const draw = () => { el.innerHTML = `<div class="nt-box"><h3>Thông Báo</h3><div class="nt-tabs">${tabs.map(t => `<button class="${t === cur ? 'on' : ''}" data-t="${t}">${t}</button>`).join('')}</div>
+    <div class="nt-list">${NOTICES.filter(n => n.tab === cur).map(n => `<div class="nt-i"><b>${n.t}</b><p>${n.d}</p></div>`).join('')}</div><button class="btn gold" id="ntOk">Đã hiểu</button></div>`;
+    el.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { cur = b.dataset.t; draw(); }); el.querySelector('#ntOk').onclick = () => el.remove(); };
+  draw(); document.body.appendChild(el);
+}
+function showSvPick() {
+  let M = {}; try { M = JSON.parse(localStorage.getItem('tmdk_svmeta') || '{}'); } catch (e) {}
+  let tab = Object.keys(M).length ? 'mine' : SV_LIST[SV_SEL - 1].c;
+  const el = document.createElement('div'); el.className = 'sv-pick';
+  const btn = sv => { const st = svStat(sv.id), m = M[sv.id]; return `<button class="sv-b ${sv.id === SV_SEL ? 'on' : ''}" data-sv="${sv.id}"><i class="sv-dot ${st[0]}"></i><b>S${sv.id} ${sv.n}</b>${st[0] === 'new' ? '<em class="new">Mới</em><em class="rec">Đề xuất</em>' : `<em class="${st[0]}">${st[1]}</em>`}${m ? `<span class="sv-me"><img src="art/story/av${m.av}.webp" onerror="this.style.visibility='hidden'" alt="">${esc(m.n)} · Ải ${m.st} · LC ${fmt(m.pw)}</span>` : ''}</button>`; };
+  const draw = () => { const L = tab === 'mine' ? SV_LIST.filter(x => M[x.id]).sort((a, b) => M[b.id].ts - M[a.id].ts) : SV_LIST.filter(x => x.c === tab).slice().reverse();
+    el.innerHTML = `<div class="ent-bg" style="background-image:url(art/brand/bg_server.webp)"></div><div class="sv-box"><h3>Chọn Máy Chủ</h3>
+      <div class="sv-cols"><div class="sv-tabs">${Object.keys(M).length ? `<button class="${tab === 'mine' ? 'on' : ''}" data-tab="mine">Đã chơi</button>` : ''}${SV_CL.slice().reverse().map(([k, n]) => `<button class="${tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>
+      <div class="sv-grid">${L.map(btn).join('') || '<p class="hint">Chưa có máy chủ nào</p>'}</div></div>
+      <div class="sv-legend"><span><i class="sv-dot new"></i>Mới</span><span><i class="sv-dot hot"></i>Đông</span><span><i class="sv-dot full"></i>Đầy</span></div><button class="btn" id="svBack">Quay lại</button></div>`;
+    el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { tab = b.dataset.tab; draw(); });
+    el.querySelectorAll('[data-sv]').forEach(b => b.onclick = () => { SV_SEL = +b.dataset.sv; snd('pickup'); el.remove(); showLogin(); });
+    el.querySelector('#svBack').onclick = () => el.remove(); };
+  draw(); document.body.appendChild(el);
+}
+function cloudWipe(cb) {   // mây khép lại rồi tan ra (chuyển cảnh vào game)
+  const el = document.createElement('div'); el.className = 'cwipe'; el.innerHTML = '<i class="l"></i><i class="r"></i>'; document.body.appendChild(el);
+  if (cb) setTimeout(cb, 650); setTimeout(() => el.classList.add('open'), cb ? 900 : 250); setTimeout(() => el.remove(), cb ? 1900 : 1250);
+}
+function enterServer(id) {
+  try { localStorage.setItem('tmdk_sv', id); } catch (e) {}
+  if (id === (SV_ID || 1)) { cloudWipe(() => enterGame()); return; }
+  sessionStorage.setItem('tmdk_in', '1'); const el = document.createElement('div'); el.className = 'cwipe'; el.innerHTML = '<i class="l"></i><i class="r"></i>'; document.body.appendChild(el); setTimeout(() => location.reload(), 650);
+}
+// ---- lần đầu vào server: truyện mở đầu -> tạo nhân vật -> Thái Bạch Kim Tinh
+const PROLOGUE = ['Thuở hỗn độn sơ khai, Hồng Quân Lão Tổ lập nên Phong Thần Bảng, định ngôi vị cho chư thần tam giới.',
+  'Từ đó Thiên Đình thái bình. Chư thần mở tiệc Bàn Đào, tam giới yên vui suốt vạn năm.',
+  'Nhưng rồi phong ấn dưới Cửu U vỡ nát. Ma Giới trỗi dậy, yêu ma tràn khắp nhân gian.',
+  'Thần Ma Đại Kiếp giáng xuống! Lôi kiếp đánh sập Nam Thiên Môn, chư thần thất lạc khắp tam giới.',
+  'Thái Thượng Lão Quân bấm độn, tìm ra một người mang thiên mệnh, có thể thu phục lại chư thần...',
+  '...và người đó chính là ngươi. Hỡi Chưởng Môn, hãy lên đường hoá giải Đại Kiếp!'];
+function showPrologue(done) {
+  let i = -1; const el = document.createElement('div'); el.className = 'prolog'; document.body.appendChild(el); bgmSet('boss');
+  const fin = () => { el.classList.add('out'); setTimeout(() => { el.remove(); bgmSet('home'); done(); }, 600); };
+  const next = () => { i++; if (i >= PROLOGUE.length) { fin(); return; }
+    el.innerHTML = `<div class="pl-img" style="background-image:url(art/story/p${i + 1}.webp)"></div><div class="pl-cap"><p></p></div><div class="pl-n">${i + 1}/${PROLOGUE.length}</div><button class="gcx-skip" id="plSkip">Bỏ qua ›</button>`;
+    el.querySelector('#plSkip').onclick = e => { e.stopPropagation(); fin(); }; snd(i === 3 ? 'thunder' : 'whoosh', 0.6);
+    const pEl = el.querySelector('.pl-cap p'), txt = PROLOGUE[i]; let k = 0; el._typing = true; const ty = setInterval(() => { k += 2; pEl.textContent = txt.slice(0, k); if (k >= txt.length) { clearInterval(ty); el._typing = false; } }, 35); el._ty = ty; el._txt = txt; };
+  el.onclick = () => { if (el._typing) { clearInterval(el._ty); el.querySelector('.pl-cap p').textContent = el._txt; el._typing = false; return; } next(); };
+  next();
+}
+const NM_HO = ['Lý', 'Vân', 'Tiêu', 'Hàn', 'Lạc', 'Bạch', 'Diệp', 'Tần', 'Mộ Dung', 'Thượng Quan', 'Âu Dương', 'Lăng', 'Mặc', 'Cố'];
+const NM_TEN = ['Thanh Phong', 'Vô Ưu', 'Tử Yên', 'Huyền Cơ', 'Lăng Vân', 'Thiên Hà', 'Nguyệt Hoa', 'Kiếm Tâm', 'Trần', 'Phi Tuyết', 'Dạ Lan', 'Tinh Hà', 'Vân Hi', 'Nhược Thuỷ', 'Cửu Ca', 'Hàn Sương'];
+const STARTERS = [['batgioi', 'Đỡ đòn, máu trâu, kéo quái'], ['honghainhi', 'Phun lửa diện rộng, sát thương cao'], ['datky', 'Pháp thuật mê hoặc, khống chế']];
+function showCreate(done) {
+  let av = 1, hero = STARTERS[0][0];
+  const rnd = () => pick(NM_HO) + ' ' + pick(NM_TEN);
+  const el = document.createElement('div'); el.className = 'cr-wrap';
+  el.innerHTML = `<div class="ent-bg" style="background-image:url(art/brand/bg_server.webp)"></div><div class="cr-box"><h3>Tạo Chưởng Môn</h3>
+    <div class="cr-row"><div class="cr-avs">${Array.from({ length: 8 }, (_, i) => `<button class="cr-av ${i === 0 ? 'on' : ''}" data-av="${i + 1}"><img src="art/story/av${i + 1}.webp" onerror="this.src='${por(['ngokhong', 'hangnga', 'duongtien', 'longnu', 'thaibachkimtinh', 'datky', 'nata', 'quanam'][i], 80)}'" alt=""></button>`).join('')}</div>
+      <div class="cr-name"><label>Tên Chưởng Môn</label><div><input id="crName" maxlength="12" value="${rnd()}"><button class="btn small" id="crDice" title="Tên ngẫu nhiên">Ngẫu nhiên</button></div><small>Tối đa 12 ký tự</small></div></div>
+    <h4>Chọn đồng hành đầu tiên</h4><div class="cr-heroes">${STARTERS.map(([id, d], i) => `<button class="cr-h ${i === 0 ? 'on' : ''}" data-h="${id}"><img src="${fullImg(id, 160)}" alt=""><b>${esc(HEROES[id].name)}</b>${rarTag(id)}<small>${d}</small></button>`).join('')}</div>
+    <button class="btn gold big" id="crOk">Bắt đầu hành trình</button></div>`;
+  document.body.appendChild(el);
+  el.querySelectorAll('[data-av]').forEach(b => b.onclick = () => { av = +b.dataset.av; el.querySelectorAll('.cr-av').forEach(x => x.classList.toggle('on', x === b)); snd('pickup', 0.5); });
+  el.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { hero = b.dataset.h; el.querySelectorAll('.cr-h').forEach(x => x.classList.toggle('on', x === b)); snd('pickup', 0.5); });
+  el.querySelector('#crDice').onclick = () => { el.querySelector('#crName').value = rnd(); snd('pickup', 0.4, 1.3); };
+  el.querySelector('#crOk').onclick = () => { const n = el.querySelector('#crName').value.trim().replace(/[<>]/g, ''); if (n.length < 2) { toast('Tên cần ít nhất 2 ký tự'); return; }
+    S.pname = n.slice(0, 12); S.pav = av; if (!S.owned[hero]) S.owned[hero] = newRec(); if (!S.lineup.includes(hero)) { if (S.lineup.length >= 5) S.lineup[S.lineup.length - 1] = hero; else S.lineup.unshift(hero); }
+    save(); svMetaSave(true); snd('gong'); el.classList.add('out'); setTimeout(() => { el.remove(); done(hero); }, 400); };
+}
+function guideTalk(lines, done) {   // Thái Bạch Kim Tinh dẫn đường: khung hội thoại có chân dung, chữ chạy
+  let i = -1; const el = document.createElement('div'); el.className = 'guide';
+  el.innerHTML = `<img class="gd-img" src="${fullImg('thaibachkimtinh', 300)}" alt=""><div class="gd-box"><b>Thái Bạch Kim Tinh</b><p></p><small>Chạm để tiếp tục ›</small></div>`; document.body.appendChild(el);
+  const p = el.querySelector('p'); let ty = null, typing = false;
+  const next = () => { i++; if (i >= lines.length) { el.classList.add('out'); setTimeout(() => { el.remove(); done && done(); }, 300); return; } let k = 0; typing = true; clearInterval(ty); ty = setInterval(() => { k += 2; p.textContent = lines[i].slice(0, k); if (k >= lines[i].length) { clearInterval(ty); typing = false; } }, 28); snd('pickup', 0.3, 1.4); };
+  el.onclick = () => { if (typing) { clearInterval(ty); p.textContent = lines[i]; typing = false; return; } next(); }; next();
+}
+function firstTime() {
+  showPrologue(() => showCreate(hero => { showHome(); cloudWipe(); setTimeout(() => guideTalk([
+    `Ha ha, Chưởng Môn ${S.pname} đã tới! Lão là Thái Bạch Kim Tinh, phụng mệnh Thái Thượng Lão Quân dẫn đường cho ngươi.`,
+    `${HEROES[hero].name} sẽ đồng hành cùng ngươi từ hôm nay. Chư thần còn lại đang thất lạc khắp tam giới, phải tự tay thu phục!`,
+    'Bấm "Chiến Đấu" để vào ải đầu tiên. Thắng ải sẽ mở dần tính năng mới, lão sẽ chỉ dẫn từng bước. Lên đường thôi!'], () => {}), 1300); }));
+}
 function enterStage(si) {
   if (typeof si === 'object') { if (si.pb) { if (pbLeft(si.pb) <= 0) { toast('Hết lượt hôm nay'); return; } pbDay().n[si.pb] = (pbDay().n[si.pb] || 0) + 1; save(); startBattle(si); return; } if (si.raid) { if (!raidUse()) return; } else if (si.tower && si.floor !== (S.tower || 0) + 1) { showTower(); return; } startBattle(si); return; }
   const st = STAGES[si], ch = CHAPTERS[st.chap];
@@ -5330,7 +5476,7 @@ async function arFindOpp() {
 function arPush() {   // gửi đội thủ + điểm lên máy chủ (bỏ qua nếu chưa mở quy tắc)
   if (!(window.Cloud && Cloud.user && Cloud.arenaSet)) return;
   const A = arState(), team = arTeamOf(); if (!team.length) return;
-  Cloud.arenaSet({ name: (Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), rating: A.r, power: arPower(team), team: JSON.stringify(team), wk: weekKey(), ts: Date.now() }).catch(e => { A.cloudErr = e.code || e.message; });
+  Cloud.arenaSet({ name: (S.pname || Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), rating: A.r, power: arPower(team), team: JSON.stringify(team), wk: weekKey(), ts: Date.now() }).catch(e => { A.cloudErr = e.code || e.message; });
 }
 // ---- LUẬN KIẾM: hai đội tướng đứng sẵn đối mặt, đối thủ dùng ĐÚNG bộ não tướng (đạn riêng, chiêu nhỏ, tuyệt kỹ đầy đủ, hợp kích).
 // Cách làm "thế giới soi gương": mỗi khung chạy lượt phe mình, rồi lật sân (x -> 2·X0 − x) + đổi vai tướng/quái + đổi kho hiệu ứng riêng
@@ -6699,7 +6845,7 @@ function showRaid() {
 // ---- Bảng xếp hạng (Firestore, cần đăng nhập Google)
 function lbPush() {
   if (!(window.Cloud && Cloud.user && Cloud.lbSet)) return;
-  const row = { name: (Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), power: totalPower(), tower: S.tower || 0, raid: (S.raidBest || {})[weekKey()] || 0, wk: weekKey(), ts: Date.now(), nan: Math.min(81, (S.nan && S.nan.best) || 0) };
+  const row = { name: (S.pname || Cloud.user.displayName || 'Chấp Bảng Sứ').slice(0, 24), power: totalPower(), tower: S.tower || 0, raid: (S.raidBest || {})[weekKey()] || 0, wk: weekKey(), ts: Date.now(), nan: Math.min(81, (S.nan && S.nan.best) || 0) };
   Cloud.lbSet(row).catch(e => { delete row.nan; Cloud.lbSet(row).catch(e2 => console.warn(e2)); });   // quy tắc cũ chưa có 'nan' → gửi lại không kèm
 }
 async function showRank(tab) {
@@ -6924,6 +7070,12 @@ function route() {
     if (v === 'mine') { showDn('mi'); setTimeout(() => mineHit(3), 500); }
     if (v === 'th') { showDn('th'); D.th.g[D.th.at - 5] = 'mob'; setTimeout(() => thMove(D.th.at - 5), 500); }
     if (v === 'rw') { showDn('th'); rewardPop({ vang: 12500, ngoc: 100, univ: 6, tt: 40 }, 'Chiến Lợi Phẩm Bí Cảnh'); } }
+  else if (k === 'login') { localStorage.setItem('tmdk_notice', dayKey()); showLogin(); }
+  else if (k === 'svpick') { localStorage.setItem('tmdk_notice', dayKey()); showLogin(); setTimeout(showSvPick, 300); }
+  else if (k === 'prolog') { showHome(); showPrologue(() => console.log('PL_DONE')); }
+  else if (k === 'create') { showHome(); showCreate(h => guideTalk(['Thử lời dẫn ' + h], () => {})); }
+  else if (k === 'gtalk') { S.pname = 'Lý Lăng Vân'; showHome(); guideTalk(['Ha ha, Chưởng Môn ' + S.pname + ' đã tới! Lão là Thái Bạch Kim Tinh, phụng mệnh Thái Thượng Lão Quân dẫn đường cho ngươi.'], () => {}); }
+  else if (k === 'first') { delete S.pname; firstTime(); }
   else if (k === 'herod') { if (!S.owned[v]) S.owned[v] = newRec(); { const lm = h.match(/(?:^|&)lv=(\d+)/); if (lm) S.owned[v].lv = +lm[1]; } { const tm = h.match(/(?:^|&)tab=(\w+)/); if (tm) HD_TAB = tm[1]; } { const sm = h.match(/(?:^|&)star=(\d)/); if (sm) { S.owned[v].star = +sm[1]; applySkins(); } } ensureHeroAssets([v]).then(() => showHeroDetail(v || 'ngokhong')); }   // &star=6: xem trang phục Thành Thánh
   else if (k === 'pb') showPB(v || '');
   else if (k === 'pbtest') { S.lineup = S.lineup.length ? S.lineup : ['culinhthan']; startBattleNow(pbStage(v || 'equip', 0)); B.auto = true; for (let i = 0; i < 60 * 95 && !B.over; i++) { update(1 / 60); if (B.paused) { const c = ui.querySelector('.cp-modal .cp-card'); if (c) c.click(); else B.paused = false; } } if (!B.over) endBattle(true); B.endT = null; showResult(); }
@@ -6960,11 +7112,21 @@ function route() {
   else showHome();
 }
 const _lastTs = S.ts || 0;
-loadArt().then(() => {
+function enterGame() {
   route();
   try { retrieveCheck(); lhState(); save(); } catch (e) { }
-  if (!location.hash && _lastTs && Date.now() - _lastTs > 2 * 3600e3) setTimeout(() => showWelcomeBack(_lastTs), 600);
-  if (!location.hash && S.retr) setTimeout(() => { if (!ui.querySelector('.modal')) showRetrieve(); }, 1500);
+  if (location.hash) return;
+  if (!S.pname) { setTimeout(firstTime, 50); return; }
+  svMetaSave(true);
+  if (_lastTs && Date.now() - _lastTs > 2 * 3600e3) setTimeout(() => showWelcomeBack(_lastTs), 600);
+  if (S.retr) setTimeout(() => { if (!ui.querySelector('.modal')) showRetrieve(); }, 1500);
+}
+const _direct = !!location.hash || sessionStorage.getItem('tmdk_in') === '1';
+const _artP = loadArt();
+if (!_direct) showSplash(() => showLoadScr(_artP, showLogin));
+else { sessionStorage.removeItem('tmdk_in'); if (!location.hash) cloudWipe(); }
+_artP.then(() => {
+  if (_direct) enterGame();
   setTimeout(loadCloud, 300);
   requestAnimationFrame(t => { lastT = t; frame(t); });
 });
