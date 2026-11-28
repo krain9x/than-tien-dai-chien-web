@@ -4457,8 +4457,8 @@ function showHome() {
       ${hi('hShop', 'fb_tubao', 'Cửa Hàng')}
       ${hi('hPet', 'ic_pet', 'Linh Thú')}
       ${hi('hDp', 'ic_dongphu', 'Động Phủ', dpPending().h >= 6)}
-      ${hi('hVc', 'ic_quest', 'Viễn Chinh', vcReady())}
-      ${hi('hTm', 'ic_team', 'Tiên Minh', tmDot())}
+      ${hi('hVc', 'ic_vienchinh', 'Viễn Chinh', vcReady())}
+      ${hi('hTm', 'ic_tienminh', 'Tiên Minh', tmDot())}
     </div>
     <div class="h4-cards">
       <button class="h4-main ${nx.kind === 'boss' ? 'boss' : ''}" id="hFight" style="background-image:url(art/scene/${CH_ART[nx.chap] || 'datky'}_bg.webp)"><span class="h4-st">${nx.kind === 'boss' ? '☠ Ải Boss' : '⭐ ' + chapStars(nx.chap) + '/30'}</span>
@@ -5572,7 +5572,7 @@ function showTm(tab) {
   if (tab) TM_TAB = tab; const T = tmState();
   if (!T.gid) {   // chưa vào minh
     ui.innerHTML = `<div class="screen panel-screen tm-screen">${topBar('Tiên Minh')}<div class="vc-body"><p class="hint">Gia nhập một Tiên Minh để nhận cộng chỉ số Tụ Linh Điện, cửa hàng cống hiến, boss minh mỗi ngày. (Bản thử: thành viên là đồng đạo ảo; khi mở máy chủ sẽ là người chơi thật.)</p>
-      ${TM_LIST.map(([id, n, fac, c]) => `<div class="vc-q"><div><b style="color:${c}">${n}</b><small>Phe ${FACTIONS[fac] || fac} · ${tmMakeMembers(id).length} thành viên</small></div><button class="btn small gold" data-tmj="${id}">Gia nhập</button></div>`).join('')}
+      ${TM_LIST.map(([id, n, fac, c]) => `<div class="vc-q tm-g"><img class="tm-gi" src="art/ui/gm_${id}.webp" alt=""><div><b style="color:${c}">${n}</b><small>Phe ${FACTIONS[fac] || fac} · ${tmMakeMembers(id).length} thành viên</small></div><button class="btn small gold" data-tmj="${id}">Gia nhập</button></div>`).join('')}
       <div class="vc-q"><div><b>Tự lập Tiên Minh</b><small>Tốn ${icon('ngoc')}200 · bạn làm Minh Chủ</small></div><button class="btn small" id="tmNew">Lập minh</button></div></div></div>`;
     $('#bBack').onclick = showHome;
     ui.querySelectorAll('[data-tmj]').forEach(b => b.onclick = () => { Object.assign(T, { gid: b.dataset.tmj, mem: tmMakeMembers(b.dataset.tmj), exp: 800, day: '' }); save(); showTm('home'); });
@@ -5583,7 +5583,7 @@ function showTm(tab) {
   const tabs = `<div class="hd-tabs q-tabs">${[['home', 'Đại Điện'], ['boss', 'Boss Minh'], ['shop', 'Tàng Bảo Các'], ['mem', 'Thành Viên']].map(([k, n]) => `<button class="${TM_TAB === k ? 'on' : ''}" data-tmt="${k}">${n}</button>`).join('')}</div>`;
   let body = '';
   if (TM_TAB === 'home') {
-    body = `<div class="tm-head"><b style="color:${gc}">${esc(gname)}</b><span>Cấp ${lv}/10 · ${nx ? `${fmt(T.exp)}/${fmt(nx)} kinh nghiệm` : 'tối đa'} · Cống hiến của bạn <b>${fmt(T.cd)}</b></span><div class="tm-bar"><i style="width:${nx ? Math.min(100, 100 * (T.exp - TM_EXP[lv - 1]) / (nx - TM_EXP[lv - 1])) : 100}%"></i></div></div>
+    body = `<div class="tm-head"><b style="color:${gc}"><img class="tm-gi" src="art/ui/gm_${tmInfo()[0]}.webp" alt=""> ${esc(gname)}</b><span>Cấp ${lv}/10 · ${nx ? `${fmt(T.exp)}/${fmt(nx)} kinh nghiệm` : 'tối đa'} · Cống hiến của bạn <b>${fmt(T.cd)}</b></span><div class="tm-bar"><i style="width:${nx ? Math.min(100, 100 * (T.exp - TM_EXP[lv - 1]) / (nx - TM_EXP[lv - 1])) : 100}%"></i></div></div>
       <div class="vc-q"><div><b>Điểm danh</b><small>+20 cống hiến, +10 kinh nghiệm minh</small></div><button class="btn small ${T.signed ? '' : 'gold'}" id="tmSign" ${T.signed ? 'disabled' : ''}>${T.signed ? 'Đã điểm danh' : 'Điểm danh'}</button></div>
       <h4>Cống hiến (1 lần/ngày)</h4>${TM_DON.map(([c, v], i) => `<div class="vc-q"><div><b>${c.vang ? icon('vang') + fmt(c.vang) : icon('ngoc') + c.ngoc}</b><small>+${v} cống hiến · +${v} kinh nghiệm minh</small></div><button class="btn small" data-tmd="${i}" ${T.don ? 'disabled' : ''}>Cống hiến</button></div>`).join('')}
       <h4>Công trình</h4>
