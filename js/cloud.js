@@ -32,5 +32,8 @@
   C.arenaSet = d => C.user ? db.collection('arena').doc(did()).set(d) : Promise.resolve();
   C.arenaList = async n => { const q = await db.collection('arena').orderBy('ts', 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
   C.arenaTop = async n => { const q = await db.collection('arena').orderBy('rating', 'desc').limit(n).get(); return q.docs.map(d => ({ uid: d.id, ...d.data() })); };
-  C.push = S => { if (!C.user) return; clearTimeout(C._t); C._t = setTimeout(() => C.pushNow(S).catch(e => { C.err = e.message; console.warn('cloud', e); }), 3000); };
+  // 29/11: gom ghi — tối đa 1 lần/phút (gói miễn phí 20.000 lượt ghi/ngày), rời game thì ghi ngay (flush)
+  C.push = S => { if (!C.user) return; C._pend = S; if (C._t) return; const wait = Math.max(3000, 60000 - (Date.now() - C.lastPush));
+    C._t = setTimeout(() => { C._t = null; const d = C._pend; C._pend = null; if (d) C.pushNow(d).catch(e => { C.err = e.message; console.warn('cloud', e); }); }, wait); };
+  C.flush = () => { if (!C.user || !C._pend) return; clearTimeout(C._t); C._t = null; const d = C._pend; C._pend = null; C.pushNow(d).catch(e => { C.err = e.message; }); };
 })();

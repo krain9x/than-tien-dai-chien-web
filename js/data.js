@@ -616,6 +616,36 @@ const CHAPTERS = [
   { id: 11, name: 'Ngọc Thỏ và Thủy tộc', region: 'Thủy tộc', boss: 'Kim Thạch Yêu Vương', mobs: { tieuyeu: 'tombinh', cungyeu: 'ngutinh', hoyeu: 'kimthach' }, mk: 'fog', theme: 'river', mech: 'Ải dưới nước, giảm tầm nhìn', story: 'Dòng nước đục che mờ tầm nhìn. Vượt thuỷ tộc, hạ Kim Thạch Yêu Vương.' },
   { id: 12, name: 'Tây Thiên lấy kinh', region: 'Tây Thiên', boss: 'Phạt Pháp hồn Ma', mobs: { tieuyeu: 'matang', cungyeu: 'mala', hoyeu: 'phatphapboss' }, theme: 'heaven', mech: 'Kết thúc, mở chế độ Tám Mươi Mốt Nạn', story: 'Chặng cuối tới Tây Thiên. Đối mặt Phạt Pháp hồn Ma, hoàn thành thỉnh kinh.' },
 ];
+// ---- ĐỢT QUÁI 1 (29/11): boss giữa chương (ải 5) + boss chế độ. Chỉ số theo boss cuối chương cùng vùng.
+const MID_BOSS = [['baolacboss', 'Bào Lạc Hoả Trụ', 'hoa', 'Cột đồng nung đỏ!', 'Lửa Bào Lạc bùng lên — công +30%'],
+  ['trikeboss', 'Cửu Đầu Trĩ Kê Tinh', 'hoa', 'Chín đầu cùng gáy!', 'Trĩ Kê gọi bầy yêu cầm'],
+  ['hongsaboss', 'Hồng Sa Trận Chủ', 'tho', 'Hồng Sa Trận khởi động!', 'Cát đỏ cuộn lên — tốc đánh +30%'],
+  ['hoanghaboss', 'Hoàng Hà Trận Linh', 'thuy', 'Cửu Khúc Hoàng Hà!', 'Nước sông dâng — triệu thêm hải yêu'],
+  ['kimquangboss', 'Kim Quang Thánh Mẫu', 'kim', 'Kim Quang Trận!', 'Hai mươi mốt chiếc gương phản chiếu ánh vàng'],
+  ['phongthandaiboss', 'Hộ Vệ Phong Thần Đài', 'tho', 'Đài Phong Thần rung chuyển!', 'Hộ vệ đá thức tỉnh — thủ +40%'],
+  ['malethanhboss', 'Tăng Trưởng Thiên Vương', 'moc', 'Thanh Vân Kiếm xuất vỏ!', 'Gió đen nổi lên — công +30%'],
+  ['nguhanhsonboss', 'Ngũ Hành Sơn Thần', 'tho', 'Ngũ hành chuyển hoá!', 'Năm đỉnh núi phát sáng — triệu thạch tinh'],
+  ['hoalongboss', 'Hoả Long Ma', 'hoa', 'Dung nham phun trào!', 'Hoả Long nổi giận — tốc đánh +30%'],
+  ['thimavuongboss', 'Thi Ma Vương', 'tho', 'Vạn thi thức tỉnh!', 'Thi Ma Vương gọi bầy cương thi'],
+  ['cuuxaboss', 'Cửu Đầu Xà Vương', 'thuy', 'Chín đầu rắn ngẩng lên!', 'Xoáy nước cuốn tới — triệu thêm thuỷ tộc'],
+  ['ngocongboss', 'Bách Nhãn Ngô Công', 'moc', 'Trăm mắt mở ra!', 'Kim quang từ trăm mắt — công +35%']];
+const MODE_BOSS = { thaothietboss: ['Thao Thiết', 'tho'], cungkyboss: ['Cùng Kỳ', 'kim'], daongotboss: ['Đào Ngột', 'moc'], hondonboss: ['Hỗn Độn', 'thuy'],
+  loikieplongboss: ['Lôi Kiếp Long', 'kim'], tammaboss: ['Tâm Ma', 'hoa'], loithanboss: ['Lôi Thần Độ Kiếp', 'kim'],
+  codieuboss: ['Cổ Điêu', 'kim'], xivuuboss: ['Xi Vưu Chiến Thần', 'kim'], congcongboss: ['Cộng Công Thuỷ Thần', 'thuy'], chucdungboss: ['Chúc Dung Hoả Thần', 'hoa'] };
+(function addBosses() {
+  const lk = { style: 'general', skin: '#c9a27a', hair: '#1d1d2b', outfit: '#6a2a2a', outfit2: '#c9a227', belt: '#c9a227', weapon: 'halberd', evil: true, size: 1.8 };
+  CHAPTERS.forEach((ch, c) => {
+    const fb = ENEMIES[ch.mobs.hoyeu]; if (fb && !fb.boss) fb.boss = true;   // Văn Trọng, Kim Thạch: trước đây thiếu cờ boss
+    const [id, name, el, t1, t2] = MID_BOSS[c], hp = Math.round((fb ? fb.hp : 20000) * 0.55), atk = Math.round((fb ? fb.atk : 100) * 0.9);
+    ENEMIES[id] = { name, hp, atk, def: fb ? fb.def : 85, aspd: 0.85, range: 70, move: 52, el, boss: true,
+      phases: [{ at: 0.5, text: t1, sub: t2, summon: [ch.mobs.tieuyeu, 3 + Math.floor(c / 3)], enrage: 0.3 }], look: Object.assign({}, (fb && fb.look) || lk, { size: 1.7 }) };
+    ch.mobs.midboss = id;
+  });
+  const top = ENEMIES.nguumaboss || {};
+  for (const id in MODE_BOSS) { const [name, el] = MODE_BOSS[id];
+    ENEMIES[id] = { name, hp: top.hp || 40000, atk: top.atk || 120, def: top.def || 90, aspd: 0.8, range: 80, move: 46, el, boss: true,
+      phases: [{ at: 0.6, text: name + ' nổi giận!', sub: 'Công +30%', enrage: 0.3 }, { at: 0.3, text: name + ' tung toàn lực!', sub: 'Tốc đánh tăng mạnh', enrage: 0.3 }], look: Object.assign({}, lk, { size: 2.0 }) }; }
+})();
 const STAGE_PHASE = ['Vùng ngoài', 'Vùng ngoài', 'Vùng ngoài', 'Vùng giữa', 'Tinh anh', 'Vùng giữa', 'Vùng trong', 'Vùng trong', 'Vùng trong', 'Sào huyệt boss'];
 const STAGES = [];
 (function buildStages() {
@@ -641,12 +671,13 @@ const STAGES = [];
         waves.push(o);
       }
       if (kind === 'boss') waves.push({ list: [['hoyeu', 1 + (c >= 6 ? 1 : 0)], ['tieuyeu', 4 + c]], boss: true });
-      if (ch.mobs) for (const w of waves) w.list = w.list.map(([t, n]) => [ch.mobs[t] || t, t === 'hoyeu' && ch.mobs[t] ? 1 : n]);   // quái riêng của vùng
+      if (kind === 'elite' && (window.EPOSE || {})[ch.mobs.midboss]) waves.push({ list: [['midboss', 1], ['tieuyeu', 3 + c]], boss: true });   // 29/11: boss giữa chương (chỉ khi đã có ảnh)
+      if (ch.mobs) for (const w of waves) w.list = w.list.map(([t, n]) => [ch.mobs[t] || t, (t === 'hoyeu' || t === 'midboss') && ch.mobs[t] ? 1 : n]);   // quái riêng của vùng
       const par = kind === 'normal' ? 90 : kind === 'elite' ? 120 : 150 + Math.min(30, c * 3);
       STAGES.push({
         id: ch.id + '-' + k, chap: c, kind, name: ch.region + ' · ' + STAGE_PHASE[k - 1] + (k === 10 ? '' : ' ' + k), lvl, par, gate: 2500 + idx * 45, theme: ch.theme, seed: 7 + idx * 13,
         bossName: kind === 'boss' ? ch.boss : null,
-        desc: kind === 'boss' ? 'BOSS cuối chương: ' + ch.boss + '. Boss nhiều giai đoạn — hạ boss để qua chương.' : kind === 'elite' ? 'Ải tinh anh: nhiều quái tinh anh, rơi nhiều Linh Phù.' : (k === 1 ? ch.story : ch.region + ' — tiến sâu vào trong, giữ vững cổng!'),
+        desc: kind === 'boss' ? 'BOSS cuối chương: ' + ch.boss + '. Boss nhiều giai đoạn — hạ boss để qua chương.' : kind === 'elite' ? ((window.EPOSE || {})[ch.mobs.midboss] ? 'Ải tinh anh: nhiều quái tinh anh, cuối ải có boss ' + ENEMIES[ch.mobs.midboss].name + '.' : 'Ải tinh anh: nhiều quái tinh anh, rơi nhiều Linh Phù.') : (k === 1 ? ch.story : ch.region + ' — tiến sâu vào trong, giữ vững cổng!'),
         reward: { ngoc: 60 + idx * 2 + (kind === 'boss' ? 150 : kind === 'elite' ? 50 : 0), vang: 800 + idx * 40 + (kind === 'boss' ? 800 : kind === 'elite' ? 300 : 0) }, waves,
       });
     }
