@@ -1453,3 +1453,22 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .tm-g { grid-template-columns: auto minmax(0, 1fr) auto; }
 .tm-gi { width: 40px; height: 40px; vertical-align: middle; } .tm-head .tm-gi { width: 30px; height: 30px; }
 .vc-screen { background: linear-gradient(rgba(255,248,230,.55), rgba(255,248,230,.75)), url('../art/bg/dongphu_bg.webp') center / cover no-repeat; }
+
+/* lễ hội tân thủ + trợ chiến (28/11) */
+.lh-ms { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.lh-ms .pb { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border-radius: 8px; border: 2px solid #c9a050; background: #fff6dc; font-size: 11px; }
+.lh-ms .pb.ready { background: #ffe08a; box-shadow: 0 0 10px #ffc23a; } .lh-ms .pb.done { opacity: .5; }
+.lu-extra { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin: 4px 0; }
+.lu-extra .btn.small { min-height: 0; padding: 4px 9px; font-size: 12px; }
+
+/* du ngoạn (28/11) */
+.th-map { display: grid; grid-template-columns: repeat(5, minmax(0, 44px)); gap: 3px; justify-content: center; }
+.th-c { aspect-ratio: 1; border-radius: 8px; border: 2px solid rgba(120,80,40,.4); background: rgba(60,40,20,.55); color: #fff; font-size: 20px; display: grid; place-items: center; line-height: 1; padding: 0; }
+.th-c.op { background: rgba(255,248,225,.92); color: #333; } .th-c.at { background: #ffd76a; border-color: #c07a10; } .th-c small { font-size: 8.5px; color: #a02a1a; font-weight: 700; }
+.fi-bar { position: relative; height: 26px; border-radius: 13px; background: linear-gradient(90deg, #2a5a8a, #1a3a6a); margin: 14px 10%; overflow: hidden; border: 2px solid #c9a050; }
+.fi-bar i { position: absolute; top: 0; bottom: 0; background: rgba(110,230,120,.75); } .fi-bar b { position: absolute; top: -2px; width: 6px; height: 30px; margin-left: -3px; background: #fff; box-shadow: 0 0 6px #fff; left: 0; }
+.mi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 46px)); gap: 4px; justify-content: center; }
+.mi-c { aspect-ratio: 1; border-radius: 6px; border: 2px solid #6a4a2a; background: linear-gradient(135deg, #8a6a4a, #4a3420); font-size: 18px; color: #fff; padding: 0; }
+.mi-c.op { background: rgba(255,248,225,.9); }
+.tree { font-size: 110px; text-align: center; line-height: 1.1; }
+.tk .vc-q, .hd5 .vc-q { background: rgba(0,0,0,.32); border-color: rgba(255,220,150,.25); } .tk .vc-q b { color: #ffd76a; } .tk .vc-q small { color: #e8dcc0; } .tk .vc-q .vc-t { color: #9fe08a; }
