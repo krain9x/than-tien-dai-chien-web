@@ -1472,3 +1472,9 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .mi-c.op { background: rgba(255,248,225,.9); }
 .tree { font-size: 110px; text-align: center; line-height: 1.1; }
 .tk .vc-q, .hd5 .vc-q { background: rgba(0,0,0,.32); border-color: rgba(255,220,150,.25); } .tk .vc-q b { color: #ffd76a; } .tk .vc-q small { color: #e8dcc0; } .tk .vc-q .vc-t { color: #9fe08a; }
+
+/* ảnh thay emoji (28/11) */
+.ic.ic-img { width: 18px; height: 18px; object-fit: contain; margin-right: 2px; }
+.th-c img { width: 82%; height: 82%; object-fit: contain; } .th-c img.fog { opacity: .55; }
+.mi-c img { width: 84%; height: 84%; object-fit: contain; } .mi-crack { display: block; width: 60%; height: 60%; margin: auto; border: 2px dashed rgba(255,255,255,.6); border-radius: 50%; }
+.tree img { width: 170px; height: 170px; object-fit: contain; }

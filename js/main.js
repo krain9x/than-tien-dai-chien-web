@@ -4268,7 +4268,8 @@ function frame(now) {
 // =====================================================================
 // UI
 // =====================================================================
-function icon(k) { return `<i class="ic ic-${k}"></i>`; }
+const ICIMG = { lt: 'res_linhthao', lq: 'res_linhqua', ttd: 'res_taytuy', pcd: 'res_thangtien', tt: 'res_tinhthiet', petsh: 'res_manhthu', tk: 'res_thelu' };
+function icon(k) { return ICIMG[k] ? `<img class="ic ic-img" src="art/ui/${ICIMG[k]}.webp" alt="">` : `<i class="ic ic-${k}"></i>`; }
 function resBar() {
   return `<div class="resbar"><span>${icon('ngoc')}${fmt(S.ngoc)}</span><span>${icon('vang')}${fmt(S.vang)}</span><span title="Mảnh vạn năng">${icon('univ')}${fmt(S.univ)}</span><span title="Tiên Khí (hồi 1 điểm / 6 phút)">⚡${tkNow()}/${TK_MAX}</span></div>`;
 }
@@ -4292,7 +4293,7 @@ function showWelcomeBack(t0) {
   const h = (Date.now() - t0) / 3600e3, ir = idleReward(), vc = S.vc ? S.vc.run.filter(r => nowS() >= r.t0 + r.h * 3600).length : 0, dp = typeof dpPending === 'function' ? dpPending() : { lt: 0, lq: 0 };
   const rows = [ir.m >= 1 ? [`Treo máy ${Math.floor(ir.m / 60)} giờ ${ir.m % 60} phút`, `${icon('vang')}${fmt(ir.vang)}${ir.ngoc ? ' · ' + icon('ngoc') + ir.ngoc : ''}`, 'hIdle'] : null,
     vc ? [`${vc} đội Viễn Chinh đã về`, 'Nhận thưởng ở Viễn Chinh', 'hVc'] : null,
-    dp.lt + dp.lq ? ['Dược Viên Động Phủ đã mọc', `🌿${dp.lt} · 🍑${dp.lq}`, 'hDp'] : null,
+    dp.lt + dp.lq ? ['Dược Viên Động Phủ đã mọc', `${icon('lt')}${dp.lt} · ${icon('lq')}${dp.lq}`, 'hDp'] : null,
     S.tm && S.tm.gid ? ['Tiên Minh: điểm danh, Boss Minh mới', 'Vào Tiên Minh', 'hTm'] : null].filter(Boolean);
   if (!rows.length) return;
   const w = document.createElement('div'); w.className = 'modal';
@@ -4457,7 +4458,7 @@ function showHome() {
     </div>
     ${resBar()}
     <div class="h4-acts">
-      ${lhOn() ? hi('hLh', 'ic_gift', 'Lễ Hội', lhDot()) : ''}
+      ${lhOn() ? hi('hLh', 'ic_lehoi', 'Lễ Hội', lhDot()) : ''}
       ${hi('hEv', 'ic_event', 'Sự Kiện', monthState().last !== dayKey())}
       ${giftLeft ? hi('hGift', 'ic_gift', 'Tân Thủ', giftDot) : ''}
       ${hi('hTd', 'ic_thanhan', 'Thánh Điện')}
@@ -4467,8 +4468,8 @@ function showHome() {
       ${hi('hDp', 'ic_dongphu', 'Động Phủ', dpPending().h >= 6)}
       ${hi('hVc', 'ic_vienchinh', 'Viễn Chinh', vcReady())}
       ${hi('hTm', 'ic_tienminh', 'Tiên Minh', tmDot())}
-      ${hi('hDq', 'ic_rank', 'Đạo Quả', dqReady())}
-      ${hi('hDn', 'ic_trial', 'Du Ngoạn', dnDot())}
+      ${hi('hDq', 'ic_daoqua', 'Đạo Quả', dqReady())}
+      ${hi('hDn', 'ic_dungoan', 'Du Ngoạn', dnDot())}
     </div>
     <div class="h4-cards">
       <button class="h4-main ${nx.kind === 'boss' ? 'boss' : ''}" id="hFight" style="background-image:url(art/scene/${CH_ART[nx.chap] || 'datky'}_bg.webp)"><span class="h4-st">${nx.kind === 'boss' ? '☠ Ải Boss' : '⭐ ' + chapStars(nx.chap) + '/30'}</span>
@@ -4586,7 +4587,7 @@ function showLineup() {
           <button class="mini rm" data-rm="${i}" title="Bỏ khỏi đội">×</button>` : '<i>+</i>'}
       </div>`;
     }).join('')}</div>
-    <div class="lu-extra"><button class="btn small" id="luSup">🤝 Trợ chiến: ${supList().map(id => esc(HEROES[id].name)).join(', ') || 'trống'}</button>${[0, 1, 2].map(i => `<button class="btn small" data-lps="${i}" title="Bấm: dùng bộ · giữ lâu: lưu đội hiện tại">Bộ ${i + 1}${(S.presets || [])[i] ? ' ✓' : ''}</button>`).join('')}<button class="btn small" id="luSave">Lưu đội vào bộ…</button></div>
+    <div class="lu-extra"><button class="btn small" id="luSup"><img class="ic ic-img" src="art/ui/ic_trochien.webp" alt=""> Trợ chiến: ${supList().map(id => esc(HEROES[id].name)).join(', ') || 'trống'}</button>${[0, 1, 2].map(i => `<button class="btn small" data-lps="${i}" title="Bấm: dùng bộ · giữ lâu: lưu đội hiện tại">Bộ ${i + 1}${(S.presets || [])[i] ? ' ✓' : ''}</button>`).join('')}<button class="btn small" id="luSave">Lưu đội vào bộ…</button></div>
     <button class="btn small gold lu-fm" id="luFm">⚔ Trận Pháp: ${esc(FORMS[fmCur()].n)} · cấp ${fmLv(fmCur())}</button>
     <p class="lu-hint">Lực chiến đội <b>${fmt(lu.reduce((s, id) => s + power(id), 0))}</b> · Đội trưởng ra trận đầu, <b>+20% tốc đánh</b>, <b>+10% sát thương chiêu</b> và mở kỹ năng đội trưởng</p>
     <div class="hf-bar hf1 lu-filter"><div class="hf-chips">${lchip('all', 'Tất cả')}${TIER_ORDER.filter(t => own0.some(id => HEROES[id].tier === t)).map(t => lchip(t, t)).join('')}</div>
@@ -5089,7 +5090,7 @@ function dayKey() { return new Date().toLocaleDateString('sv'); }
 function dq() { const k = dayKey(); if (!S.daily || S.daily.d !== k) S.daily = { d: k, p: {}, c: {} }; return S.daily; }
 function qAdd(id, n) { const d = dq(); d.p[id] = Math.min(999, (d.p[id] || 0) + (n == null ? 1 : n)); save(); }
 function grant(r) { if (r.lq) dpState().lq += r.lq; if (r.lt) dpState().lt += r.lt; if (r.petsh) petGiveRandom(r.petsh); if (r.thanhan) S.thanhan = (S.thanhan || 0) + r.thanhan; if (r.ngoc) S.ngoc += r.ngoc; if (r.vang) S.vang += r.vang; if (r.univ) S.univ += r.univ; if (r.tk) { tkNow(); S.tk.v = Math.min(TK_MAX + 60, S.tk.v + r.tk); } }
-const rewTxt = r => [r.lq && `🍑${r.lq}`, r.lt && `🌿${r.lt}`, r.petsh && `🐾${r.petsh}`, r.ngoc && `${icon('ngoc')}${fmt(r.ngoc)}`, r.vang && `${icon('vang')}${fmt(r.vang)}`, r.univ && `${icon('univ')}${r.univ}`, r.tk && `⚡${r.tk}`, r.thanhan && `${icon('thanhan')}${r.thanhan}`].filter(Boolean).join(' ');
+const rewTxt = r => [r.lq && `${icon('lq')}${r.lq}`, r.lt && `${icon('lt')}${r.lt}`, r.petsh && `${icon('petsh')}${r.petsh}`, r.ngoc && `${icon('ngoc')}${fmt(r.ngoc)}`, r.vang && `${icon('vang')}${fmt(r.vang)}`, r.univ && `${icon('univ')}${r.univ}`, r.tk && `${icon('tk')}${r.tk}`, r.thanhan && `${icon('thanhan')}${r.thanhan}`].filter(Boolean).join(' ');
 let QTAB = 'day';
 function showQuests(tab) {   // Nhiệm vụ: tab Ngày / Tuần, nút "Nhận tất cả"
   if (tab) QTAB = tab;
@@ -5491,7 +5492,7 @@ function vcReward(q, bonus) { const c = clearedN(), k = bonus ? 1.5 : 1;
   return { vang: Math.round(700 * q.h * (1 + c / 25) * k), univ: q.h >= 4 ? Math.round(q.h * k) : 0, lt: Math.round(8 * q.h * k), ngoc: q.h >= 8 ? Math.round(20 * k) : 0 }; }
 const vcBonusOk = (q, ids) => ids.some(id => HEROES[id].fac === q.fac) && ids.some(id => HEROES[id].role === q.role);
 const vcReady = () => { const V = S.vc; return !!(V && V.run.some(r => nowS() >= r.t0 + r.h * 3600)); };
-function vcRewTxt(r) { return [r.vang && icon('vang') + fmt(r.vang), r.univ && icon('univ') + r.univ, r.lt && '🌿' + r.lt, r.ngoc && icon('ngoc') + r.ngoc].filter(Boolean).join(' '); }
+function vcRewTxt(r) { return [r.vang && icon('vang') + fmt(r.vang), r.univ && icon('univ') + r.univ, r.lt && icon('lt') + r.lt, r.ngoc && icon('ngoc') + r.ngoc].filter(Boolean).join(' '); }
 const vcBusy = () => new Set(vcState().run.flatMap(r => r.ids));
 function showVc(tab) {
   if (tab) VC_TAB = tab; const V = vcState();
@@ -5517,8 +5518,8 @@ function showVc(tab) {
     const used = new Set(); for (const k in S.owned) for (const s2 in (S.owned[k].eq || {})) used.add(S.owned[k].eq[s2]);
     const free = r => (S.items || []).filter(it => it.r === r && !used.has(it.id) && !it.lk), TT = { R: 1, SR: 3, SSR: 10, UR: 30 }, NX = { R: 'SR', SR: 'SSR', SSR: 'UR' }, GC = { R: 20, SR: 60, SSR: 200 };
     body = `<p class="hint">Phân giải trang bị chưa mặc ra Tinh Thiết; ghép 3 món cùng phẩm (+Tinh Thiết) thành 1 món phẩm cao hơn, bộ ngẫu nhiên trong 3 món. Đồ đang mặc không bị đụng tới.</p>
-      <div class="dp-res"><span>⚙ Tinh Thiết <b>${fmt(S.tt || 0)}</b></span></div>
-      ${['R', 'SR', 'SSR', 'UR'].map(r => { const L = free(r); return `<div class="vc-q"><div><b style="color:${EQ_RAR[r].c}">${EQ_RAR[r].name}: ${L.length} món chưa mặc</b><small>Phân giải: ⚙${TT[r]}/món${NX[r] ? ` · Ghép 3 → 1 ${EQ_RAR[NX[r]].name} (⚙${GC[r]})` : ''}</small></div>
+      <div class="dp-res"><span>${icon('tt')} Tinh Thiết <b>${fmt(S.tt || 0)}</b></span></div>
+      ${['R', 'SR', 'SSR', 'UR'].map(r => { const L = free(r); return `<div class="vc-q"><div><b style="color:${EQ_RAR[r].c}">${EQ_RAR[r].name}: ${L.length} món chưa mặc</b><small>Phân giải: ${icon('tt')}${TT[r]}/món${NX[r] ? ` · Ghép 3 → 1 ${EQ_RAR[NX[r]].name} (${icon('tt')}${GC[r]})` : ''}</small></div>
         <div class="vc-b"><button class="btn small" data-eqd="${r}" ${L.length ? '' : 'disabled'}>Phân giải hết</button>${NX[r] ? `<button class="btn small ${L.length >= 3 && (S.tt || 0) >= GC[r] ? 'gold' : ''}" data-eqc="${r}" ${L.length >= 3 && (S.tt || 0) >= GC[r] ? '' : 'disabled'}>Ghép</button>` : ''}</div></div>`; }).join('')}`;
     showVc.lo = { free, TT, NX, GC };
   }
@@ -5527,7 +5528,7 @@ function showVc(tab) {
   ui.querySelectorAll('[data-vct]').forEach(b => b.onclick = () => showVc(b.dataset.vct));
   tutor('i_vc', 'Phái tướng đi <b>Viễn Chinh</b> vài giờ để nhận vàng, mảnh vạn năng. Đúng phe + vai trò yêu cầu được thêm 50%. Thẻ <b>Luyện Hoá Mảnh</b> đổi mảnh dư, <b>Lò Trang Bị</b> phân giải và ghép đồ.');
   ui.querySelectorAll('[data-vcgo]').forEach(b => b.onclick = () => vcPick(+b.dataset.vcgo));
-  ui.querySelectorAll('[data-vcget]').forEach(b => b.onclick = () => { const r = V.run.splice(+b.dataset.vcget, 1)[0]; S.vcDone = (S.vcDone || 0) + 1; S.vang += r.rew.vang; S.univ += r.rew.univ; S.ngoc += r.rew.ngoc; dpState().lt += r.rew.lt; save(); toast('Viễn chinh trở về: ' + vcRewTxt(r.rew).replace(/<[^>]+>/g, '')); showVc(); });
+  ui.querySelectorAll('[data-vcget]').forEach(b => b.onclick = () => { const r = V.run.splice(+b.dataset.vcget, 1)[0]; S.vcDone = (S.vcDone || 0) + 1; S.vang += r.rew.vang; S.univ += r.rew.univ; S.ngoc += r.rew.ngoc; dpState().lt += r.rew.lt; save(); toast('Viễn chinh trở về: ' + vcRewTxt(r.rew).replace(/<[^>]+>/g, ' ')); showVc(); });
   if ($('#vcRr')) $('#vcRr').onclick = () => { V.rr--; V.board = vcRoll(); save(); showVc(); };
   if ($('#lhAll')) $('#lhAll').onclick = () => { let n = 0; for (const id in S.owned) { const o = S.owned[id]; if (!HEROES[id]) continue; let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[tierOf(id)] || [])[st - 1] || 0; const ex = Math.max(0, o.shard - need); if (ex) { o.shard -= ex; n += Math.floor(ex * vcRate(id)); } } S.univ += n; save(); toast('Nhận ' + n + ' mảnh vạn năng'); showVc(); };
   ui.querySelectorAll('[data-lh]').forEach(b => b.onclick = () => { const id = b.dataset.lh, o = S.owned[id]; let need = 0; for (let st = o.star; st < maxStar(id); st++) need += (STAR_COST[tierOf(id)] || [])[st - 1] || 0; const ex = Math.max(0, o.shard - need); o.shard -= ex; const n = Math.floor(ex * vcRate(id)); S.univ += n; save(); toast('Nhận ' + n + ' mảnh vạn năng'); showVc(); });
@@ -5721,7 +5722,7 @@ function htStage(id, i) { const b = STAGES[Math.min(STAGES.length - 1, HT_ST[i] 
 function htHTML(id) {
   const L = htLv(id), h = HEROES[id];
   return `<div class="tk"><p class="hint">Chuỗi thử thách riêng của ${esc(h.name)}: <b>${esc(h.name)} phải làm đội trưởng</b>. Vượt mỗi ải lần đầu nhận mảnh tướng và Tinh Thiết.</p>
-    ${HT_ST.map((stg, i) => `<div class="vc-q"><div><b>${['Sơ Thí', 'Tái Luyện', 'Phá Quan', 'Đăng Phong', 'Tạo Cực'][i]} · độ khó ải ${stg}</b><small>${HT_REW[i][0]} mảnh ${esc(h.name)} · ⚙${HT_REW[i][1]} Tinh Thiết</small></div>
+    ${HT_ST.map((stg, i) => `<div class="vc-q"><div><b>${['Sơ Thí', 'Tái Luyện', 'Phá Quan', 'Đăng Phong', 'Tạo Cực'][i]} · độ khó ải ${stg}</b><small>${HT_REW[i][0]} mảnh ${esc(h.name)} · ${icon('tt')}${HT_REW[i][1]} Tinh Thiết</small></div>
       ${i < L ? '<span class="vc-t">Đã vượt</span>' : `<button class="btn small ${i === L ? 'gold' : ''}" data-ht="${i}" ${i === L ? '' : 'disabled'}>Khiêu chiến</button>`}</div>`).join('')}</div>`;
 }
 function htGo(id, i) { S.lineup = [id, ...S.lineup.filter(x => x !== id && S.owned[x])].slice(0, 5); save(); enterStage(htStage(id, i)); }
@@ -5761,7 +5762,8 @@ function thNew() { const r = dnRng(dnSeed()), g = [];
 const thPw = () => teamPw() * (1 + thSt().buff);
 const thSt = () => dnState().th;
 const thTilePw = (i) => { const y = Math.floor(i / TH_W), base = 1500 + 260 * clearedN(); return Math.round(base * (1 + (TH_H - 1 - y) * 0.25) * (thSt().g[i] === 'boss' ? 2.2 : 1)); };
-const TH_IC = { start: '🏯', mob: '👹', chest: '🎁', bless: '✨', spring: '💧', trap: '🕸', empty: '·', boss: '🐉' };
+const TH_IC = { start: '', mob: 'th_mob', chest: 'th_chest', bless: 'th_bless', spring: 'th_spring', trap: 'th_trap', empty: '', boss: 'th_boss' };
+const thImg = k => TH_IC[k] ? `<img src="art/ui/${TH_IC[k]}.webp" alt="">` : '';
 function thMove(i) { const T = thSt(); if (T.done || T.steps <= 0) return; const ax = T.at % TH_W, ay = Math.floor(T.at / TH_W), x = i % TH_W, y = Math.floor(i / TH_W);
   if (Math.abs(ax - x) + Math.abs(ay - y) !== 1) { toast('Chỉ đi sang ô kề bên'); return; }
   T.steps--; T.at = i; if (!T.open.includes(i)) T.open.push(i); const k = T.g[i]; let msg = '';
@@ -5775,7 +5777,7 @@ function thMove(i) { const T = thSt(); if (T.done || T.steps <= 0) return; const
   for (const d of [-TH_W, TH_W, -1, 1]) { const j = i + d; if (j >= 0 && j < TH_W * TH_H && !(d === -1 && x === 0) && !(d === 1 && x === TH_W - 1) && !T.open.includes(j)) T.open.push(j); }
   save(); if (msg) toast(msg); showDn(); }
 // ---- Câu Cá: thanh ngắm, bấm Kéo khi kim nằm trong vùng xanh
-const FISH = [['Cá Chép Vàng', 'vang', 2500, 0.55], ['Cá Kình Bạc', 'tt', 15, 0.25], ['Linh Ngư', 'lq', 20, 0.12], ['Kim Long Ngư', 'ngoc', 40, 0.06], ['Cá Thần Đông Hải', 'univ', 10, 0.02]];
+const FISH = [['Cá Chép Vàng', 'vang', 2500, 0.55, 'fi_chep'], ['Cá Kình Bạc', 'tt', 15, 0.25, 'fi_kinh'], ['Linh Ngư', 'lq', 20, 0.12, 'fi_linh'], ['Kim Long Ngư', 'ngoc', 40, 0.06, 'fi_kimlong'], ['Cá Thần Đông Hải', 'univ', 10, 0.02, 'fi_than']];
 let fishAnim = null;
 function fishStart() { const D = dnState(); if (D.fish <= 0) return; const bar = $('#fiBar'), mk = $('#fiMk'); if (!bar || !mk) return; let t0 = performance.now(); const zone = [0.4 + Math.random() * 0.25]; zone.push(zone[0] + 0.16);
   $('#fiZone').style.left = zone[0] * 100 + '%'; $('#fiZone').style.width = (zone[1] - zone[0]) * 100 + '%';
@@ -5787,7 +5789,7 @@ function fishStart() { const D = dnState(); if (D.fish <= 0) return; const bar =
     else toast('Cá sổng mất rồi...'); save(); showDn(); }; }
 // ---- Đào Mỏ: lưới 6×6, cuốc đá tìm khoáng
 function mineNew() { const r = dnRng(dnSeed() + 99); return Array.from({ length: 36 }, () => { const q = r(); return { k: q < 0.35 ? 'empty' : q < 0.62 ? 'iron' : q < 0.82 ? 'gold' : q < 0.94 ? 'gem' : 'jade', hp: q > 0.82 ? 2 : 1, open: 0 }; }); }
-const MINE_IC = { empty: '🪨', iron: '⛓', gold: '💰', gem: '💠', jade: '💎' };
+const MINE_IC = { empty: 'mi_rock', iron: 'mi_iron', gold: 'mi_gold', gem: 'mi_gem', jade: 'mi_jade' };
 function mineHit(i) { const D = dnState(), c = D.mine[i]; if (c.open || D.pick <= 0) return; D.pick--; c.hp--; if (c.hp > 0) { save(); toast('Đá cứng, cuốc thêm lần nữa'); showDn(); return; }
   c.open = 1; const m = { iron: () => { S.tt = (S.tt || 0) + 8; return '⚙8 Tinh Thiết'; }, gold: () => { S.vang += 2000 + 80 * clearedN(); return 'vàng'; }, gem: () => { S.univ += 2; return '2 mảnh vạn năng'; }, jade: () => { S.ngoc += 25; return '25 ngọc'; }, empty: () => 'không có gì' }[c.k]();
   save(); toast('Đào được: ' + m); showDn(); }
@@ -5799,18 +5801,18 @@ function showDn(tab) {
   const tabs = `<div class="hd-tabs q-tabs">${[['th', 'Thám Hiểm'], ['fi', 'Câu Cá'], ['mi', 'Đào Mỏ'], ['tr', 'Cây Tiền']].map(([k, n]) => `<button class="${DN_TAB === k ? 'on' : ''}" data-dnt="${k}">${n}</button>`).join('')}</div>`;
   let body = '';
   if (DN_TAB === 'th') { const T = D.th;
-    body = `<div class="tm-head"><b>Bí Cảnh Thám Hiểm</b><span>Còn ${T.steps} bước · lực chiến thám hiểm ${fmt(thPw())}${T.buff ? ' (+' + Math.round(T.buff * 100) + '%)' : ''} · đã nhặt ${rewTxt(T.loot) || 'chưa có'}${T.loot.tt ? ' · ⚙' + T.loot.tt : ''}</span></div>
-      <div class="th-map">${T.g.map((k, i) => { const op = T.open.includes(i), at = T.at === i; return `<button class="th-c ${op ? 'op' : ''} ${at ? 'at' : ''}" data-th="${i}" ${T.done || !op || at ? 'disabled' : ''}>${at ? '🧙' : op ? TH_IC[k] : '?'}${op && (k === 'mob' || k === 'boss') && !at ? `<small>${fmt(thTilePw(i))}</small>` : ''}</button>`; }).join('')}</div>
-      <p class="hint">Đi sang ô kề bên (mỗi bước 1 lượt). 👹 quái/🐉 boss: thắng nếu lực chiến đội đủ mạnh (số nhỏ là lực chiến cần). 🎁 rương · ✨ phúc lành · 💧 thêm bước · 🕸 bẫy. Bản đồ mới mỗi ngày.</p>
+    body = `<div class="tm-head"><b>Bí Cảnh Thám Hiểm</b><span>Còn ${T.steps} bước · lực chiến thám hiểm ${fmt(thPw())}${T.buff ? ' (+' + Math.round(T.buff * 100) + '%)' : ''} · đã nhặt ${rewTxt(T.loot) || 'chưa có'}${T.loot.tt ? ' · Tinh Thiết ' + T.loot.tt : ''}</span></div>
+      <div class="th-map">${T.g.map((k, i) => { const op = T.open.includes(i), at = T.at === i; return `<button class="th-c ${op ? 'op' : ''} ${at ? 'at' : ''}" data-th="${i}" ${T.done || !op || at ? 'disabled' : ''}>${at ? '<img src="art/ui/th_hero.webp" alt="">' : op ? thImg(k) : '<img class="fog" src="art/ui/th_fog.webp" alt="">'}${op && (k === 'mob' || k === 'boss') && !at ? `<small>${fmt(thTilePw(i))}</small>` : ''}</button>`; }).join('')}</div>
+      <p class="hint">Đi sang ô kề bên (mỗi bước 1 lượt). Quái/boss: thắng nếu lực chiến đội đủ mạnh (số nhỏ là lực chiến cần). Rương · phúc lành (+10% lực chiến) · linh tuyền (+3 bước) · bẫy (−2 bước). Bản đồ mới mỗi ngày.</p>
       <div style="text-align:center"><button class="btn gold" id="thGet" ${T.loot.vang + T.loot.ngoc + T.loot.univ + T.loot.tt ? '' : 'disabled'}>Mang chiến lợi phẩm về</button></div>`; }
   else if (DN_TAB === 'fi') body = `<div class="tm-head"><b>Câu Cá · Đông Hải</b><span>Còn ${D.fish}/5 lượt hôm nay · bấm "Thả câu", rồi bấm "Kéo!" khi kim nằm trong vùng xanh</span></div>
       <div class="fi-bar" id="fiBar"><i id="fiZone"></i><b id="fiMk"></b></div>
       <div style="text-align:center"><button class="btn gold big" id="fiGo" ${D.fish > 0 ? '' : 'disabled'}>Thả câu</button></div>
-      <h4>Bộ sưu tập</h4>${FISH.map(([n, k, v]) => `<div class="vc-q"><div><b>${n}</b><small>${k === 'vang' ? 'vàng' : k === 'tt' ? 'Tinh Thiết' : k === 'lq' ? 'Linh Quả' : k === 'ngoc' ? 'ngọc' : 'mảnh vạn năng'} · đã câu ${D.album[n] || 0}</small></div></div>`).join('')}`;
-  else if (DN_TAB === 'mi') body = `<div class="tm-head"><b>Đào Mỏ · Côn Lôn Sơn</b><span>Còn ${D.pick} lần cuốc · đá cứng (💠💎) cần cuốc 2 lần · mỏ mới mỗi ngày</span></div>
-      <div class="mi-grid">${D.mine.map((c, i) => `<button class="mi-c ${c.open ? 'op' : ''}" data-mi="${i}" ${c.open || D.pick <= 0 ? 'disabled' : ''}>${c.open ? MINE_IC[c.k] : c.hp < (c.k === 'gem' || c.k === 'jade' ? 2 : 1) ? '⛏' : ''}</button>`).join('')}</div>`;
+      <h4>Bộ sưu tập</h4>${FISH.map(([n, k, v, , im]) => `<div class="vc-q tm-g"><img class="tm-gi" src="art/ui/${im}.webp" alt=""><div><b>${n}</b><small>${k === 'vang' ? 'vàng' : k === 'tt' ? 'Tinh Thiết' : k === 'lq' ? 'Linh Quả' : k === 'ngoc' ? 'ngọc' : 'mảnh vạn năng'} · đã câu ${D.album[n] || 0}</small></div></div>`).join('')}`;
+  else if (DN_TAB === 'mi') body = `<div class="tm-head"><b>Đào Mỏ · Côn Lôn Sơn</b><span>Còn ${D.pick} lần cuốc · đá quý (ngọc lam, ngọc bích) cần cuốc 2 lần · mỏ mới mỗi ngày</span></div>
+      <div class="mi-grid">${D.mine.map((c, i) => `<button class="mi-c ${c.open ? 'op' : ''}" data-mi="${i}" ${c.open || D.pick <= 0 ? 'disabled' : ''}>${c.open ? `<img src="art/ui/${MINE_IC[c.k]}.webp" alt="">` : c.hp < (c.k === 'gem' || c.k === 'jade' ? 2 : 1) ? '<i class="mi-crack"></i>' : ''}</button>`).join('')}</div>`;
   else body = `<div class="tm-head"><b>Cây Tiền</b><span>Lắc cây rơi vàng (có lúc bạo kích ×2, ×5). Còn ${D.tree} lần miễn phí hôm nay.</span></div>
-      <div class="tree">🌳</div><div style="text-align:center"><button class="btn gold big" id="trGo">${D.tree > 0 ? 'Lắc cây (miễn phí)' : 'Lắc thêm · ' + [20, 40, 80, 120][Math.min(3, D.treeBuy)] + ' ngọc'}</button></div>`;
+      <div class="tree"><img src="art/ui/tree_money.webp" alt=""></div><div style="text-align:center"><button class="btn gold big" id="trGo">${D.tree > 0 ? 'Lắc cây (miễn phí)' : 'Lắc thêm · ' + [20, 40, 80, 120][Math.min(3, D.treeBuy)] + ' ngọc'}</button></div>`;
   ui.innerHTML = `<div class="screen panel-screen vc-screen">${topBar('Du Ngoạn')}${tabs}<div class="vc-body">${body}</div></div>`;
   $('#bBack').onclick = () => { cancelAnimationFrame(fishAnim); showHome(); };
   ui.querySelectorAll('[data-dnt]').forEach(b => b.onclick = () => { cancelAnimationFrame(fishAnim); showDn(b.dataset.dnt); });
@@ -5824,10 +5826,10 @@ function showDn(tab) {
 function showDongPhu() {
   const D = dpState(), P = dpPending(), today = dayKey();
   ui.innerHTML = `<div class="screen panel-screen dp-screen" style="background:linear-gradient(rgba(255,248,230,.3), rgba(255,248,230,.55)), url('art/bg/dongphu_bg.webp') center / cover no-repeat">${topBar('Động Phủ')}
-    <div class="dp-res"><span>🌿 Linh Thảo <b>${fmt(D.lt)}</b></span><span>🍑 Linh Quả <b>${fmt(D.lq)}</b></span><span>💊 Tẩy Tuỷ Đan <b>${D.ttd}</b></span><span>🔮 Thăng Tiên Đan <b>${D.pcd || 0}</b></span></div>
+    <div class="dp-res"><span>${icon('lt')} Linh Thảo <b>${fmt(D.lt)}</b></span><span>${icon('lq')} Linh Quả <b>${fmt(D.lq)}</b></span><span>${icon('ttd')} Tẩy Tuỷ Đan <b>${D.ttd}</b></span><span>${icon('pcd')} Thăng Tiên Đan <b>${D.pcd || 0}</b></span></div>
     <div class="dp-grid">${Object.entries(DP_B).map(([k, B0]) => { const lv = dpLv(k), c = DP_COST[lv];
       let act = '';
-      if (k === 'duoc') act = `<button class="btn small ${P.lt + P.lq ? 'gold' : ''}" id="dpHarvest" ${P.lt + P.lq ? '' : 'disabled'}>Thu hoạch 🌿${P.lt} 🍑${P.lq}</button>`;
+      if (k === 'duoc') act = `<button class="btn small ${P.lt + P.lq ? 'gold' : ''}" id="dpHarvest" ${P.lt + P.lq ? '' : 'disabled'}>Thu hoạch ${icon('lt')}${P.lt} ${icon('lq')}${P.lq}</button>`;
       if (k === 'lo') act = `<button class="btn small gold" id="dpBrew">Luyện đan</button>`;
       if (k === 'thu') act = `<button class="btn small ${D.day !== today ? 'gold' : ''}" id="dpDaily" ${D.day !== today ? '' : 'disabled'}>${D.day !== today ? 'Nhận mảnh hôm nay' : 'Đã nhận hôm nay'}</button>`;
       return `<div class="dp-b"><img src="art/ui/${B0.img}.webp" alt=""><div class="dp-i"><b>${B0.n} <em>Cấp ${lv}/${DP_MAX}</em></b><small>${B0.d(lv)}</small>
@@ -5843,7 +5845,7 @@ function showDongPhu() {
 function dpBrew() {
   const D = dpState(), lv = dpLv('lo'), w = document.createElement('div'); w.className = 'modal';
   w.innerHTML = `<div class="xfer"><h3>Luyện Đan Lô · cấp ${lv}</h3><p class="hint">Linh Thảo: ${fmt(D.lt)} · vàng: ${fmt(S.vang)}</p>${DAN.map(x => { const open = lv >= x.lv, ok = open && D.lt >= x.lt && D.lq >= (x.lq || 0) && S.vang >= (x.vang || 0);
-    return `<div class="eq-row"><b>${x.n}</b><p>${x.d}</p><small>${open ? `🌿${x.lt}${x.lq ? ' 🍑' + x.lq : ''}${x.vang ? ' + ' + fmt(x.vang) + ' vàng' : ''}` : 'Mở khi lò đạt cấp ' + x.lv}</small>
+    return `<div class="eq-row"><b>${x.n}</b><p>${x.d}</p><small>${open ? `${icon('lt')}${x.lt}${x.lq ? ' ' + icon('lq') + x.lq : ''}${x.vang ? ' + ' + fmt(x.vang) + ' vàng' : ''}` : 'Mở khi lò đạt cấp ' + x.lv}</small>
       ${open ? `<button class="btn small ${ok ? 'gold' : ''}" data-dan="${x.id}" ${ok ? '' : 'disabled'}>Luyện</button>` : ''}</div>`; }).join('')}
     ${D.ttd ? `<div class="eq-row"><b>Dùng Tẩy Tuỷ Đan (${D.ttd})</b><p>Chọn tướng trong Đội Hình hiện tại:</p><div class="dp-tt">${S.lineup.filter(id => S.owned[id]).map(id => `<button class="btn small" data-tt="${id}" ${(S.owned[id].tuy || 0) >= 10 ? 'disabled' : ''}><img src="${por(id, 40)}" alt="">${(S.owned[id].tuy || 0)}/10</button>`).join('')}</div></div>` : ''}
     <div class="res-btns"><button class="btn" id="danC">Đóng</button></div></div>`;
@@ -5891,7 +5893,7 @@ function showPets(sel) {
       <p class="pet-sk"><b>${P.sk}</b> · hồi ${Math.max(6, P.cd - 0.5 * (p.star - 1)).toFixed(1)} giây<br>${P.d(m)}</p>
       ${p.own ? `<p class="hint">Cấp ${p.lv}/${maxLv} · ${'★'.repeat(p.star)}${'☆'.repeat(PET_MAX_STAR - p.star)} · Linh Quả ${fmt(D.lq)} · mảnh ${p.sh}</p>
         <div class="pet-btns"><button class="btn small ${S.pet === id ? '' : 'gold'}" id="petGo" ${S.pet === id ? 'disabled' : ''}>${S.pet === id ? 'Đang xuất chiến' : 'Xuất chiến'}</button>
-        <button class="btn small" id="petLv" ${p.lv >= maxLv || D.lq < lc ? 'disabled' : ''}>${p.lv >= maxLv ? 'Cần nâng Linh Thú Viên' : `Nâng cấp 🍑${lc}`}</button>
+        <button class="btn small" id="petLv" ${p.lv >= maxLv || D.lq < lc ? 'disabled' : ''}>${p.lv >= maxLv ? 'Cần nâng Linh Thú Viên' : `Nâng cấp ${icon('lq')}${lc}`}</button>
         ${p.star < PET_MAX_STAR ? `<button class="btn small ${p.sh >= need ? 'gold' : ''}" id="petStar" ${p.sh >= need ? '' : 'disabled'}>Thăng sao (${p.sh}/${need} mảnh)</button>` : ''}</div>`
       : `<p class="hint">Chưa sở hữu · cần ${need} mảnh (đang có ${p.sh}). Mảnh rơi từ boss chương lần đầu, Linh Thú Viên trong Động Phủ, Thú Hồn Đan và Cửa Hàng.</p>
         <div class="pet-btns"><button class="btn small ${p.sh >= need ? 'gold' : ''}" id="petGet" ${p.sh >= need ? '' : 'disabled'}>Triệu hồi</button></div>`}</div></div></div></div>`;
@@ -5977,7 +5979,7 @@ function realmRowHTML(id) {
   const o = S.owned[id]; if (!o) return '';
   const g = o.cg || 0, nx = g < cgCap(id) ? CG[g + 1] : null, D = dpState(), ok = nx && o.lv >= MAX_LV && D.lt >= nx.lt && (D.pcd || 0) >= nx.dan && S.vang >= nx.vang;
   return `<div class="hu-row cg-row" style="--cg:${CG[g].c}"><div><b>Tiên Vị · <span class="cg-n">${CG[g].n}</span></b>
-    <small>${g ? `+${Math.round(CG_STAT * g * 100)}% máu, công, thủ${CG.slice(1, g + 1).filter(x => x.perk).map(x => ' · ' + x.perk).join('')}` : 'Chưa phong tiên vị'}${nx ? ` → <b>${nx.n}</b>: ${o.lv < MAX_LV ? `cần cấp ${MAX_LV}` : `🌿${nx.lt} · Thăng Tiên Đan ${D.pcd || 0}/${nx.dan} · ${fmt(nx.vang)} vàng`}` : ' · Đã đạt tiên vị cao nhất'}</small></div>
+    <small>${g ? `+${Math.round(CG_STAT * g * 100)}% máu, công, thủ${CG.slice(1, g + 1).filter(x => x.perk).map(x => ' · ' + x.perk).join('')}` : 'Chưa phong tiên vị'}${nx ? ` → <b>${nx.n}</b>: ${o.lv < MAX_LV ? `cần cấp ${MAX_LV}` : `${icon('lt')}${nx.lt} · Thăng Tiên Đan ${D.pcd || 0}/${nx.dan} · ${fmt(nx.vang)} vàng`}` : ' · Đã đạt tiên vị cao nhất'}</small></div>
     ${nx ? `<div class="hu-btns"><button class="btn ${ok ? 'gold' : ''}" id="bCg" ${ok ? '' : 'disabled'}>Thăng vị</button></div>` : ''}</div>`;
 }
 function realmBreak(id) {
@@ -6025,7 +6027,7 @@ function showFormation() {
   w.innerHTML = `<div class="xfer fm-box"><h3>Trận Pháp</h3><p class="hint">Chọn 1 trận pháp cho đội khi đánh ải. Hàng trước = tướng cận chiến, hàng sau = tướng đánh xa. Linh Thảo: ${fmt(D.lt)} · vàng: ${fmt(S.vang)}</p>
     <div class="fm-list">${Object.entries(FORMS).map(([id, F]) => { const lv = fmLv(id), open = clearedN() >= F.at || !S.gated || S.unlockAll, cur = S.fm.cur === id, c = FM_COST(Math.max(1, lv));
       return `<div class="fm-row ${cur ? 'on' : ''} ${open ? '' : 'lock'}"><div class="fm-i"><b>${F.n}${lv ? ` <em>Cấp ${lv}/5</em>` : ''}</b><small>${F.d(fmK(id))}</small>${open ? '' : `<small class="fm-lk">🔒 Mở khi qua ải ${unlockAtN(F.at)}</small>`}</div>
-        <div class="fm-b">${!open ? '' : !lv ? `<button class="btn small gold" data-fml="${id}">Lĩnh ngộ ${icon('vang')}${fmt(c.vang)}</button>` : `${cur ? '<i class="fm-on">Đang dùng</i>' : `<button class="btn small gold" data-fmu="${id}">Dùng</button>`}${lv < 5 ? `<button class="btn small" data-fmup="${id}">Nâng ${icon('vang')}${fmt(c.vang)} 🌿${c.lt}</button>` : ''}`}</div></div>`; }).join('')}</div>
+        <div class="fm-b">${!open ? '' : !lv ? `<button class="btn small gold" data-fml="${id}">Lĩnh ngộ ${icon('vang')}${fmt(c.vang)}</button>` : `${cur ? '<i class="fm-on">Đang dùng</i>' : `<button class="btn small gold" data-fmu="${id}">Dùng</button>`}${lv < 5 ? `<button class="btn small" data-fmup="${id}">Nâng ${icon('vang')}${fmt(c.vang)} ${icon('lt')}${c.lt}</button>` : ''}`}</div></div>`; }).join('')}</div>
     <div class="res-btns"><button class="btn" id="fmC">Đóng</button></div></div>`;
   ui.appendChild(w);
   $('#fmC').onclick = () => { w.remove(); showLineup(); };
