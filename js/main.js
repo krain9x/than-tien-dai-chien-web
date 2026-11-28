@@ -4338,6 +4338,7 @@ function showSettings() {
   w.innerHTML = `<div class="buff-box"><div class="cp-title"><span>Cài Đặt</span></div><div class="buff-body">
     <section><h4>Giao diện</h4><div class="th-pick">${Object.keys(THEMES).map(k => `<button class="th-opt ${(S.theme || 'hoa') === k ? 'on' : ''}" data-th="${k}"><img src="art/ui/${THEMES[k].bg}.webp" alt=""><b>${THEMES[k].n}</b><small>${THEMES[k].d}</small></button>`).join('')}</div></section>
     <section><h4>Tài khoản</h4><div class="bf"><b>Lưu trực tuyến</b><span>${st}</span></div>
+      <div class="set-row"><button class="btn small" id="sProlog">Xem lại truyện mở đầu</button><button class="btn small" id="sLogin">Về màn đăng nhập / Đổi máy chủ</button></div>
       <div class="set-row"><button class="btn small gold" id="sAcc">${window.Cloud && Cloud.user ? 'Đăng xuất' : 'Đăng nhập Google'}</button><button class="btn small" id="sData">Mã chuyển dữ liệu</button></div></section>
     <section><h4>Góp ý / Báo lỗi</h4><div class="set-row"><button class="btn small gold" id="sFb">Gửi góp ý</button></div></section>
     <section><h4>Âm thanh và hình ảnh</h4>
@@ -4353,6 +4354,8 @@ function showSettings() {
   q('#sAcc').onclick = async () => { if (!(window.Cloud && Cloud.ok)) { toast('Không kết nối được máy chủ lưu'); return; }
     try { if (Cloud.user) await Cloud.signOut(); else await Cloud.signIn(); } catch (e) { toast('Lỗi: ' + (e.code || e.message)); } w.remove(); showSettings(); };
   q('#sData').onclick = () => { w.remove(); showSaveTransfer(); };
+  q('#sProlog').onclick = () => { w.remove(); showPrologue(() => showHome()); };
+  q('#sLogin').onclick = () => { w.remove(); cloudWipe(() => showLogin()); };
   q('#sFb').onclick = () => { w.remove(); showFeedback(); };
   q('#sFull').onclick = () => { w.remove(); grantAllHeroes(); };
   q('#sSnd').onclick = () => { S.mute = !S.mute; save(); setTimeout(bgmApply, 0); audioOn(); w.remove(); showSettings(); };
