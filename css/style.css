@@ -1654,3 +1654,4 @@ html, body { height: 100dvh; min-height: 100dvh; background-color: #1f140e; }
 .gd-box b { position: absolute; top: -16px; left: 16px; padding: 2px 14px; border-radius: 10px; background: linear-gradient(180deg, #ffd86a, #f0a020); color: #5a2000; font-size: 15px; border: 2px solid #8a4a10; }
 .gd-box p { margin: 6px 0 4px; color: #3a2000; font: 700 15px/1.45 'Baloo 2', sans-serif; min-height: 2.9em; } .gd-box small { display: block; text-align: right; color: #a06a20; font-size: 11px; animation: gcxBlink 1.2s infinite; }
 @media (max-height: 420px) { .ent-login .ent-logo.big { width: min(36vw, 420px); margin-left: max(-18vw, -210px); } .sv-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } .cr-h img { height: 80px; } }
+.sv-dot.maint { background: #8a8a9a; color: #8a8a9a; } em.maint { background: #6a6a7a; }

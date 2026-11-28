@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Quản Trị Thần Ma</title>
+<style>
+:root { --bg: #f6f1e6; --card: #fffdf8; --ink: #2b1d10; --mute: #7a6a55; --line: #e2d6bf; --acc: #b5651d; --acc2: #8a3a00; --ok: #2e8b57; --bad: #c0392b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b1712; --card: #26201a; --ink: #f1e6d2; --mute: #b3a58e; --line: #3d342a; --acc: #e0913f; --acc2: #ffb86b; --ok: #4fc285; --bad: #ff6b5b; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+header h1 { font-size: 18px; margin: 0; flex: 1; color: var(--acc2); }
+nav { display: flex; gap: 4px; padding: 8px 16px; overflow-x: auto; border-bottom: 1px solid var(--line); }
+nav button { white-space: nowrap; }
+main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+button { font: inherit; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer; }
+button.on, button.pri { background: var(--acc); color: #fff; border-color: var(--acc); }
+button.danger { color: var(--bad); border-color: var(--bad); }
+input, select, textarea { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--ink); max-width: 100%; }
+textarea { width: 100%; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.card h2 { font-size: 16px; margin: 0 0 10px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.stat b { display: block; font-size: 24px; color: var(--acc2); } .stat small { color: var(--mute); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--mute); font-weight: 600; }
+.tw { overflow-x: auto; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.mute { color: var(--mute); font-size: 13px; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px; background: var(--line); }
+.ok { color: var(--ok); } .bad { color: var(--bad); }
+#toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 16px; border-radius: 8px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+#toast.show { opacity: 1; }
+.gate { text-align: center; padding: 60px 16px; }
+pre { white-space: pre-wrap; word-break: break-all; max-height: 360px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 8px; font-size: 12px; }
+</style>
+</head>
+<body>
+<header><h1>Quản Trị · Thần Ma Đại Kiếp</h1><span id="who" class="mute"></span><button id="btnAuth">Đăng nhập Google</button></header>
+<nav id="tabs"></nav>
+<main id="app"><div class="gate">Đang tải...</div></main>
+<div id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// Công cụ quản trị máy chủ (29/11). Quyền thật nằm ở firestore.rules (isAdmin = krain9x.vn@gmail.com) — trang này chỉ là giao diện.
+const ADMIN = 'krain9x.vn@gmail.com';
+firebase.initializeApp({ apiKey: 'AIzaSyC4vLIy5lI-Rpb1qk09UaTPfuo98Q_YRx0', authDomain: 'than-ma-chien.firebaseapp.com', projectId: 'than-ma-chien',
+  storageBucket: 'than-ma-chien.firebasestorage.app', messagingSenderId: '426424932823', appId: '1:426424932823:web:16a940aef1124dcfbd5392' });
+const auth = firebase.auth(), db = firebase.firestore();
+const $ = s => document.querySelector(s), app = $('#app');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); };
+const fmt = n => Math.round(n || 0).toLocaleString('vi-VN');
+const when = ts => ts ? new Date(ts).toLocaleString('vi-VN') : '—';
+// Danh sách mặc định (khớp main.js) — quản trị có thể sửa, thêm, ẩn
+const DEF_CL = [['td', 'Cụm Thiên Đình'], ['pt', 'Cụm Phong Thần'], ['tdu', 'Cụm Tây Du']];
+const DEF_SV = ['Nam Thiên Môn', 'Lăng Tiêu Điện', 'Dao Trì', 'Đâu Suất Cung', 'Quảng Hàn Cung', 'Côn Lôn', 'Ngọc Hư Cung', 'Bích Du Cung', 'Kim Ngao Đảo', 'Triều Ca',
+  'Hoa Quả Sơn', 'Thuỷ Liêm Động', 'Hoả Diệm Sơn', 'Bàn Ti Động', 'Linh Sơn'].map((n, i) => ({ id: i + 1, n, c: i < 5 ? 'td' : i < 10 ? 'pt' : 'tdu', st: '', hide: false }));
+const DEF_NOTICE = [{ tab: 'Sự kiện', t: 'Lễ Hội Tân Thủ 7 ngày', d: 'Đăng nhập và làm nhiệm vụ mỗi ngày để nhận Ngọc, vàng, mảnh vạn năng. Đủ điểm ngày 7 nhận ngay một tướng SSR!' },
+  { tab: 'Cập nhật', t: 'Thần Ma Đại Kiếp chính thức ra mắt', d: 'Chào mừng Chưởng Môn!' }, { tab: 'Bảo trì', t: 'Lịch bảo trì', d: 'Hiện không có lịch bảo trì.' }];
+let TAB = 'tong', CFG = {}, LB = [];
+const TABS = [['tong', 'Tổng quan'], ['sv', 'Máy chủ & Bảo trì'], ['tb', 'Thông báo'], ['nc', 'Người chơi'], ['gy', 'Góp ý']];
+function drawTabs() { $('#tabs').innerHTML = TABS.map(([k, n]) => `<button class="${k === TAB ? 'on' : ''}" data-t="${k}">${n}</button>`).join(''); $('#tabs').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { TAB = b.dataset.t; render(); }); }
+async function loadCfg() { const q = await db.collection('config').get(); CFG = {}; q.docs.forEach(d => CFG[d.id] = d.data()); }
+async function loadLb() { const q = await db.collection('lb').orderBy('power', 'desc').limit(500).get(); LB = q.docs.map(d => ({ id: d.id, ...d.data() })); }
+const svOf = r => r.sv || (/_s(\d+)$/.exec(r.id) || [0, 1])[1] * 1;
+async function render() {
+  drawTabs();
+  try {
+    if (TAB === 'tong') return renderTong();
+    if (TAB === 'sv') return renderSv();
+    if (TAB === 'tb') return renderTb();
+    if (TAB === 'nc') return renderNc();
+    if (TAB === 'gy') return renderGy();
+  } catch (e) { app.innerHTML = `<div class="card bad">Lỗi: ${esc(e.message)}</div>`; }
+}
+async function renderTong() {
+  app.innerHTML = '<div class="mute">Đang tải...</div>'; await loadLb();
+  const day = Date.now() - 864e5, by = {};
+  for (const r of LB) { const s = svOf(r); (by[s] = by[s] || []).push(r); }
+  const act = LB.filter(r => (r.ts || 0) > day).length;
+  app.innerHTML = `<div class="grid" style="margin-bottom:14px">
+      <div class="stat"><small>Người chơi trên bảng (đã đăng nhập Google)</small><b>${LB.length}</b></div>
+      <div class="stat"><small>Hoạt động 24 giờ qua</small><b>${act}</b></div>
+      <div class="stat"><small>Số máy chủ có người</small><b>${Object.keys(by).length}</b></div></div>
+    <div class="card"><h2>Theo máy chủ</h2><div class="tw"><table><tr><th>Máy chủ</th><th>Người chơi</th><th>Hoạt động 24h</th><th>Mạnh nhất</th></tr>
+      ${Object.keys(by).sort((a, b) => a - b).map(s => { const L = by[s]; const top = L[0]; return `<tr><td>S${s}</td><td>${L.length}</td><td>${L.filter(r => (r.ts || 0) > day).length}</td><td>${esc(top.name)} · ${fmt(top.power)}</td></tr>`; }).join('') || '<tr><td colspan="4" class="mute">Chưa có dữ liệu</td></tr>'}</table></div></div>
+    <p class="mute">Chỉ tính người chơi đã đăng nhập Google và có dữ liệu bảng xếp hạng. Người chơi tài khoản Khách không hiện ở đây.</p>`;
+}
+async function renderSv() {
+  app.innerHTML = '<div class="mute">Đang tải...</div>'; await loadCfg();
+  const C = CFG.servers || {}; let list = (C.list && C.list.length ? C.list : DEF_SV).map(x => ({ ...x })); let cl = (C.clusters && C.clusters.length ? C.clusters : DEF_CL).map(x => x.slice());
+  const M = C.maint || { all: false, sv: {}, msg: '' };
+  const draw = () => {
+    app.innerHTML = `<div class="card"><h2>Bảo trì</h2>
+        <div class="row"><label><input type="checkbox" id="mAll" ${M.all ? 'checked' : ''}> Bảo trì TOÀN BỘ máy chủ</label></div>
+        <div class="row"><input id="mMsg" style="flex:1;min-width:240px" placeholder="Lời nhắn khi bảo trì (ví dụ: Bảo trì đến 15:00 để cập nhật)" value="${esc(M.msg || '')}"></div>
+        <p class="mute">Khi bảo trì, người chơi không vào được máy chủ đó; tài khoản quản trị vẫn vào được để kiểm tra.</p></div>
+      <div class="card"><h2>Cụm máy chủ</h2>${cl.map((c, i) => `<div class="row"><code>${esc(c[0])}</code><input data-cl="${i}" value="${esc(c[1])}"></div>`).join('')}
+        <div class="row"><input id="ncK" placeholder="mã cụm (vd: mt)" size="10"><input id="ncN" placeholder="Tên cụm"><button id="ncAdd">Thêm cụm</button></div></div>
+      <div class="card"><h2>Danh sách máy chủ</h2><div class="tw"><table><tr><th>ID</th><th>Tên</th><th>Cụm</th><th>Trạng thái</th><th>Ẩn</th><th>Bảo trì riêng</th></tr>
+        ${list.map((x, i) => `<tr><td>S${x.id}</td><td><input data-n="${i}" value="${esc(x.n)}"></td>
+          <td><select data-c="${i}">${cl.map(c => `<option value="${esc(c[0])}" ${c[0] === x.c ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select></td>
+          <td><select data-s="${i}">${[['', 'Tự động'], ['new', 'Mới'], ['hot', 'Đông'], ['full', 'Đầy']].map(([v, n]) => `<option value="${v}" ${v === (x.st || '') ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
+          <td><input type="checkbox" data-h="${i}" ${x.hide ? 'checked' : ''}></td><td><input type="checkbox" data-m="${x.id}" ${(M.sv || {})[x.id] ? 'checked' : ''}></td></tr>`).join('')}</table></div>
+        <div class="row" style="margin-top:8px"><button id="svAdd">+ Mở máy chủ mới (S${list.length + 1})</button></div>
+        <p class="mute">"Tự động": máy chủ mới nhất hiện Mới, 2 máy chủ trước đó hiện Đông. Không xoá máy chủ đã có người chơi — hãy dùng "Ẩn".</p></div>
+      <div class="row"><button class="pri" id="svSave">Lưu thay đổi</button><span class="mute">Người chơi thấy ngay ở lần mở game kế tiếp.</span></div>`;
+    const grab = () => { app.querySelectorAll('[data-n]').forEach(e => list[+e.dataset.n].n = e.value.trim() || list[+e.dataset.n].n); app.querySelectorAll('[data-c]').forEach(e => list[+e.dataset.c].c = e.value);
+      app.querySelectorAll('[data-s]').forEach(e => list[+e.dataset.s].st = e.value); app.querySelectorAll('[data-h]').forEach(e => list[+e.dataset.h].hide = e.checked);
+      app.querySelectorAll('[data-cl]').forEach(e => cl[+e.dataset.cl][1] = e.value.trim() || cl[+e.dataset.cl][1]);
+      M.all = $('#mAll').checked; M.msg = $('#mMsg').value.trim(); M.sv = {}; app.querySelectorAll('[data-m]').forEach(e => { if (e.checked) M.sv[e.dataset.m] = true; }); };
+    $('#svAdd').onclick = () => { grab(); const n = prompt('Tên máy chủ mới:', 'Máy chủ ' + (list.length + 1)); if (!n) return; list.push({ id: list.length + 1, n: n.trim(), c: cl[cl.length - 1][0], st: 'new', hide: false }); draw(); };
+    $('#ncAdd').onclick = () => { grab(); const k = $('#ncK').value.trim(), n = $('#ncN').value.trim(); if (!/^[a-z]{1,6}$/.test(k) || !n) { toast('Mã cụm: 1–6 chữ thường; cần tên cụm'); return; } if (cl.some(c => c[0] === k)) { toast('Mã cụm đã có'); return; } cl.push([k, n]); draw(); };
+    $('#svSave').onclick = async () => { grab(); try { await db.collection('config').doc('servers').set({ list, clusters: cl, maint: M, ts: Date.now() }); toast('Đã lưu cấu hình máy chủ'); } catch (e) { toast('Lỗi: ' + e.message); } };
+  };
+  draw();
+}
+async function renderTb() {
+  app.innerHTML = '<div class="mute">Đang tải...</div>'; await loadCfg();
+  let items = ((CFG.notice && CFG.notice.items && CFG.notice.items.length) ? CFG.notice.items : DEF_NOTICE).map(x => ({ ...x }));
+  const draw = () => {
+    app.innerHTML = `<div class="card"><h2>Bảng Thông Báo ở màn đăng nhập</h2><p class="mute">Tab: Sự kiện, Cập nhật, Bảo trì (hoặc tên tab khác). Hiện 1 lần mỗi ngày cho người chơi.</p>
+      ${items.map((x, i) => `<div class="card"><div class="row"><select data-tab="${i}">${['Sự kiện', 'Cập nhật', 'Bảo trì'].map(t => `<option ${t === x.tab ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        <input data-t="${i}" style="flex:1;min-width:200px" value="${esc(x.t)}" placeholder="Tiêu đề"><button class="danger" data-del="${i}">Xoá</button></div>
+        <textarea data-d="${i}" rows="3" placeholder="Nội dung">${esc(x.d)}</textarea></div>`).join('')}
+      <div class="row"><button id="tbAdd">+ Thêm mục</button><button class="pri" id="tbSave">Lưu thông báo</button></div></div>`;
+    const grab = () => { app.querySelectorAll('[data-tab]').forEach(e => items[+e.dataset.tab].tab = e.value); app.querySelectorAll('input[data-t]').forEach(e => items[+e.dataset.t].t = e.value);
+      app.querySelectorAll('[data-d]').forEach(e => items[+e.dataset.d].d = e.value); };
+    app.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { grab(); items.splice(+b.dataset.del, 1); draw(); });
+    $('#tbAdd').onclick = () => { grab(); items.push({ tab: 'Sự kiện', t: '', d: '' }); draw(); };
+    $('#tbSave').onclick = async () => { grab(); items = items.filter(x => x.t.trim()); try { await db.collection('config').doc('notice').set({ items, ts: Date.now() }); toast('Đã lưu thông báo'); draw(); } catch (e) { toast('Lỗi: ' + e.message); } };
+  };
+  draw();
+}
+async function renderNc() {
+  app.innerHTML = '<div class="mute">Đang tải...</div>'; await loadLb();
+  const bans = {}; (await db.collection('bans').get()).docs.forEach(d => bans[d.id] = d.data());
+  let q = '';
+  const draw = () => {
+    const L = LB.filter(r => !q || (r.name || '').toLowerCase().includes(q) || r.id.includes(q));
+    app.innerHTML = `<div class="card"><div class="row"><input id="ncQ" placeholder="Tìm theo tên Chưởng Môn hoặc mã" value="${esc(q)}" style="flex:1;min-width:220px"></div>
+      <div class="tw"><table><tr><th>Tên</th><th>Máy chủ</th><th>Lực chiến</th><th>Ải</th><th>Tháp</th><th>Lần cuối</th><th></th></tr>
+      ${L.slice(0, 200).map(r => `<tr><td>${esc(r.name)} ${bans[r.id] ? '<span class="pill bad">Đã khoá</span>' : ''}<div class="mute">${esc(r.id)}</div></td><td>S${svOf(r)}</td><td>${fmt(r.power)}</td><td>${r.st == null ? '—' : r.st}</td><td>${r.tower || 0}</td><td>${when(r.ts)}</td>
+        <td><button data-v="${esc(r.id)}">Xem</button> ${bans[r.id] ? `<button data-ub="${esc(r.id)}">Mở khoá</button>` : `<button class="danger" data-b="${esc(r.id)}">Khoá</button>`}</td></tr>`).join('') || '<tr><td colspan="7" class="mute">Không có</td></tr>'}</table></div></div><div id="ncView"></div>`;
+    $('#ncQ').oninput = e => { q = e.target.value.trim().toLowerCase(); const p = e.target.selectionStart; draw(); const n = $('#ncQ'); n.focus(); n.setSelectionRange(p, p); };
+    app.querySelectorAll('[data-v]').forEach(b => b.onclick = () => viewPlayer(b.dataset.v));
+    app.querySelectorAll('[data-b]').forEach(b => b.onclick = async () => { const id = b.dataset.b, msg = prompt('Lý do khoá (người chơi sẽ thấy):', 'Tài khoản vi phạm quy định (gian lận).'); if (msg == null) return;
+      try { await db.collection('bans').doc(id).set({ msg, ts: Date.now(), by: ADMIN }); await db.collection('lb').doc(id).delete(); await db.collection('arena').doc(id).delete().catch(() => {}); bans[id] = { msg }; LB = LB.filter(x => x.id !== id); toast('Đã khoá và gỡ khỏi bảng xếp hạng'); draw(); } catch (e) { toast('Lỗi: ' + e.message); } });
+    app.querySelectorAll('[data-ub]').forEach(b => b.onclick = async () => { try { await db.collection('bans').doc(b.dataset.ub).delete(); delete bans[b.dataset.ub]; toast('Đã mở khoá'); draw(); } catch (e) { toast('Lỗi: ' + e.message); } });
+  };
+  draw();
+}
+async function viewPlayer(id) {
+  const box = $('#ncView'); box.innerHTML = '<div class="card mute">Đang tải bản lưu...</div>';
+  try { const d = await db.collection('users').doc(id).get(); if (!d.exists) { box.innerHTML = '<div class="card mute">Không có bản lưu trên mạng.</div>'; return; }
+    const v = d.data(), s = JSON.parse(v.save || '{}'), own = Object.keys(s.owned || {});
+    box.innerHTML = `<div class="card"><h2>${esc(s.pname || v.name)} · ${esc(id)}</h2>
+      <div class="grid"><div class="stat"><small>Ngọc</small><b>${fmt(s.ngoc)}</b></div><div class="stat"><small>Vàng</small><b>${fmt(s.vang)}</b></div><div class="stat"><small>Mảnh vạn năng</small><b>${fmt(s.univ)}</b></div>
+      <div class="stat"><small>Tướng</small><b>${own.length}</b></div><div class="stat"><small>Ải đã qua</small><b>${Object.keys(s.cleared || {}).length}</b></div><div class="stat"><small>Lượt chiêu mộ</small><b>${fmt(s.pulls)}</b></div></div>
+      <p class="mute">Lưu lúc ${when(v.ts)}${s.tamper ? ' · <span class="bad">Bản lưu từng bị sửa tay (tamper=' + s.tamper + ')</span>' : ''}</p>
+      <details><summary>Danh sách tướng</summary><pre>${esc(own.map(k => k + ' · cấp ' + (s.owned[k].lv || 1) + ' · ' + (s.owned[k].star || 1) + ' sao').join('\n'))}</pre></details></div>`;
+  } catch (e) { box.innerHTML = `<div class="card bad">Lỗi: ${esc(e.message)}</div>`; }
+}
+async function renderGy() {
+  app.innerHTML = '<div class="mute">Đang tải...</div>';
+  const q = await db.collection('feedback').orderBy('ts', 'desc').limit(200).get(); const L = q.docs.map(d => ({ id: d.id, ...d.data() }));
+  const K = { loi: 'Lỗi', canbang: 'Cân bằng', giaodien: 'Giao diện', khac: 'Khác' };
+  app.innerHTML = `<div class="card"><h2>Góp ý người chơi (${L.filter(x => !x.done).length} chưa xử lý)</h2>
+    ${L.map(f => `<div class="card" style="${f.done ? 'opacity:.55' : ''}"><div class="row"><span class="pill">${esc(K[f.k] || f.k || '')}</span><b>${esc(f.name || '?')}</b><span class="mute">S${f.sv || 1} · ${when(f.ts)} · màn: ${esc(f.scr || '')}</span></div>
+      <div>${esc(f.t)}</div><div class="row" style="margin-top:6px">${f.done ? '<span class="ok">Đã xử lý</span>' : `<button data-d="${f.id}">Đánh dấu đã xử lý</button>`}<button class="danger" data-x="${f.id}">Xoá</button></div></div>`).join('') || '<p class="mute">Chưa có góp ý.</p>'}</div>`;
+  app.querySelectorAll('[data-d]').forEach(b => b.onclick = async () => { await db.collection('feedback').doc(b.dataset.d).update({ done: true }); renderGy(); });
+  app.querySelectorAll('[data-x]').forEach(b => b.onclick = async () => { if (!confirm('Xoá góp ý này?')) return; await db.collection('feedback').doc(b.dataset.x).delete(); renderGy(); });
+}
+$('#btnAuth').onclick = async () => { if (auth.currentUser) await auth.signOut(); else { try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch (e) { toast('Lỗi: ' + e.message); } } };
+auth.onAuthStateChanged(u => {
+  $('#who').textContent = u ? u.email : ''; $('#btnAuth').textContent = u ? 'Đăng xuất' : 'Đăng nhập Google';
+  if (!u) { $('#tabs').innerHTML = ''; app.innerHTML = '<div class="gate"><p>Đăng nhập bằng tài khoản quản trị để tiếp tục.</p></div>'; return; }
+  if (u.email !== ADMIN) { $('#tabs').innerHTML = ''; app.innerHTML = '<div class="gate bad"><p>Tài khoản này không có quyền quản trị.</p></div>'; return; }
+  render();
+});
+</script>
+</body>
+</html>
